@@ -1,18 +1,18 @@
 import { PiDiamondsFourFill } from 'react-icons/pi'
 import { useNavigate } from 'react-router-dom'
-const Signup = () => {
-    const Nav = useNavigate()
+const SignIn = () => {
+  const Nav = useNavigate()
   return (
     <div className="Signup_Container">
         <section className="White_Section">
             <span><PiDiamondsFourFill/> EchoCart</span>
-            <h1>Welcome To EchoCart</h1>
-            <article>Registered User? <p onClick={()=>Nav('/SignIn')}>Sign In</p></article>
+            <h1>Welcome Back, To EchoCart</h1>
+            <article>New User? <p onClick={()=> Nav('/SignUp')}>Create an account</p></article>
             <label htmlFor="email">Email</label>
             <input type="text" placeholder="input your registered email" />
             <label htmlFor="email">password</label>
             <input type="text" placeholder="input your password" />
-            <div className="Login_Btn">Sign Up</div>
+            <div className="Login_Btn">LOGIN</div>
 
         </section>
         <section className="Blue_Section">
@@ -23,4 +23,4 @@ const Signup = () => {
   )
 }
 
-export default Signup
+export default SignIn

@@ -1,14 +1,23 @@
 // import './App.css'
 import Dashboard from './Components/Dashboard'
-import Signup from './Components/Signup'
-import './SCSS/Signup.scss'
+import SignIn from './Components/SignIn'
+import Signup from './Components/SignUp'
+import './SCSS/Signin.scss'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 function App() {
 
   return (
     <>
-    <Signup/>
-     <Dashboard/>
+    
+     <BrowserRouter>
+     
+     <Routes>
+      <Route path='/' element={<Dashboard/>}/>
+      <Route path='SignUp' element={<Signup/>}/>
+      <Route path='SignIn' element={<SignIn/> }/>
+     </Routes>
+     </BrowserRouter>
     </>
   )
 }

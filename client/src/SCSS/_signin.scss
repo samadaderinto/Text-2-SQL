@@ -1,0 +1,90 @@
+@import 'mixin';
+.Signup_Container {
+   @include General-Container;
+    height: 125vh;
+
+    .White_Section {
+        @include White-container;
+
+        span {
+            width: 100%;
+            height: 20%;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 5%;
+            color: rgb(70, 69, 69);
+        }
+
+        h1 {
+            width: 100%;
+            color: rgb(70, 69, 69);
+            font-weight: 600;
+            font-size: 55px;
+            // font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        article {
+            width: 55%;
+            display: flex;
+            justify-content: space-between;
+            color: grey;
+            font-size: 19px;
+            padding-bottom: 2%;
+            padding-top: 2%;
+
+            p {
+                color: rgb(45, 109, 247);
+            }
+        }
+
+        label {
+            color: grey;
+            margin: 3px;
+        }
+
+        .Input_Container {
+            @include Input-container;
+            }
+          
+        }
+
+        p {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            color: rgb(35, 91, 174);
+            cursor: pointer;
+            padding: 10px;
+        }
+
+
+      .Signup_Btn {
+        @include Button
+      }
+
+       .Bottom_Container {
+        width: 100%;
+        height: max-content;
+        display: flex;
+        justify-content: space-between;
+
+        .Login_Btn {
+            @include Button;
+        }
+
+        p {
+            color: grey;
+            cursor: pointer;
+        }
+       }
+    
+
+    .Blue_Section {
+        @include Blue-container;
+        justify-content: flex-end;
+        span {
+            font-size: 29px;
+            color: white;
+        }
+    }
+}

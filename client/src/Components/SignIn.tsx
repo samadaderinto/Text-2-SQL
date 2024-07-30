@@ -11,7 +11,7 @@ const SignIn = () => {
         <section className="White_Section">
             <span><PiDiamondsFourFill/> EchoCart</span>
             <h1>Welcome Back, To EchoCart</h1>
-            <article>New User? <p onClick={()=> Nav('/SignUp')}>Create an account</p>
+            <article><span>New User?</span> <p onClick={()=> Nav('/SignUp')}>Create an account</p>
             </article>
             <label htmlFor="email">Email</label>
             <div className="Input_Container" tabIndex={0}>

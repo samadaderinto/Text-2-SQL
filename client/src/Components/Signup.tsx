@@ -11,7 +11,7 @@ const Signup = () => {
         <section className="White_Section">
             <span><PiDiamondsFourFill/> EchoCart</span>
             <h1>Welcome To EchoCart</h1>
-            <article>Registered User? <p onClick={()=>Nav('/SignIn')}>Sign In</p></article>
+            <article><span>Registered User?</span> <p onClick={()=>Nav('/SignIn')}>Sign In</p></article>
             <label htmlFor="email">Email</label>
             <div className="Input_Container" tabIndex={0}>
             <input type="text" placeholder="input your registered email" />

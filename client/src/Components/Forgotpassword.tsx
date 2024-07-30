@@ -14,7 +14,7 @@ const Forgotpassword = () => {
             <div className="Input_Container" tabIndex={0}>
              <input type="text" placeholder="input your registered email" />
             </div>
-            <div className="Login_Btn">LOGIN</div>
+            <div className="Login_Btn" onClick={()=> Nav('/Newpassword')}>LOGIN</div>
         </section>
         <section className="Forgot_Blue">
             <h1>Easiest Way To Manage Your Store</h1>

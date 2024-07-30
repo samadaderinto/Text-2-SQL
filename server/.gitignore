@@ -1,0 +1,12 @@
+pm.json
+pmkeypair.pem
+.env
+.venv/
+__pycache__/
+.DS_Store
+/static/
+users.csv
+assets/
+.idea
+*.log
+celerybeat-schedule

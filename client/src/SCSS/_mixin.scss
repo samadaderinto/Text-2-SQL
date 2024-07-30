@@ -13,6 +13,15 @@
     padding-top: 5%;
     flex-direction: column;
     background-color: white;
+
+    span {
+        width: 100%;
+        height: 20%;
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 5%;
+        color: rgb(70, 69, 69);
+    }
 }
 
 @mixin Input-container {

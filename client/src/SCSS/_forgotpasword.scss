@@ -1,0 +1,69 @@
+@import 'mixin';
+
+.Forgot_Container {
+    @include General-Container;
+    height: 200vh;
+
+    .Forgot_White {
+        @include White-container;
+        // padding: 5%;
+        span {
+            width: 100%;
+            height: 20%;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 1%;
+            margin-top:15%;
+            color: rgb(53, 52, 52);
+        }
+
+        p {
+            font-size: 18px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        h1 {
+            font-size: 40px;
+            color: rgb(70, 70, 70);
+            font-weight: 700;
+            width: 55%;
+        }
+
+        h3 {
+            color: rgb(180, 178, 178);
+            padding-top: 3%;
+            font-weight: 400;
+            font-size: 16px;
+        }
+
+        label {
+            // color: grey;
+            height: 25px;
+            margin-top: 50px;
+        }
+
+
+        .Input_Container {
+            @include Input-container;
+            height: 7%;
+            padding-bottom: 7%
+        }
+
+        .Login_Btn {
+            @include Button;
+        }
+
+    }
+
+    .Forgot_Blue {
+        @include Blue-container;
+
+        h1 {
+            font-size: 43px;
+            font-weight: 600;
+            text-align: center;
+            color: white;
+        }
+    }
+}

@@ -1,6 +1,10 @@
+import {useState} from 'react'
 import { PiDiamondsFourFill } from 'react-icons/pi'
+import { IoEye, IoEyeOff } from 'react-icons/io5'
 import { useNavigate } from 'react-router-dom'
 const Signup = () => {
+  const [show, setShow ] = useState(false)
+  const [pass, setPass ] = useState('password')
     const Nav = useNavigate()
   return (
     <div className="Signup_Container">
@@ -9,10 +13,23 @@ const Signup = () => {
             <h1>Welcome To EchoCart</h1>
             <article>Registered User? <p onClick={()=>Nav('/SignIn')}>Sign In</p></article>
             <label htmlFor="email">Email</label>
+            <div className="Input_Container" tabIndex={0}>
             <input type="text" placeholder="input your registered email" />
+            </div>
             <label htmlFor="email">password</label>
-            <input type="text" placeholder="input your password" />
-            <div className="Login_Btn">Sign Up</div>
+            <div className="Input_Container" tabIndex={0}>
+            <input type={pass} placeholder="input your password" />
+            {
+              show? <p onClick={()=>{ 
+                setPass('password')
+                 setShow(false)}
+                }><IoEyeOff/></p> : <p onClick={()=> {
+                  setPass('text')
+                  setShow(true)}
+                }><IoEye/></p>
+            }
+            </div>
+            <div className="Signup_Btn">Sign Up</div>
 
         </section>
         <section className="Blue_Section">

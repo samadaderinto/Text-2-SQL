@@ -3,7 +3,7 @@ import { useState } from "react"
 import { IoEye, IoEyeOff } from 'react-icons/io5'
 
 // import { useNavigate } from "react-router-dom"
-const Newpassword = () => {
+export const Newpassword = () => {
     const checkStrength = (password: string) => {
         if(password.includes('!'|| '@' || '#' || '$' || '%' ||'&' || '*' )) {
             setStrength(strength + 1);
@@ -102,4 +102,3 @@ const Newpassword = () => {
   )
 }
 
-export default Newpassword

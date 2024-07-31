@@ -1,15 +1,18 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
+import Home from './pages/home'
+import PageNotFound from './pages/PageNotFound'
 
-import Dashboard from './Components/Dashboard'
-import SignIn from './Components/SignIn'
-import Signup from './Components/Signup'
-import Forgotpassword from './Components/Forgotpassword'
-import Newpassword from './Components/Newpassword'
-import PageNotFound from './Components/PageNotFound'
+import { SignIn } from './Components/SignIn'
+import { Signup } from './Components/Signup'
+import { Forgotpassword } from './Components/Forgotpassword'
+import { Newpassword } from './Components/Newpassword'
+import { Dashboard } from './Components/Dashboard'
 
 
 import './SCSS/Main.scss'
+
+
 
 function App() {
 
@@ -17,8 +20,8 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          <Route path='/dashboard' element={<Dashboard />}>
-            <Route index element={<Signup />} />
+          <Route path='/' element={<Home />}>
+            <Route index path='/dashboard' element={<Dashboard />} />
             <Route path='/product' element={<SignIn />} />
             <Route path='/orders' element={<SignIn />} />
             <Route path='/customers' element={<SignIn />} />

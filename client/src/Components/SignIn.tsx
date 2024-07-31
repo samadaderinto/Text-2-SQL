@@ -2,10 +2,14 @@ import { useState } from 'react'
 import { PiDiamondsFourFill } from 'react-icons/pi'
 import { IoEye, IoEyeOff } from 'react-icons/io5'
 import { useNavigate } from 'react-router-dom'
-const SignIn = () => {
+
+
+export const SignIn = () => {
   const Nav = useNavigate()
   const [show, setShow ] = useState(false)
   const [pass, setPass ] = useState('password')
+
+  
   return (
     <div className="Signup_Container">
         <section className="White_Section">
@@ -42,5 +46,3 @@ const SignIn = () => {
     </div>
   )
 }
-
-export default SignIn

@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom"
 import { PiDiamondsFourFill } from "react-icons/pi"
 import { FaArrowLeft } from 'react-icons/fa6'
-const Forgotpassword = () => {
+
+
+export const Forgotpassword = () => {
     const Nav = useNavigate()
   return (
     <div className="Forgot_Container">
@@ -22,5 +24,3 @@ const Forgotpassword = () => {
     </div>
   )
 }
-
-export default Forgotpassword

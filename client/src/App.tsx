@@ -27,14 +27,13 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          <Route path='/' element={<Home />}>
+          <Route path='/' element={<Home />}/>
             <Route index path='/dashboard' element={<Dashboard />} />
             <Route path='/product' element={<Product />} />
             <Route path='/orders' element={<Orders />} />
             <Route path='/customers' element={<Customers />} />
             <Route path='/settings' element={<Settings />} />
-          </Route>
-
+            
           <Route path='auth/signup' element={<Signup />} />
           <Route path='auth/signin' element={<SignIn />} />
           <Route path='auth/forgot-password' element={<Forgotpassword />} />

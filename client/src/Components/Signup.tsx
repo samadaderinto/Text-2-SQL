@@ -8,12 +8,17 @@ export const Signup = () => {
   const [show, setShow] = useState(false)
   const [pass, setPass] = useState('password')
   const Nav = useNavigate()
+
+  
   return (
     <div className="Signup_Container">
       <section className="White_Section">
         <span><PiDiamondsFourFill /> EchoCart</span>
         <h1>Welcome To EchoCart</h1>
-        <article><span>Registered User?</span> <p onClick={() => Nav('/auth/signin')}>Sign In</p></article>
+        <article>
+          <span>Registered User?</span>
+          <p onClick={() => Nav('/auth/signin')}>Sign In</p>
+        </article>
         <label htmlFor="email">Email</label>
         <div className="Input_Container" tabIndex={0}>
           <input type="text" placeholder="input your registered email" />

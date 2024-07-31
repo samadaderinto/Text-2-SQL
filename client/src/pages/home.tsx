@@ -7,27 +7,27 @@ import { Outlet } from "react-router-dom";
 const Home = () => {
   return (
     <div className="Home_Container">
-         <div className='Header_Container'>
-        <span><PiDiamondsFourFill/> EchoCart</span>
+      <div className='Header_Container'>
+        <span><PiDiamondsFourFill /> EchoCart</span>
         <section className="Search_Container">
-          <p><IoSearch/></p>
+          <p><IoSearch /></p>
           <input type="text" placeholder="Search anything..." />
-          <p><RiSpeakLine/></p>
+          <p><RiSpeakLine /></p>
         </section>
         <section className="RightHand_Container">
           <p className="Exclusive_Store">Exclusive Store</p>
-          <p><IoIosNotificationsOutline/></p>
+          <p><IoIosNotificationsOutline /></p>
           <div className="Image_Container">
-            
+
           </div>
         </section>
 
-    </div>
-    <section className="Home_Sidebar"></section>
-    <Outlet />
+      </div>
+      <section className="Home_Sidebar"></section>
+      <Outlet />
 
-  
-      
+
+
     </div>
   )
 }

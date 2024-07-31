@@ -15,20 +15,22 @@ function App() {
 
   return (
     <>
-    
-     <BrowserRouter>
-     
-     <Routes>
-      <Route path='/' element={<Dashboard/>}/>
-      <Route path='auth/signup' element={<Signup/>}/>
-      <Route path='auth/signin' element={<SignIn/> }/>
-      <Route path='auth/forgot-password' element={<Forgotpassword/>}/>
-      <Route path='auth/new-password' element={<Newpassword/>}/>
-      <Route path="*" element={<PageNotFound/>}></Route>
-     </Routes>
+      <BrowserRouter>
+        <Routes>
+          <Route path='/dashboard' element={<Dashboard />}>
+            <Route index element={<Signup />} />
+            <Route path='/product' element={<SignIn />} />
+            <Route path='/orders' element={<SignIn />} />
+            <Route path='/customers' element={<SignIn />} />
+          </Route>
 
-     
-     </BrowserRouter>
+          <Route path='auth/signup' element={<Signup />} />
+          <Route path='auth/signin' element={<SignIn />} />
+          <Route path='auth/forgot-password' element={<Forgotpassword />} />
+          <Route path='auth/new-password' element={<Newpassword />} />
+          <Route path="*" element={<PageNotFound />}></Route>
+        </Routes>
+      </BrowserRouter>
     </>
   )
 }

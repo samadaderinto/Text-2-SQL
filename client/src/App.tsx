@@ -16,16 +16,11 @@ function App() {
      
      <Routes>
       <Route path='/' element={<Dashboard/>}/>
-<<<<<<< Updated upstream
-      <Route path='SignUp' element={<Signup/>}/>
-      <Route path='SignIn' element={<SignIn/> }/>
-      <Route path='ForgotPassword' element={<Forgotpassword/>}/>
-      <Route path='Newpassword' element={<Newpassword/>}/>
-=======
+
       <Route path='auth/signup' element={<Signup/>}/>
       <Route path='auth/signin' element={<SignIn/> }/>
-      <Route path='forgot-password' element={<Forgotpassword/>}/>
->>>>>>> Stashed changes
+      <Route path='auth/forgot-password' element={<Forgotpassword/>}/>
+      <Route path='auth/new-password' element={<Newpassword/>}/>
      </Routes>
      </BrowserRouter>
     </>

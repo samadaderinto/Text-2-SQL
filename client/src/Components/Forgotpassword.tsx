@@ -7,14 +7,14 @@ const Forgotpassword = () => {
     <div className="Forgot_Container">
         <section className="Forgot_White">
         <span><PiDiamondsFourFill/> EchoCart</span>
-        <p onClick={()=> Nav('/SignIn')}><FaArrowLeft/></p>
+        <p onClick={()=> Nav('/auth/sign-in')}><FaArrowLeft/></p>
         <h1>Forgot Your Password?</h1>
         <h3>Send your email address to reset password & make new password</h3>
         <label htmlFor="email">Email</label>
             <div className="Input_Container" tabIndex={0}>
              <input type="text" placeholder="input your registered email" />
             </div>
-            <div className="Login_Btn" onClick={()=> Nav('/Newpassword')}>LOGIN</div>
+            <div className="Login_Btn" onClick={()=> Nav('/auth/new-password')}>LOGIN</div>
         </section>
         <section className="Forgot_Blue">
             <h1>Easiest Way To Manage Your Store</h1>

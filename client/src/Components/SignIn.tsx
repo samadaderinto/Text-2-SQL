@@ -34,7 +34,7 @@ export const SignIn = () => {
                 }><IoEye/></p>
             }
             </div>
-            <p onClick={()=> Nav('/ForgotPassword')}>forgot password?</p>
+            <p onClick={()=> Nav('/auth/forgot-password')}>forgot password?</p>
             <div className="Bottom_Container">
               <div className="Login_Btn">LOGIN</div>
             </div>

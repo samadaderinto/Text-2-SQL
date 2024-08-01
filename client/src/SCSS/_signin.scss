@@ -1,7 +1,7 @@
 @import 'mixin';
 .Signup_Container {
    @include General-Container;
-    height: 125vh;
+    height: 145vh;
 
     .White_Section {
         @include White-container;
@@ -62,7 +62,8 @@
 
 
       .Signup_Btn {
-        @include Button
+        @include Button;
+        margin-bottom: 15px;
       }
 
        .Bottom_Container {

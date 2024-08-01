@@ -7,7 +7,6 @@ import {  IoPeopleOutline  } from 'react-icons/io5'
 export const Dashboard = () => {
 
   const  [Active, setActive] = useState< number | null>(null)
-  const [total, setTotal] = useState('')
 
 interface card {
   icon: ReactElement,
@@ -28,7 +27,7 @@ const cardArray: card[] = [
   },
 {
   icon: <RiShoppingBag4Line/>,
-  title: 'Total Sales',
+  title: 'Total Sale',
   value: 271568.09,
   percent: 25.5,
   increment: 15
@@ -62,7 +61,6 @@ const cardArray: card[] = [
           key={index}   
           onClick={()=> {
             setActive(index)
-            setTotal(obj.title)   
           }}
           className={Active === index? 'Blue_Card': ''}
           >
@@ -70,10 +68,10 @@ const cardArray: card[] = [
               <div>{obj.icon}</div>
               <h4>{obj.title}</h4>
             </span>
-            <h3>{total === 'Total Sales'? `$${obj.value}`: obj.value }</h3>
+            <h3>{obj.title === 'Total Sales' ? `$${obj.value}`: obj.value }</h3>
             <span>
               <p className="Card_percentage">{`${obj.percent}%`}</p>
-              <p>{`+${obj.increment} Today`}</p>
+              <p>{`+${obj.increment}k Today`}</p>
             </span>
           </article>
         ))

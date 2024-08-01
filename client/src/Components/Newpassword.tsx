@@ -4,43 +4,69 @@ import { IoEye, IoEyeOff } from 'react-icons/io5'
 
 // import { useNavigate } from "react-router-dom"
 export const Newpassword = () => {
-    const checkStrength = (password: string) => {
-        if(password.includes('!'|| '@' || '#' || '$' || '%' ||'&' || '*' )) {
-            setStrength(strength + 1);
-            console.log(strength)
-        // }  if ( password.length >= 8){
-        //      setStrength(strength + 1);
-        //      console.log(strength)
-        } if( password.includes('0' || '1' || '2' || '3' || '4'|| '5' || '6' || '7' || '8' || '9')){
-            setStrength(strength + 1);
-            console.log(strength)
-            
-        } if(password.length === 0) {
-            setStrength(0)
-
-        } 
-
-        if (strength >= 0) {
-            class1 !== 'filled_div'? setClass1('filled_div'): null
-        }  if(strength >= 2 ) {
-            class2 !== 'filled_div'? setClass2('filled_div'): null
-        } if(strength >= 3) {
-            class3 !== 'filled_div'? setClass3('filled_div'): null
-            class4 !== 'filled_div'? setClass4('filled_div'): null
-        }
-    }
+    
 
     // const Nav = useNavigate()
   const [show, setShow ] = useState(false)
   const [pass, setPass ] = useState('password')
   const [confirm, setConfirm ] = useState('password')
   const [Show2, setShow2 ] = useState(false)
-  const [strength, setStrength] = useState(0)
   const [value, setValue] = useState('')
   const [class1, setClass1] = useState('')
   const [class2, setClass2] = useState('')
   const [class3, setClass3] = useState('')
   const [class4, setClass4] = useState('')
+  const [check1, setCheck1] = useState(false)
+  const [check2, setCheck2] = useState(false)
+  const [check3, setCheck3] = useState(false)
+  const [strength, setStrength] = useState('')
+
+
+
+  const checkStrength = (password: string) => {
+    // Regular expressions to check for special characters and digits
+    const specialCharsRegex = /[!@#$%&*]/;
+    const digitsRegex = /[0-9]/;
+  
+    // Check for special characters
+    if (specialCharsRegex.test(password)) {
+      setCheck1(true);
+      console.log(check1);
+    }
+  
+    // Check for password length
+    if (password.length >= 8) {
+      setCheck3(true);
+      console.log(check3);
+    }
+  
+    // Check for digits
+    if (digitsRegex.test(password)) {
+      setCheck2(true);
+      console.log(check2);
+    }
+
+    if (check1 || check2 || check3) {
+        class1 !== 'filled_div_green'? setClass1('filled_div_green'): null
+    }  if(check1 && check2 || check1 && check3 || check2 && check3) {
+        class2 !== 'filled_div_green'? setClass2('filled_div_green'): null
+    } if(check1 && check2 && check3) {
+        class3 !== 'filled_div_green'? setClass3('filled_div_green'): null
+        class4 !== 'filled_div_green'? setClass4('filled_div_green'): null
+    }
+}
+
+const Qualified = ()=> {
+if(class3 === '') {
+    setStrength('weak')
+} else if(class1 === '') {
+    setStrength('')
+} else if (class3 !== ''){
+    setStrength('strong')
+    console.log(strength)
+}
+}
+
 
   return (
     <div className="Newpassword_Container">
@@ -52,6 +78,7 @@ export const Newpassword = () => {
              <input type={pass} onChange={(e)=>{
                 setValue(e.target.value) 
                 checkStrength(value)
+                Qualified()
              }} value={value} id="password" placeholder="input your password" />
              {
               show? <p onClick={()=>{ 
@@ -68,12 +95,14 @@ export const Newpassword = () => {
             <div className="Password_strength">
               
             <span className={class1}></span>
-                <span className={class2}></span>
-                <span className={class3}></span>
-                <span className={class4}></span>
+            <span className={class2}></span>
+            <span className={class3}></span>
+            <span className={ class4}></span>
 
-          
-                <h3>strong</h3>
+
+          {
+            strength === 'weak'? <h3 className="Red_color">weak</h3>: strength === 'strong'? <h3>strong</h3>: <h3></h3>
+          }
             </div>
 
             <label htmlFor="confirm">confirm password</label>

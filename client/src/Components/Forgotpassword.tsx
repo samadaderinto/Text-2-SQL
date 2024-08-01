@@ -9,7 +9,7 @@ export const Forgotpassword = () => {
     <div className="Forgot_Container">
         <section className="Forgot_White">
         <span><PiDiamondsFourFill/> EchoCart</span>
-        <p onClick={()=> Nav('/auth/sign-in')}><FaArrowLeft/></p>
+        <p onClick={()=> Nav('/auth/signin')}><FaArrowLeft/></p>
         <h1>Forgot Your Password?</h1>
         <h3>Send your email address to reset password & make new password</h3>
         <label htmlFor="email">Email</label>

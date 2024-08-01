@@ -78,6 +78,10 @@ const cardArray: card[] = [
       }
       
      </section>
+     <section className="Graph_Container">
+      <div className="Main_Graph_Container"></div>
+      <div className="Side_Graph_Container"></div>
+     </section>
     </div>
   )
 }

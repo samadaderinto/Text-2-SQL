@@ -3,7 +3,12 @@ from django.contrib.auth.models import BaseUserManager, AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 
+from utils.mixins import DatesMixin
+
 from phonenumber_field.modelfields import PhoneNumberField
+from taggit.managers import TaggableManager
+from nanoid import generate
+
 
 # Create your models here.
 
@@ -67,5 +72,61 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ["first_name", "last_name", "phone", "password"]
 
     objects = UserManager()
+    
+
+class Store(DatesMixin):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    username = models.CharField(max_length=17, unique=True)
+    name = models.CharField(max_length=100)
+    bio = models.TextField()
+    phone = PhoneNumberField(null=True, blank=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.username:
+            self.username = self._generate_unique_username()
+        super().save(*args, **kwargs)
+
+    def _generate_unique_username(self, size=15):
+        username = generate(size)
+        while Store.objects.filter(username=username).exists():
+            username = generate(size)
+        return username
+    
+       
+    
+class Product(DatesMixin):
+    CATEGORIES_CHOICE = (
+    ("fishing", "fishing"),
+    ("sports", "sports"),
+    ("electronics", "electronics"),
+    ("phones", "phones"),
+    ("games", "games"),
+    ("tablets", "tablets"),
+    ("outwear", "outwear"),
+    ("pets", "pets"),
+    ("toys", "toys"),
+    ("computing", "computing"),
+    ("lingerie", "lingerie"),
+    ("books", "books"),
+    ("beverages", "beverages"))
+    
+    
+    store = models.ForeignKey(Store, on_delete=models.CASCADE)
+    title = models.CharField(max_length=225, blank=False, null=False)
+    description = models.TextField(null=False, blank=False)
+    price = models.DecimalField(max_digits=15, decimal_places=2, blank=False, null=False)
+    discount = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(60)])
+    available = models.IntegerField(null=False, blank=False, validators=[MinValueValidator(0)])
+    category = models.CharField(choices=CATEGORIES_CHOICE, max_length=15)
+    rating = models.DecimalField(max_digits=4,decimal_places=2,default=0.00,validators=[MinValueValidator(0), MaxValueValidator(5)])
+    tags = TaggableManager()
+    sales = models.IntegerField(validators=[MinValueValidator(0)], default=0)
+
+    @property
+    def sale_price(self):
+        return "%.2f" % (float(self.price) * self.discount / 100)
+
+    def set_availability(self, quantity_bought: int):
+        self.available -= quantity_bought
 
 

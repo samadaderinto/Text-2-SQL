@@ -11,7 +11,7 @@ export const Dashboard = () => {
 interface card {
   icon: ReactElement,
   title: string,
-  value: number ,
+  value: number,
   percent: number,
   increment: number
 }

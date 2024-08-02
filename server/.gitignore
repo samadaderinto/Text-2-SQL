@@ -1,6 +1,6 @@
 pm.json
 pmkeypair.pem
-.env
+.env.prod
 .venv/
 __pycache__/
 .DS_Store

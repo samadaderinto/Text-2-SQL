@@ -7,14 +7,19 @@ from rest_framework.decorators import action
 
 
 from app.serializers import LoginSerializer, UserSerializer
+from app.services import AuthService
+
 
 from drf_spectacular.utils import extend_schema
+from kink import di
 # Create your views here.
 
 
 
 
 class AppViewSet(viewsets.GenericViewSet):
+    
+    auth_service: AuthService = di[AuthService]
     
     @extend_schema(request=LoginSerializer, responses={200: UserSerializer})
     @action(detail=False, methods=["post"])
@@ -23,8 +28,7 @@ class AppViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         result = self.auth_service.login(
             request,
-            serializer.validated_data["phone"],  # type: ignore
-            serializer.validated_data["password"],  # type: ignore
-            serializer.validated_data["fcm_token"] # type: ignore
+            serializer.validated_data["phone"],
+            serializer.validated_data["password"], 
         )
         return Response(status=status.HTTP_200_OK, data=result["data"], headers=result["token"])

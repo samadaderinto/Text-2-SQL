@@ -5,6 +5,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 
 from phonenumber_field.serializerfields import PhoneNumberField
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -29,9 +31,8 @@ class UserSerializer(serializers.ModelSerializer):
             return user
 
 class LoginSerializer(serializers.Serializer):
-    phone = serializers.PhoneNumberField()
+    phone = PhoneNumberField()
     password = serializers.CharField()
-    fcm_token = serializers.CharField(allow_null=True, allow_blank=True)
 
 class EmailTokenObtainSerializer(TokenObtainSerializer):
     username_field = User.EMAIL_FIELD
@@ -43,7 +44,6 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
-
         refresh = self.get_token(self.user)
 
         data["refresh"] = str(refresh)

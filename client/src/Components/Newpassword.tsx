@@ -61,7 +61,7 @@ if(class3 === '') {
     setStrength('weak')
 } else if(class1 === '') {
     setStrength('')
-} else if (class3 !== ''){
+} else if (check1 && check2 && check3){
     setStrength('strong')
     console.log(strength)
 }

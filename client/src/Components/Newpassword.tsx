@@ -7,8 +7,8 @@ export const Newpassword = () => {
     
 
     // const Nav = useNavigate()
-  const [show, setShow ] = useState(false)
-  const [pass, setPass ] = useState('password')
+  const [show, setShow] = useState(false)
+  const [pass, setPass] = useState('password')
   const [confirm, setConfirm ] = useState('password')
   const [Show2, setShow2 ] = useState(false)
   const [value, setValue] = useState('')

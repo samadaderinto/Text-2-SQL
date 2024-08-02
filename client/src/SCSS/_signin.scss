@@ -91,4 +91,44 @@
             color: white;
         }
     }
+
+
+}
+
+@media( max-width: 900px ) {
+    .Signup_Container {
+        height: 100vh;
+
+        .White_Section {
+            width: 100%;
+
+            h1 {
+                font-size: 45px;
+                margin-top: -15%;
+                text-align: center;
+            }
+
+            article {
+                width: 85%;
+                p {
+                    width: 100%;
+                    // background-color: black;
+                }
+            }
+
+            .Input_Container {
+                height: 8%;
+            }
+        }
+
+        .Blue_Section {
+            display: none;
+        }
+
+        .Bottom_Container {
+            .Login_Btn {
+                margin-top: 6%;
+            }
+        }
+    }
 }

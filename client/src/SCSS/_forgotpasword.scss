@@ -58,3 +58,33 @@
         }
     }
 }
+
+@media(max-width: 900px) {
+    
+.Forgot_Container {
+    .Forgot_White {
+        width: 100%;
+        margin-top: -30%;
+
+        h1 {
+            width: 80%;
+        }
+
+        label {
+            margin-top: 9%;
+        }
+
+        .Input_Container {
+            height: 4.5%;
+        }
+
+        .Login_Btn {
+            margin-top: 6%;
+        }
+ }
+
+    .Forgot_Blue {
+        display: none;
+    }
+}
+}

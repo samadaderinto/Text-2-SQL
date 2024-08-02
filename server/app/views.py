@@ -29,6 +29,6 @@ class AppViewSet(viewsets.GenericViewSet):
         result = self.auth_service.login(
             request,
             serializer.validated_data["phone"],
-            serializer.validated_data["password"], 
+            serializer.validated_data["password"]
         )
         return Response(status=status.HTTP_200_OK, data=result["data"], headers=result["token"])

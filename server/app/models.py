@@ -59,6 +59,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     username = None
+    avatar = models.ImageField(upload_to="images/profile", null=True, blank=True)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     email = models.EmailField(unique=True, db_index=True)
@@ -115,7 +116,7 @@ class Product(DatesMixin):
     title = models.CharField(max_length=225, blank=False, null=False)
     description = models.TextField(null=False, blank=False)
     price = models.DecimalField(max_digits=15, decimal_places=2, blank=False, null=False)
-    discount = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(60)])
+    discount = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)])
     available = models.IntegerField(null=False, blank=False, validators=[MinValueValidator(0)])
     category = models.CharField(choices=CATEGORIES_CHOICE, max_length=15)
     rating = models.DecimalField(max_digits=4,decimal_places=2,default=0.00,validators=[MinValueValidator(0), MaxValueValidator(5)])
@@ -128,5 +129,43 @@ class Product(DatesMixin):
 
     def set_availability(self, quantity_bought: int):
         self.available -= quantity_bought
+        
+        
+class Cart(DatesMixin):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    ordered = models.BooleanField(default=False)
+ 
+
+class CartItem(DatesMixin):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField(validators=[MinValueValidator(1)], default=1)
+    
+            
+class Order(DatesMixin):
+    ORDER_STATUS_CHOICE = (
+    ("pending", "pending"),
+    ("cancelled", "cancelled"),
+    ("paid", "paid"))
+    
+    
+    id = models.CharField(max_length=15, default=generate(size=15), unique=True, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    status = models.CharField(choices=ORDER_STATUS_CHOICE, max_length=15)
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
+    def save(self, *args, **kwargs):
+        if not self.orderId:
+            self.orderId = self._generate_unique()
+        super().save(*args, **kwargs)
+
+    def _generate_unique(self, size=15):
+        marketer_id = generate(size)
+        while Order.objects.filter(username=marketer_id).exists():
+            marketer_id = generate(size)
+        return marketer_id
+    
 
 

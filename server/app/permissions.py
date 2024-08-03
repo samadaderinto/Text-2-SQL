@@ -1,7 +1,7 @@
 from rest_access_policy import AccessPolicy
 
 
-from app.models import Store
+from .models import Store
 
 
 

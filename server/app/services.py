@@ -34,6 +34,15 @@ class QueryService:
     
         pass
     
+    def audio_to_text(self, request):
+        pass
+    
+    def text_to_SQL(self, request):
+        pass
+    
+    def runSQLQuery(self, request):
+        pass
+    
 
 @inject
 class ProductService:
@@ -43,6 +52,11 @@ class ProductService:
     ):
         
       pass
+    
+    
+    def products(self):
+        pass
+        
   
 
 @inject

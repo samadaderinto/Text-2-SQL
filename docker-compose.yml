@@ -1,24 +1,41 @@
-version: "3.2"
 services:
   backend:
-    build: ./backend
+    build: ./server
     volumes:
-      - ./backend:/app/backend
+      - .:/var/www/server
+    command: bash run.sh
+    restart: always
+    user: root
     ports:
-      - "8000:8000"
-    stdin_open: true
-    tty: true
-    command: python3 manage.py runserver 0.0.0.0:8000
+      - 8000:8000
+    env_file:
+      - ./server/.env.prod
+    depends_on:
+       - database
+    
     
   frontend:
-    build: ./frontend
+    build: ./client
     volumes:
       - ./frontend:/app
       - /app/node_modules
     ports:
-      - "3000:3000"
+      - 5173:5173
     environment:
       - NODE_ENV=development
     depends_on:
       - backend
-    command: npm run start
+    command: npm run dev
+
+
+  database:
+    image: postgres
+    container_name: db
+    restart: always
+    tty: true
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment: 
+      - POSTGRES_PASSWORD=1234
+    ports: 
+      - 5432:5432

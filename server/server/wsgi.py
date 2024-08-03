@@ -22,4 +22,3 @@ dotenv.read_dotenv(str(ENV_FILE_PATH))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'server.settings')
 
 application = get_wsgi_application()
-za  

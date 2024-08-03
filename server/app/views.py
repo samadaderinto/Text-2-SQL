@@ -54,17 +54,28 @@ class AuthViewSet(viewsets.GenericViewSet):
         serializer = ResetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         result = self.auth_service.reset_password(
-            serializer.validated_data["code"],  # type: ignore
-            serializer.validated_data["phone"],  # type: ignore
-            serializer.validated_data["new_password"],  # type: ignore
+            serializer.validated_data["code"],
+            serializer.validated_data["phone"],
+            serializer.validated_data["new_password"],
             request,
         )
         return Response(200, data=result["data"], headers=result["token"])
     
     
 class QueryViewSet(viewsets.GenericViewSet):
+    query_service: QueryService = di[QueryService]
     
-    auth_service: QueryService = di[QueryService]
+    
+    def audio_to_text(self, request):
+        pass
+    
+    def text_to_SQL(self, request):
+        pass
+    
+    def runSQLQuery(self, request):
+        pass
+
+    
     
 
 class ProductViewSet(viewsets.GenericViewSet):

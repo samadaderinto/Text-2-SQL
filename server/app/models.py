@@ -59,6 +59,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     username = None
+    avatar = models.ImageField(upload_to="images/profile", null=True, blank=True)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     email = models.EmailField(unique=True, db_index=True)
@@ -142,8 +143,15 @@ class CartItem(DatesMixin):
     
             
 class Order(DatesMixin):
-    id = models.CharField(max_length=15, default=generate(size=13), unique=True, editable=False)
+    ORDER_STATUS_CHOICE = (
+    ("pending", "pending"),
+    ("cancelled", "cancelled"),
+    ("paid", "paid"))
+    
+    
+    id = models.CharField(max_length=15, default=generate(size=15), unique=True, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    status = models.CharField(choices=ORDER_STATUS_CHOICE, max_length=15)
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)

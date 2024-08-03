@@ -1,14 +1,14 @@
 # Use an official node runtime as a parent image
-FROM node:8
+FROM node::alpine
 
 WORKDIR /app/
 
-COPY package.json yarn.lock /app/
+COPY package.json package-lock.json /app/
 
 RUN npm install
 
 COPY . /app/
 
-EXPOSE 3000
+EXPOSE 5173
 
 CMD npm run dev

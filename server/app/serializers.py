@@ -33,7 +33,19 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     phone = PhoneNumberField()
     password = serializers.CharField()
+    
+class PhoneSerializer(serializers.Serializer):
+    phone = PhoneNumberField()
+    
+class ResetPasswordSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    phone = PhoneNumberField()
+    new_password = serializers.CharField()
 
+class VerifyOtpSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    phone = PhoneNumberField()
+    
 class EmailTokenObtainSerializer(TokenObtainSerializer):
     username_field = User.EMAIL_FIELD
     

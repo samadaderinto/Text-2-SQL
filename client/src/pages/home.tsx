@@ -1,8 +1,9 @@
-import { ReactElement, useState } from "react";
+import React, { ReactElement,  useState, useEffect } from "react";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { IoSearch, IoPeopleOutline, IoSettingsOutline } from "react-icons/io5";
 import { PiDiamondsFourFill } from "react-icons/pi";
-import { RiSpeakLine, RiShoppingBag3Line } from "react-icons/ri";
+import { RiSpeakLine,  RiShoppingBag3Line } from "react-icons/ri";
+import { FaEarListen } from "react-icons/fa6";
 import {  RxDashboard } from 'react-icons/rx'
 import { MdOutlineShoppingCart } from "react-icons/md";
 import { Outlet } from "react-router-dom";
@@ -16,6 +17,68 @@ const Home = () => {
 
   const [activeIndex, setActiveIndex] = useState< number | null>(null)
   const [active, setActive] = useState('')
+  const [voice, setVoice] = useState(false)
+  const [listen, setListen] = useState(false)
+  const [recording, setRecording] = useState(false)
+  const [stream, setStream] = useState< MediaStream | null>(null);
+
+  useEffect(() => {
+    let timeoutId: number | null = null;
+
+    // Cleanup function to stop the media stream
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [stream]);
+
+  const startRecording = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setStream(mediaStream);
+      setRecording(true);
+
+      // Automatically stop recording after 10 seconds
+      const id = setTimeout(() => {
+        stopRecording();
+        setRecording(false)
+      }, 3000); // 10000 ms = 10 seconds
+
+      // Use a ref to store the timeout ID
+      timeoutIdRef.current = id;
+    } catch (error) {
+      console.error('Error accessing audio input:', error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setRecording(false);
+    setListen(false)
+
+    // Clear the timeout if it's still active
+    if (timeoutIdRef.current !== null) {
+      clearTimeout(timeoutIdRef.current);
+    }
+  };
+
+  // Create a ref to store the timeout ID
+  const timeoutIdRef = React.useRef<number | null>(null);
+
+if (listen) {
+  startRecording()
+  // console.log(recording)
+  // console.log(stream)
+} else {
+  null
+}
 
   interface item {
     icon: ReactElement,
@@ -50,9 +113,21 @@ const Home = () => {
       <div className='Header_Container'>
         <span><PiDiamondsFourFill /> EchoCart</span>
         <section className="Search_Container">
-          <p><IoSearch /></p>
-          <input type="text" placeholder="Search anything..." />
-          <p><RiSpeakLine /></p>
+
+
+          {
+            listen? 
+            
+            <p><FaEarListen/></p> : 
+            <>
+            <p><IoSearch /></p>
+            <input type="text" placeholder="Search anything..." />
+            <p onClick={()=> {
+              voice?setVoice(false): setVoice(true)}
+  
+            } ><RiSpeakLine /></p>
+            </>
+          }
         </section>
         <section className="RightHand_Container">
           <p className="Exclusive_Store">Exclusive Store</p>
@@ -63,6 +138,14 @@ const Home = () => {
         </section>
 
       </div>
+
+      {
+        voice? <span onClick={()=>{
+          setVoice(false)
+          setListen(true)
+        }} className="Search_By_Voice">Search By Voice</span> : null
+      }
+
      <div className="Main_Container">
      <nav className="Home_Sidebar">
         <div className="Sidebar_Container">

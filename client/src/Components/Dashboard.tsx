@@ -79,7 +79,38 @@ const cardArray: card[] = [
       
      </section>
      <section className="Graph_Container">
-      <div className="Main_Graph_Container"></div>
+      <div className="Main_Graph_Container">
+        <span>
+        <h3>Recent Orders</h3>
+        <p>View All</p>
+        </span>
+        <span className="Graph_Subheader">
+          <h4>Name</h4>
+          <ul>
+            <li>ID</li>
+            <li>Price</li>
+            <li>Amount</li>
+            <li>Status</li>
+          </ul>
+        </span>
+        <article>
+          <span className="Dashboard_Order_Item">
+            <div className="Dashboard_Order_Item_Description">
+              <span className="Item_Img_Holder"></span>
+              <span>
+               <h2>HP EliteBook 830 Touchscreen</h2>
+               <h4>Computing</h4>
+              </span>
+            </div>
+            <div>
+               <p>8976TY</p>
+                <p>$30</p>
+                <p>5,951</p>
+                <p>Delivered</p>
+            </div>
+          </span>
+        </article>
+      </div>
       <div className="Side_Graph_Container"></div>
      </section>
     </div>

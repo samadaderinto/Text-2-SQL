@@ -74,8 +74,8 @@ const Home = () => {
 
 if (listen) {
   startRecording()
-  console.log(recording)
-  console.log(stream)
+  // console.log(recording)
+  // console.log(stream)
 } else {
   null
 }

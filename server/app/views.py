@@ -6,8 +6,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.decorators import action
 
 
-from app.serializers import LoginSerializer, ResetPasswordSerializer, UserSerializer
-from app.services import AuthService, QueryService
+from .serializers import LoginSerializer, ResetPasswordSerializer, UserSerializer
+from .services import AuthService, CustomerService, OrderService, ProductService, QueryService, SettingsService
 
 
 from drf_spectacular.utils import extend_schema
@@ -65,3 +65,19 @@ class AuthViewSet(viewsets.GenericViewSet):
 class QueryViewSet(viewsets.GenericViewSet):
     
     auth_service: QueryService = di[QueryService]
+    
+
+class ProductViewSet(viewsets.GenericViewSet):
+    product_service: ProductService = di[ProductService]
+
+
+class CustomerViewSet(viewsets.GenericViewSet):
+    customer_service: CustomerService = di[CustomerService]
+
+
+class OrderViewSet(viewsets.GenericViewSet):
+    order_service: OrderService = di[OrderService]
+    
+    
+class SettingsViewSet(viewsets.GenericViewSet):
+    settings_service: SettingsService = di[SettingsService]

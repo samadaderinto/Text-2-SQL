@@ -128,5 +128,36 @@ class Product(DatesMixin):
 
     def set_availability(self, quantity_bought: int):
         self.available -= quantity_bought
+        
+        
+class Cart(DatesMixin):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    ordered = models.BooleanField(default=False)
+ 
+
+class CartItem(DatesMixin):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField(validators=[MinValueValidator(1)], default=1)
+    
+            
+class Order(DatesMixin):
+    id = models.CharField(max_length=15, default=generate(size=13), unique=True, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
+    def save(self, *args, **kwargs):
+        if not self.orderId:
+            self.orderId = self._generate_unique()
+        super().save(*args, **kwargs)
+
+    def _generate_unique(self, size=15):
+        marketer_id = generate(size)
+        while Order.objects.filter(username=marketer_id).exists():
+            marketer_id = generate(size)
+        return marketer_id
+    
 
 

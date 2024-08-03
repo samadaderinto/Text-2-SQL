@@ -5,7 +5,7 @@ from kink import inject
 from openai import OpenAI
 
 
-from app.models import User
+from .models import User
 
 
 
@@ -33,3 +33,43 @@ class QueryService:
         User: Type[User]):
     
         pass
+    
+
+@inject
+class ProductService:
+    def __init__(
+        self,
+        User: Type[User]
+    ):
+        
+      pass
+  
+
+@inject
+class CustomerService:
+    def __init__(
+        self,
+        User: Type[User]
+    ):
+        
+      pass
+  
+  
+@inject
+class OrderService:
+    def __init__(
+        self,
+        User: Type[User]
+    ):
+        
+      pass
+  
+  
+@inject
+class SettingsService:
+    def __init__(
+        self,
+        User: Type[User]
+    ):
+        
+      pass

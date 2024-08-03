@@ -104,18 +104,123 @@
         height: 69%;
         display: flex;
         // padding: 3%;
-        align-items: center;
+        // align-items: center;
         justify-content: space-between;
 
         .Main_Graph_Container {
             width: 69%;
-            height: 92%;
+            height: 68%;
+            padding: 3%;
+            // display: flex;
+            justify-content: space-between;
             background-color: #fff;
+
+            span {
+                width: 100%;
+                display: flex;
+                padding: 3%;
+                align-items: center;
+                justify-content: space-between;
+
+                h3 {
+                    font-weight: 500;
+                    font-size: 19px;
+                    color: rgb(58, 57, 57);
+                }
+
+                p {
+                    color: rgb(74, 152, 242);
+                    font-size: 14px;
+                }
+
+                h4 {
+                    width: 50%;
+                    padding-bottom: 2px;
+                    font-weight: 500;
+                    font-size: 13px;
+                    color: grey;
+                }
+
+                ul {
+                    width: 50%;
+                    display: flex;
+                    justify-content: space-between;
+
+                    li {
+                        list-style-type: none;
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: grey;
+                    }
+                }
+            }
+
+            .Graph_Subheader {
+                padding-left: 0;
+                padding-right: 0;
+                border-bottom: 1px solid rgb(238, 236, 236);
+            }
+
+            article {
+                width: 100%;
+                height: 75vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+
+                .Dashboard_Order_Item {
+                    width: 100%;
+                    display: flex;
+                    margin-top: 2%;
+                    align-items: center;
+                    padding: 0;
+                    height: 19%;
+
+                    div {
+                        width: 46%;
+                        display: flex;
+                        justify-content: space-between;
+                    }
+
+                    .Dashboard_Order_Item_Description {
+                        display: flex;
+                        height: 100%;
+                        justify-content: space-between;
+                        align-items: center;
+
+                        span {
+                            display: flex;
+                            width: 74%;
+                            background-color: #fff;
+                            flex-direction: column;
+                            padding: 6% 0;
+                            text-align: center;
+                            h2 {
+                                width: 100%;
+                                font-size: 13px;
+                                font-weight: 600;
+                            }
+                        }
+
+                        .Item_Img_Holder {
+                            width: 24%;
+                            height: 85%;
+                            background-color: black;
+                        }
+                    }
+
+                    p {
+                        color: black;
+                        font-size: 13px;
+                    }
+                }
+            }
+
         }
 
         .Side_Graph_Container {
             width: 29%;
-            height: 92%;
+            height: 68%;
             background-color: #fff;
         }
     }

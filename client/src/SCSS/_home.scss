@@ -1,13 +1,13 @@
 .Home_Container {
     width: 100%;
-    height: 250vh;
+    height: 350vh;
     // display: flex;
     background-color: rgb(248, 248, 248);
     // justify-content: space-between;
     
     .Header_Container {
         width: 100%;
-        height: 7%;
+        height: 5.5%;
         display: flex;
         padding: 1%;
         justify-content: space-between;
@@ -32,6 +32,7 @@
             
             p {
                 font-size: 18px;
+                cursor: pointer;
                 color: rgb(39, 112, 230);
             }
 
@@ -72,6 +73,27 @@
                 cursor: pointer;
             }
         }
+    }
+
+    .Search_By_Voice {
+        width: 150px;
+        height: 40px;
+        margin-top: -3.5%;
+        margin-left: 44%;
+        border-radius: 3px;
+        z-index: 50;
+        padding: 6px;
+        box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
+        -webkit-box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
+        -moz-box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
+        text-align: center;
+        color: grey;
+        position: absolute;
+        cursor: pointer;
+        // top: 10;
+        // right: 50;
+        background-color: rgb(237, 240, 237);
+        // left: 80;
     }
 
 

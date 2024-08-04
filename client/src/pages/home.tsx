@@ -105,7 +105,8 @@ const Home = () => {
           {
             listen? 
             <>
-            <p onClick={()=> listen? setListen(false): null}>stop</p>
+            <span>Listening...</span>
+            {/* <span onClick={()=> listen? setListen(false): setListen(true)}>stop</span> */}
             <p><FaEarListen/></p>
             </>
              : 
@@ -134,6 +135,13 @@ const Home = () => {
           setVoice(false)
           setListen(true)
         }} className="Search_By_Voice">Search By Voice</span> : null
+      }
+
+      {
+        listen? <span onClick={()=>{
+          // setVoice(true)
+          setListen(false)
+        }} className="Search_By_Voice Stop_Voice">Stop recording</span> : null
       }
 
      <div className="Main_Container">

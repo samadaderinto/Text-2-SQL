@@ -2,6 +2,8 @@
 
 export const Product = () => {
   return (
-    <div>Product</div>
+    <div className="Product_Container">
+      
+    </div>
   )
 }

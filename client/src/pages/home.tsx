@@ -1,4 +1,4 @@
-import React, { ReactElement,  useState, useEffect } from "react";
+import  { ReactElement,  useState, useRef } from "react";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { IoSearch, IoPeopleOutline, IoSettingsOutline } from "react-icons/io5";
 import { PiDiamondsFourFill } from "react-icons/pi";
@@ -19,66 +19,47 @@ const Home = () => {
   const [active, setActive] = useState('')
   const [voice, setVoice] = useState(false)
   const [listen, setListen] = useState(false)
-  const [recording, setRecording] = useState(false)
-  const [stream, setStream] = useState< MediaStream | null>(null);
-
-  useEffect(() => {
-    let timeoutId: number | null = null;
-
-    // Cleanup function to stop the media stream
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [stream]);
+  const [audio, setAudio] = useState<Blob | null>(null)
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const startRecording = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setStream(mediaStream);
-      setRecording(true);
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
 
-      // Automatically stop recording after 10 seconds
-      const id = setTimeout(() => {
-        stopRecording();
-        setRecording(false)
-      }, 3000); // 10000 ms = 10 seconds
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
 
-      // Use a ref to store the timeout ID
-      timeoutIdRef.current = id;
-    } catch (error) {
-      console.error('Error accessing audio input:', error);
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        // You can handle the audioBlob or audioUrl here, e.g., upload it or save it
+        setAudio(audioBlob)
+        console.log(audio)
+        console.log('Recording stopped. Audio URL:', audioUrl);
+        audioChunksRef.current = [];
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } else {
+      console.error('getUserMedia not supported on this browser.');
     }
   };
 
   const stopRecording = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-    setRecording(false);
-    setListen(false)
-
-    // Clear the timeout if it's still active
-    if (timeoutIdRef.current !== null) {
-      clearTimeout(timeoutIdRef.current);
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
     }
   };
 
-  // Create a ref to store the timeout ID
-  const timeoutIdRef = React.useRef<number | null>(null);
-
-if (listen) {
-  startRecording()
-  // console.log(recording)
-  // console.log(stream)
-} else {
-  null
-}
 
   interface item {
     icon: ReactElement,
@@ -108,6 +89,12 @@ if (listen) {
     },
   ]
 
+  if (listen) {
+    startRecording()
+  } else {
+    stopRecording()
+  }
+
   return (
     <div className="Home_Container">
       <div className='Header_Container'>
@@ -117,8 +104,11 @@ if (listen) {
 
           {
             listen? 
-            
-            <p><FaEarListen/></p> : 
+            <>
+            <p onClick={()=> listen? setListen(false): null}>stop</p>
+            <p><FaEarListen/></p>
+            </>
+             : 
             <>
             <p><IoSearch /></p>
             <input type="text" placeholder="Search anything..." />

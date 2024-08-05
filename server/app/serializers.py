@@ -1,11 +1,11 @@
-from .models import User
+from .models import Order, Product, User
 
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 
 from phonenumber_field.serializerfields import PhoneNumberField
-
+from taggit.serializers import TagListSerializerField, TaggitSerializer
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,3 +62,42 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
         data["access"] = str(refresh.access_token)
 
         return data
+    
+
+class ProductSerializer(TaggitSerializer, serializers.ModelSerializer):
+    tags = TagListSerializerField()
+    class Meta:
+        model = Product
+        fields = [
+            "id",
+            "store",
+            "title",
+            "available",
+            "discount",
+            "description",
+            "price",
+            "sale_price",
+            "tags",
+            "sales",
+            "created",
+            "updated"
+        ]
+        
+
+class OrderSerializer(TaggitSerializer, serializers.ModelSerializer):
+    tags = TagListSerializerField()
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "user",
+            "status",
+            "cart",
+            "total",
+            "subtotal",
+            "created",
+            "updated"
+            
+        ]
+        
+    

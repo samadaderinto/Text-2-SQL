@@ -112,7 +112,7 @@ class Product(DatesMixin):
     ("beverages", "beverages"))
     
     
-    store = models.ForeignKey(Store, on_delete=models.CASCADE)
+    store = models.ForeignKey('Store', on_delete=models.CASCADE)
     title = models.CharField(max_length=225, blank=False, null=False)
     description = models.TextField(null=False, blank=False)
     price = models.DecimalField(max_digits=15, decimal_places=2, blank=False, null=False)
@@ -162,10 +162,10 @@ class Order(DatesMixin):
         super().save(*args, **kwargs)
 
     def _generate_unique(self, size=15):
-        marketer_id = generate(size)
-        while Order.objects.filter(username=marketer_id).exists():
-            marketer_id = generate(size)
-        return marketer_id
+        id = generate(size)
+        while Order.objects.filter(username=id).exists():
+              id = generate(size)
+        return id
     
 
 

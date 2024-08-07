@@ -10,10 +10,9 @@ services:
       - 8000:8000
     env_file:
       - ./server/.env.prod
-    # depends_on:
-    #    - database
-    
-    
+    depends_on:
+      - database
+
   frontend:
     build: ./client
     volumes:
@@ -27,15 +26,14 @@ services:
       - backend
     command: npm run dev
 
-
-  # database:
-  #   image: postgres
-  #   container_name: db
-  #   restart: always
-  #   tty: true
-  #   volumes:
-  #     - ./data:/var/lib/postgresql/data
-  #   environment: 
-  #     - POSTGRES_PASSWORD=1234
-  #   ports: 
-  #     - 5432:5432
+  database:
+    image: postgres
+    container_name: db
+    restart: always
+    tty: true
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment: 
+      - POSTGRES_PASSWORD=1234
+    ports: 
+      - 5432:5432

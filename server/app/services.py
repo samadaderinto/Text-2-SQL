@@ -1,19 +1,23 @@
+import os
+
 from django.conf import settings
-from django.shortcuts import get_object_or_404, get_list_or_404
+from django.shortcuts import get_object_or_404
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.urls import reverse
 from django.utils.encoding import smart_str, force_bytes
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.db import connection 
+from django.core.files.storage import default_storage
 
 from typing import Type
 from kink import inject
-from openai import OpenAI
+from openai import OpenAI, Audio
+from pydub import AudioSegment
 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
-from rest_framework import viewsets
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.decorators import action
 
@@ -159,20 +163,61 @@ client = OpenAI(
 )
 @inject
 class QueryService:
-    def __init__(
-        self,
-        User: Type[User]):
+    def __init__(self, User: Type[User]):
+        self.User = User
+        self.commands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE']
+        
     
-        pass
+    def sanitize_sql_query(self, query):
+   
+        query = query.strip()
+        # Extract the command (first word) from the query
+        command = query.split(' ', 1)[0].upper()
+        
+        if command in self.commands:
+            # Perform basic sanitization
+            # This should be extended with more thorough checks for a production environment
+            return query
+        else:
+            raise ValueError("Disallowed SQL command")
+        
     
     def audio_to_text(self, request):
-        pass
+        if request.FILES.get('audio_file'):
+            audio_file = request.FILES['audio_file']
+            file_path = default_storage.save('temp_audio_file', audio_file)
+            
+
+            audio = AudioSegment.from_file(file_path)
+            wav_file_path = file_path.rsplit('.', 1)[0] + '.wav'
+            audio.export(wav_file_path, format='wav')
+
+    
+            with open(wav_file_path, 'rb') as f:
+                response = Audio.transcribe(
+                    model="whisper-1",
+                    file=f
+                )
+            
+            os.remove(file_path)
+            os.remove(wav_file_path)
+            
+        
+            return response['text']
+        return Response({'error': 'Invalid request'}, status=400)
     
     def text_to_SQL(self, request):
-        self.audio_to_text(request)
+        
+        text = self.audio_to_text(request)
+        
     
     def runSQLQuery(self, request):
-        self.text_to_SQL(request)
+        query = self.text_to_SQL(request)
+        sanitized_query = self.sanitize_query(query)
+        with connection.cursor() as cursor:
+             cursor.execute( sanitized_query)
+             data = cursor.fetchall()
+        return data
     
 
 @inject

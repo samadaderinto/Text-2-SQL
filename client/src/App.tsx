@@ -14,6 +14,7 @@ import { Orders } from './Components/Orders'
 import { Customers } from './Components/Customers'
 import { Product } from './Components/Product'
 import { Settings } from './Components/Settings'
+import { Newproduct } from './Components/Newproduct'
 
 
 
@@ -30,6 +31,7 @@ function App() {
           <Route path='/' element={<Home />}/>
             <Route index path='/dashboard' element={<Dashboard />} />
             <Route path='/product' element={<Product />} />
+            <Route path='/product/new-product' element={<Newproduct />} />
             <Route path='/orders' element={<Orders />} />
             <Route path='/customers' element={<Customers />} />
             <Route path='/settings' element={<Settings />} />

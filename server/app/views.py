@@ -140,14 +140,14 @@ class CustomerViewSet(viewsets.GenericViewSet,
     def create(self, request):
         serializer = UserSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        budget = self.customer_service.create_budget(request.user, **serializer.validated_data) 
+        budget = self.customer_service.customer_service(request.user, **serializer.validated_data) 
         return Response(status=201, data=UserSerializer(budget).data)
     
     @extend_schema(request=UserSerializer, responses={200: UserSerializer})
     def update(self, request,  pk=None):
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        budget = self.customer_service.update_budget(request.user, pk, **serializer.validated_data)
+        budget = self.customer_service.customer_service(request.user, pk, **serializer.validated_data)
         return Response(status=201, data=UserSerializer(budget).data)
     
     
@@ -159,16 +159,16 @@ class CustomerViewSet(viewsets.GenericViewSet,
 
     @extend_schema(responses={204: None})
     def destroy(self, request, pk=None):
-        self.customer_service.delete_budget(request.user, pk)
+        self.customer_service.customer_service(request.user, pk)
         return Response(status=204)
 
 
 class OrderViewSet(viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin,):
-    order_service: OrderService = di[OrderService]
+    mixins.DestroyModelMixin):
     
+    order_service: OrderService = di[OrderService]
     pagination_class = Paginator
     authentication_classes = [ServerAccessPolicy]
     serializer_class = OrderSerializer
@@ -180,14 +180,14 @@ class OrderViewSet(viewsets.GenericViewSet,
     def create(self, request):
         serializer = OrderSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        budget = self.order_service.create_budget(request.user, **serializer.validated_data) 
+        budget = self.order_service.order_service(request.user, **serializer.validated_data) 
         return Response(status=201, data=UserSerializer(budget).data)
     
     @extend_schema(request=OrderSerializer, responses={200: OrderSerializer})
     def update(self, request,  pk=None):
         serializer = OrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        budget = self.order_service.update_budget(request.user, pk, **serializer.validated_data)
+        budget = self.order_service.order_service(request.user, pk, **serializer.validated_data)
         return Response(status=201, data=OrderSerializer(budget).data)
     
     
@@ -199,7 +199,7 @@ class OrderViewSet(viewsets.GenericViewSet,
 
     @extend_schema(responses={204: None})
     def destroy(self, request, pk=None):
-        self.order_service.delete_budget(request.user, pk)
+        self.order_service.order_service(request.user, pk)
         return Response(status=204)
     
     

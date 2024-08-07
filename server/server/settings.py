@@ -23,14 +23,31 @@ SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+
 SECRET_KEY = str(os.environ.get("SECRET_KEY"))
 
 OPENAI_API_KEY = str(os.environ.get("OPENAI_API_KEY"))
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+SERVER_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG") == "true"
 
-ALLOWED_HOSTS = []
+
+
+ALLOWED_HOSTS = ["*"]
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = ["*"]
+
+X_FRAME_OPTIONS = "SAMEORIGIN"
+SILENCED_SYSTEM_CHECKS = ["security.W019"]
+
 
 
 # Application definition
@@ -52,7 +69,7 @@ INSTALLED_APPS = [
     "phonenumber_field",
     "rest_framework",
     "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist",
+    "rest_framework_simplejwt.token_blacklist"
 ]
 
 MIDDLEWARE = [
@@ -204,3 +221,14 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "AudQL API Documentation",
+    "DESCRIPTION": "This is the official documentation for the AudQL  backend",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
+}
+

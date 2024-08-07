@@ -10,9 +10,15 @@ export const Newproduct = () => {
       // const File = e.target.files[0]
       const url = URL.createObjectURL(e.target.files[0])
       setImg(url)
-
+      console.log(img)
 
     }
+
+    // useEffect(()=> {
+    //   if(img) {
+    //     console.log(img)
+    //   }
+    // })[img]
    
   
   }
@@ -50,12 +56,16 @@ export const Newproduct = () => {
         </div>
         <div className="Product_Media_Container">
           <h3>Product Media</h3>
-          <section onClick={Upload}>
+          <section>
+         
             {
               img === null ? 
               <>
+               <label htmlFor="fileInput">
+          <input type="file" onChange={Upload} style={{display: "none"}}  id="fileInput" />
               <LuImagePlus/>
               <p>click or drag image</p>
+              </label>
               </>
               : <img src={img} alt="" />
             }

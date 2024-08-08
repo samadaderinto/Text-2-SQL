@@ -26,7 +26,7 @@ class AuthViewSet(viewsets.GenericViewSet):
     auth_service: AuthService = di[AuthService]
     
     @extend_schema(request=LoginSerializer, responses={200: UserSerializer})
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], url_path="login")
     def login(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -37,7 +37,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         return Response(status=status.HTTP_200_OK, data=result["data"], headers=result["token"])
     
     @extend_schema(request=UserSerializer, responses={201: UserSerializer})
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], url_path="signup")
     def signup(self, request):
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -89,7 +89,7 @@ class ProductViewSet(viewsets.GenericViewSet,
     
     product_service: ProductService = di[ProductService]
     pagination_class = Paginator
-    authentication_classes = [ServerAccessPolicy]
+    permission_classes = (ServerAccessPolicy,)
     serializer_class = ProductSerializer
 
     def get_queryset(self):
@@ -99,14 +99,14 @@ class ProductViewSet(viewsets.GenericViewSet,
     def create(self, request):
         serializer = ProductSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        product = self.product_service.create_budget(request.user, **serializer.validated_data) 
+        product = self.product_service.create_product(request.user, **serializer.validated_data) 
         return Response(status=201, data=ProductSerializer(product).data)
     
     @extend_schema(request=ProductSerializer, responses={200: ProductSerializer})
     def update(self, request,  pk=None):
         serializer = ProductSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        product = self.product_service.update_budget(request.user, pk, **serializer.validated_data)
+        product = self.product_service.update_product(request.user, pk, **serializer.validated_data)
         return Response(status=201, data=ProductSerializer(product).data)
     
     
@@ -118,7 +118,7 @@ class ProductViewSet(viewsets.GenericViewSet,
 
     @extend_schema(responses={204: None})
     def destroy(self, request, pk=None):
-        self.product_service.delete_budget(request.user, pk)
+        self.product_service.delete_product(request.user, pk)
         return Response(status=204)
 
 
@@ -130,7 +130,7 @@ class CustomerViewSet(viewsets.GenericViewSet,
     
     customer_service: CustomerService = di[CustomerService]
     pagination_class = Paginator
-    authentication_classes = [ServerAccessPolicy]
+    permission_classes = (ServerAccessPolicy,)
     serializer_class = UserSerializer
 
     def get_queryset(self):
@@ -170,7 +170,7 @@ class OrderViewSet(viewsets.GenericViewSet,
     
     order_service: OrderService = di[OrderService]
     pagination_class = Paginator
-    authentication_classes = [ServerAccessPolicy]
+    permission_classes = (ServerAccessPolicy,)
     serializer_class = OrderSerializer
 
     def get_queryset(self):
@@ -205,5 +205,7 @@ class OrderViewSet(viewsets.GenericViewSet,
     
 class SettingsViewSet(viewsets.GenericViewSet):
     settings_service: SettingsService = di[SettingsService]
+    
+    permission_classes = (ServerAccessPolicy,)
     
     

@@ -26,9 +26,7 @@ from utils.algorithms import TokenGenerator, auth_token, send_mail
 from .serializers import (
     EmailSerializer,
     LoginSerializer,
-    OrderSerializer,
     ProductSerializer,
-    ResetPasswordSerializer,
     SetNewPasswordSerializer,
     UserSerializer
 )
@@ -57,80 +55,26 @@ class AuthService:
             data={'firstname': user.first_name, 'absolute_url': absolute_url}
         )
 
-    @extend_schema(responses={status.HTTP_200_OK: dict})
-    @action(detail=False, methods=['get'], url_path='activate')
-    def verify_activation(self, request, uidb64, token):
-        id = smart_str(urlsafe_base64_decode(uidb64))
-        user = get_object_or_404(self.User, pk=id)
-
-        if not TokenGenerator().check_token(user, token):
-            return Response(
-                {'error': 'Token is not valid, please request a new one'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        user.is_active = True
-        user.save()
-
-        return Response(
-            {'message': 'Email verified, you can now login'}, status=status.HTTP_200_OK
-        )
-
-    @extend_schema(
-        request=UserSerializer, responses={status.HTTP_201_CREATED: UserSerializer}
-    )
-    @action(detail=False, methods=['post'], url_path='register')
-    def create_user(self, request):
-        data = JSONParser().parse(request)
-        serializer = UserSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
+    
+    def create_user(self, request, data):
+        email = data['email']
 
         if self.User.objects.filter(email=email).exists():
-            return Response(
-                {'message': 'Email already registered'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return None  
 
         self.User.objects.create_user(**data)
         self.send_activation_mail(request, email)
-        return Response(
-            {'message': 'User successfully created, Verify your email account'},
-            status=status.HTTP_201_CREATED
-        )
 
-    @extend_schema(
-        request=LoginSerializer, responses={status.HTTP_200_OK: UserSerializer}
-    )
-    @action(detail=False, methods=['post'], url_path='login')
-    def login(self, request):
-        data = JSONParser().parse(request)
-        serializer = LoginSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
+    
+    def login(self, request, data):
         user = get_object_or_404(self.User, email=data['email'])
         token = auth_token(user)
         user_serializer = UserSerializer(user)
-        return Response(
-            user_serializer.data,
-            headers={'Authorization': token},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return {'token': token, 'data': user_serializer.data}
+       
 
-    @extend_schema(
-        request=LoginSerializer, responses={status.HTTP_200_OK: UserSerializer}
-    )
-    @action(detail=False, methods=['post'], url_path='login/refresh')
-    def login_token_refresh(self):
-        return TokenRefreshView.as_view()
+    
 
-    @extend_schema(request=None, responses={status.HTTP_205_RESET_CONTENT: None})
-    @action(detail=False, methods=['post'], url_path='logout')
-    def logout(self, request):
-        data = JSONParser().parse(request)
-        try:
-            RefreshToken(data['refresh']).blacklist()
-            return Response(status=status.HTTP_205_RESET_CONTENT)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(request=EmailSerializer, responses={status.HTTP_200_OK: dict})
     @action(detail=False, methods=['post'], url_path='reset-password/request')

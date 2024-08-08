@@ -39,7 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
             return user
 
 class LoginSerializer(serializers.Serializer):
-    phone = PhoneNumberField()
+    email = serializers.EmailField()
     password = serializers.CharField()
     
 class PhoneSerializer(serializers.Serializer):

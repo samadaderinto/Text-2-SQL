@@ -1,12 +1,10 @@
 FROM python:3
 
-WORKDIR /var/www/server
-RUN pip install --upgrade pip
-RUN pip install pipenv
-RUN pip3 install --upgrade pip3 install pipenv
-ADD Pipfile /var/www/server
-ADD Pipfile.lock /var/www/server
+WORKDIR /var/www/pearmonie
+RUN pip3 install pipenv
+ADD Pipfile /var/www/pearmonie
+ADD Pipfile.lock /var/www/pearmonie
 RUN python3 -m pipenv install
-ADD . /var/www/server
+ADD . /var/www/pearmonie
 RUN chmod +x run.sh
 CMD ["./run.sh"]

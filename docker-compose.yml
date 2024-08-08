@@ -1,17 +1,17 @@
 services:
   backend:
-    build: 
-        context: ./server
-        dockerfile: Dockerfile
+    build: ./server
     volumes:
-      - ./server:/var/www/server
+      - .:/var/www/server
     command: bash run.sh
-    # restart: always
+    restart: always
     user: root
     ports:
-      - "8000:8000"
+      - 8000:8000
     env_file:
-      - ./server/.env
+      - ./server/.env.prod
+    depends_on:
+      - database
 
   frontend:
     build: ./client
@@ -19,11 +19,21 @@ services:
       - ./frontend:/app
       - /app/node_modules
     ports:
-      - "5173:5173"
+      - 5173:5173
     environment:
       - NODE_ENV=development
     depends_on:
       - backend
     command: npm run dev
 
-
+  database:
+    image: postgres
+    container_name: db
+    restart: always
+    tty: true
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment: 
+      - POSTGRES_PASSWORD=1234
+    ports: 
+      - 5432:5432

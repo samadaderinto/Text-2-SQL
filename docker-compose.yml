@@ -4,14 +4,15 @@ services:
         context: ./server
         dockerfile: Dockerfile
     volumes:
-      - ./server:/var/www/server
+      - .:/var/www/server
     command: bash run.sh
     # restart: always
     user: root
     ports:
       - "8000:8000"
     env_file:
-      - ./server/.env
+      - server/.env
+   
 
   frontend:
     build: ./client
@@ -26,4 +27,4 @@ services:
       - backend
     command: npm run dev
 
-
+  

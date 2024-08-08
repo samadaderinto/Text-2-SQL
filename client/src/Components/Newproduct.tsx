@@ -37,9 +37,9 @@ export const Newproduct = () => {
              <article className="Select_Article">
              <label htmlFor="currency">currency</label>
               <select name="currency" id="currency">
-              <option value="">$</option>
-              <option value="">£</option>
-              <option value="">€</option>
+              <option value="$">$</option>
+              <option value="£">£</option>
+              <option value="€">€</option>
               </select> 
              </article>
               <article className="Price_Article">

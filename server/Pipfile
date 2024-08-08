@@ -1,0 +1,24 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+djangorestframework = "*"
+python-dotenv = "*"
+requests = "*"
+gunicorn = "*"
+uvicorn = "*"
+django-cors-headers = "*"
+drf-spectacular = "*"
+kink = "*"
+django = "*"
+django-phonenumber-field = {extras = ["phonenumbers"], version = "*"}
+pytest-django = "*"
+faker = "*"
+pytest = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"

@@ -6,7 +6,7 @@ services:
     volumes:
       - .:/var/www/server
     command: bash run.sh
-    restart: always
+    # restart: always
     user: root
     ports:
       - "8000:8000"

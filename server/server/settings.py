@@ -64,7 +64,7 @@ INSTALLED_APPS = [
     "app.apps.CoreConfig",
     
     
-    "dotenv",
+
     "corsheaders",
     "phonenumber_field",
     "rest_framework",

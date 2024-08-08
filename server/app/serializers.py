@@ -132,3 +132,6 @@ class SetNewPasswordSerializer(serializers.Serializer):
         except:
             raise AuthenticationFailed("The reset link is invalid", status.HTTP_401_UNAUTHORIZED)
         return super().validate(attrs)
+    
+class FileSerializer(serializers.FileSerializer):
+    

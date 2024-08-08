@@ -1,8 +1,13 @@
+import os
+
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str
-from django.utils.http import urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
+from django.core.files.storage import default_storage
 
 from rest_framework import viewsets, mixins
 from rest_framework import status
@@ -14,16 +19,20 @@ from rest_framework.decorators import action
 
 from .models import Order, Product, User
 from .permissions import ServerAccessPolicy
-from .serializers import LoginSerializer, OrderSerializer, ProductSerializer, ResetPasswordSerializer, UserSerializer, SetNewPasswordSerializer
+from .serializers import EmailSerializer, LoginSerializer, OrderSerializer, ProductSerializer, ResetPasswordSerializer, UserSerializer, SetNewPasswordSerializer, FileSerializer
 from .services import AuthService, CustomerService, OrderService, ProductService, QueryService, SettingsService
 
 
 from drf_spectacular.utils import extend_schema
 from kink import di
 
-from utils.algorithms import TokenGenerator, auth_token
+from utils.algorithms import TokenGenerator, auth_token, send_mail
 
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from openai import Audio
+from pydub import AudioSegment
+
 
 
 class AuthViewSet(viewsets.GenericViewSet):
@@ -139,7 +148,30 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         return Response({'uidb64': uidb64, 'token': token}, status=status.HTTP_200_OK)
 
+    @extend_schema(request=EmailSerializer, responses={status.HTTP_200_OK: dict})
+    @action(detail=False, methods=['post'], url_path='reset-password/request')
+    def request_reset_password(self, request):
+        data = JSONParser().parse(request)
+        serializer = EmailSerializer(email=data['email'])
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        user = get_object_or_404(self.User, email=data['email'])
+        uidb64 = urlsafe_base64_encode(user.id.to_bytes())
+        token = PasswordResetTokenGenerator().make_token(user)
 
+        current_site = get_current_site(request).domain
+        relativeLink = reverse(
+            'password_reset_confirmation', kwargs={'uidb64': uidb64, 'token': token}
+        )
+        abs_url = f"http://{current_site}{relativeLink}"
+        mail_data = {'absolute_url': abs_url, 'email': email}
+
+        send_mail('password-reset', email, data=mail_data)
+
+        return Response(
+            {'success': 'We have sent you a mail to reset your password'},
+            status=status.HTTP_200_OK
+        )
 
     @extend_schema(request=SetNewPasswordSerializer, responses={status.HTTP_205_RESET_CONTENT: None})
     @action(detail=False, methods=['post'], url_path='reset-password/')
@@ -155,8 +187,20 @@ class QueryViewSet(viewsets.GenericViewSet):
     query_service: QueryService = di[QueryService]
     
     
-    def audio_to_text(self, request):
-        pass
+    @extend_schema(request=FileSerializer, responses={status.HTTP_200_OK: None})
+    @action(detail=False, methods=['post'], url_path='upload/')
+    def audio_to_query(self, request):
+        if request.FILES.get('audio_file'):
+            audio_file = request.FILES['audio_file']
+            file_path = default_storage.save('temp_audio_file', audio_file)
+
+            audio = AudioSegment.from_file(file_path)
+            wav_file_path = file_path.rsplit('.', 1)[0] + '.wav'
+            audio.export(wav_file_path, format='wav')
+            
+            return self.query_service(request, wav_file_path, file_path)
+                
+        return Response({'error': 'Invalid request'}, status=400)
     
     def text_to_SQL(self, request):
         pass

@@ -1,0 +1,130 @@
+.Settings_Container {
+    width: 100%;
+    height: 147vh;
+    display: flex;
+    flex-direction: column;
+    padding: 5%;
+
+    h1 {
+        font-size: 34px;
+        font-weight: 500;
+        color: rgb(66, 64, 64);
+    }
+
+    ul {
+        width: 38%;
+        height: max-content;
+        display: flex;
+        justify-content: space-between;
+        color: rgb(195, 193, 193);
+        padding: 3%;
+
+        li {
+            list-style-type: none;
+            cursor: pointer;
+            padding: 4.5%;
+        }
+
+        .Active{
+            color: rgb(21, 122, 237);
+            border-bottom: 2px solid rgb(21, 122, 237)  ;
+        }
+    }
+
+    form {
+        width: 70%;
+        height: 92%;
+        display: flex;
+        padding: 5%;
+        margin-left: 13%;
+        background-color: #fff;
+        flex-direction: column;
+        // justify-content: space-between;
+        margin-top: 5%;
+
+        h3 {
+            font-size: 23px;
+            font-weight: 500;
+            padding-bottom: 6%;
+        }
+
+        label {
+            width: 100%;
+            display: flex;
+            padding-right: 8%;
+            justify-content: space-between;
+            margin-left: 4%;
+
+            p {
+                color: rgb(21, 122, 237);
+                cursor: pointer;
+            }
+        }
+
+        input {
+            padding: 2.5%;
+            outline: none;
+            margin: 4%;
+            margin-top: 1%;
+            border: 1px solid rgb(221, 219, 219);
+        }
+
+        select {
+            padding: 2.5%;
+            outline: none;
+            margin: 4%;
+            margin-top: 1%;
+            border: 1px solid rgb(221, 219, 219);
+        }
+
+        div {
+            width: 100%;
+            display: flex;
+            margin-top: 2%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 15vh;
+            // background-color: black;
+
+            span {
+                width: 38%;
+                height: 80%;
+                display: flex;
+                cursor: pointer;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .Blue_Btn {
+                background-color: rgb(21, 122, 237);
+                color: #fff;
+                border: 1px solid white;
+                margin-left: 5px;
+            }
+
+            .White_Btn {
+                background-color: #fff;
+                color: rgb(21, 122, 237);
+                border: 1px solid rgb(21, 122, 237);
+                margin-right: 5px;
+            }
+        }
+
+        .Notify_Section {
+            width: 100%;
+            display: flex;
+            padding-top: 8%;
+            padding-bottom: 12%;
+            // padding: 1%;
+
+            p {
+                font-size: 18px;
+            }
+
+            input {
+                transform: scale(2.7);
+            }
+        }
+    }
+}

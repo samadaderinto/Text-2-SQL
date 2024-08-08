@@ -39,7 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
             return user
 
 class LoginSerializer(serializers.Serializer):
-    phone = PhoneNumberField()
+    email = serializers.EmailField()
     password = serializers.CharField()
     
 class PhoneSerializer(serializers.Serializer):
@@ -132,3 +132,6 @@ class SetNewPasswordSerializer(serializers.Serializer):
         except:
             raise AuthenticationFailed("The reset link is invalid", status.HTTP_401_UNAUTHORIZED)
         return super().validate(attrs)
+    
+class FileSerializer(serializers.FileSerializer):
+    

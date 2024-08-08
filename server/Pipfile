@@ -5,30 +5,18 @@ name = "pypi"
 
 [packages]
 djangorestframework = "*"
-django = "*"
-drf-spectacular = "*"
-django-phonenumber-field = {extras = ["phonenumbers"], version = "*"}
-django-cors-headers = "*"
-drf-access-policy = "*"
-django-taggit = "*"
-
+python-dotenv = "*"
+requests = "*"
 gunicorn = "*"
 uvicorn = "*"
-python-dotenv = "*"
-
+django-cors-headers = "*"
+drf-spectacular = "*"
 kink = "*"
-
-
-six = "*"
-nanoid = "*"
-Pillow = "*"
-openai = "*"
-PyJWT = "==2.1.0"
-
-
+django = "*"
+django-phonenumber-field = {extras = ["phonenumbers"], version = "*"}
+pytest-django = "*"
 faker = "*"
 pytest = "*"
-pytest-django = "*"
 
 [dev-packages]
 

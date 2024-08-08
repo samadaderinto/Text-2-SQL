@@ -1,17 +1,17 @@
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-icons/md";
 import { FiSearch } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Newproduct } from "./Newproduct";
 
 export const Product = () => {
   const [newproduct, setNewproduct] = useState(false)
-  const Nav = useNavigate()
+  // const Nav = useNavigate()
   return (
     <>
     {
-      !newproduct? (
+      newproduct? (
     
       <div className="Product_Container">
       <section className="Add_Product">

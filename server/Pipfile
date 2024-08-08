@@ -1,0 +1,38 @@
+server/Pipfile
+@@ -1,36 +0,0 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+djangorestframework = "*"
+django = "*"
+drf-spectacular = "*"
+django-phonenumber-field = {extras = ["phonenumbers"], version = "*"}
+django-cors-headers = "*"
+drf-access-policy = "*"
+django-taggit = "*"
+
+gunicorn = "*"
+uvicorn = "*"
+python-dotenv = "*"
+
+kink = "*"
+
+
+six = "*"
+nanoid = "*"
+Pillow = "*"
+openai = "*"
+PyJWT = "==2.1.0"
+
+
+faker = "*"
+pytest = "*"
+pytest-django = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"

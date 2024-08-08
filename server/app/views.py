@@ -89,7 +89,7 @@ class ProductViewSet(viewsets.GenericViewSet,
     
     product_service: ProductService = di[ProductService]
     pagination_class = Paginator
-    authentication_classes = [ServerAccessPolicy]
+    permission_classes = (ServerAccessPolicy,)
     serializer_class = ProductSerializer
 
     def get_queryset(self):
@@ -130,7 +130,7 @@ class CustomerViewSet(viewsets.GenericViewSet,
     
     customer_service: CustomerService = di[CustomerService]
     pagination_class = Paginator
-    authentication_classes = [ServerAccessPolicy]
+    permission_classes = (ServerAccessPolicy,)
     serializer_class = UserSerializer
 
     def get_queryset(self):
@@ -170,7 +170,7 @@ class OrderViewSet(viewsets.GenericViewSet,
     
     order_service: OrderService = di[OrderService]
     pagination_class = Paginator
-    authentication_classes = [ServerAccessPolicy]
+    permission_classes = (ServerAccessPolicy,)
     serializer_class = OrderSerializer
 
     def get_queryset(self):

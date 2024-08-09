@@ -133,5 +133,15 @@ class SetNewPasswordSerializer(serializers.Serializer):
             raise AuthenticationFailed("The reset link is invalid", status.HTTP_401_UNAUTHORIZED)
         return super().validate(attrs)
     
-class FileSerializer(serializers.FileSerializer):
+class FileSerializer(serializers.Serializer):
+    
+    file = serializers.FileField(required=True)
+    
+    def validate_file(self, value):
+        """
+        Validate the uploaded file to ensure it is an audio file.
+        """
+        if not value.name.endswith(('.mp3', '.wav', '.ogg')):
+            raise serializers.ValidationError('The uploaded file must be an audio file (MP3, WAV, or OGG).')
+        return value
     

@@ -102,11 +102,11 @@ class QueryService:
         return response['text']
        
 
-    def text_to_SQL(self, request):
-        text = self.audio_to_text(request)
+    def text_to_SQL(self, request, wav_file_path, file_path):
+        text = self.audio_to_text(request, wav_file_path, file_path)
 
-    def runSQLQuery(self, request):
-        query = self.text_to_SQL(request)
+    def runSQLQuery(self, request, wav_file_path, file_path):
+        query = self.text_to_SQL(request, wav_file_path, file_path)
         sanitized_query = self.sanitize_query(query)
         with connection.cursor() as cursor:
             cursor.execute(sanitized_query)

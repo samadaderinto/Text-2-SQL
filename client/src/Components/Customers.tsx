@@ -1,15 +1,21 @@
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-icons/md";
 import { FiSearch } from "react-icons/fi";
+import { useState } from "react";
+import { Newcustomer } from "./Newcustomer";
 
 
 
 export const Customers = () => {
+  const [newcustomer, setNewcustomer] = useState(false)
   return (
-    <div className="Customer_Container">
+    <>
+    {
+      !newcustomer ?(
+        <div className="Customer_Container">
       <article>
         <h1>Customers</h1>
-        <span><IoIosAddCircleOutline className="Circle_Icon"/> Add New Customers</span>
+        <span onClick={()=> !newcustomer? setNewcustomer(true): null}><IoIosAddCircleOutline className="Circle_Icon"/> Add New Customers</span>
       </article>
 
       <section className="Customer_List_Container">
@@ -59,5 +65,10 @@ export const Customers = () => {
        </section>
       </section>
     </div>
+      ): (<Newcustomer/>)
+
+    }
+    
+    </>
   )
 } 

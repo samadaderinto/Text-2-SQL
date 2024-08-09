@@ -11,7 +11,7 @@ export const Product = () => {
   return (
     <>
     {
-      newproduct? (
+      !newproduct? (
     
       <div className="Product_Container">
       <section className="Add_Product">

@@ -198,19 +198,11 @@ class QueryViewSet(viewsets.GenericViewSet):
             wav_file_path = file_path.rsplit('.', 1)[0] + '.wav'
             audio.export(wav_file_path, format='wav')
             
-            return self.query_service(request, wav_file_path, file_path)
+            return self.query_service.runSQLQuery(request, wav_file_path, file_path)
                 
         return Response({'error': 'Invalid request'}, status=400)
-    
-    def text_to_SQL(self, request):
-        pass
-    
-    def runSQLQuery(self, request):
-        pass
 
     
-    
-
 class ProductViewSet(viewsets.GenericViewSet, 
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,

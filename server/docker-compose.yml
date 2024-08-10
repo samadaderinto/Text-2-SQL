@@ -1,5 +1,5 @@
 services:
-    pearmonie:
+    server:
         build:
             context: .
             dockerfile: Dockerfile
@@ -7,10 +7,12 @@ services:
         restart: always
         user: root
         volumes:
-            - .:/var/www/pearmonie
+            - .:/var/www/server
         ports:
             - 8000:8000
         env_file:
-            - ./.env
+            - .env
+
+  
   
 

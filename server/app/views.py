@@ -1,7 +1,7 @@
 import os
 
 from django.core.paginator import Paginator
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -15,14 +15,14 @@ from rest_framework.response import Response
 from rest_framework.parsers import JSONParser
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.decorators import action
-
+from rest_framework.permissions import AllowAny
 
 from .models import Order, Product, User
 from .permissions import ServerAccessPolicy
-from .serializers import EmailSerializer, LoginSerializer, OrderSerializer, ProductSerializer, ResetPasswordSerializer, UserSerializer, SetNewPasswordSerializer, FileSerializer
+from .serializers import EmailSerializer, LogOutSerializer, LoginSerializer, OrderSerializer, ProductSerializer, ResetPasswordSerializer, UserSerializer, SetNewPasswordSerializer, FileSerializer
 from .services import AuthService, CustomerService, OrderService, ProductService, QueryService, SettingsService
 
-
+from rest_access_policy import AccessViewSetMixin
 from drf_spectacular.utils import extend_schema
 from kink import di
 
@@ -39,18 +39,14 @@ class AuthViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.auth_service: AuthService = di[AuthService] 
+        self.User = User
+        
     
-    @extend_schema(request=LoginSerializer, responses={200: UserSerializer})
-    @action(detail=False, methods=["post"], url_path="login")
-    def login(self, request):
-        data = JSONParser().parse(request)
-        serializer = LoginSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        result = self.auth_service.login(
-            request,
-            serializer.validated_data["email"],
-            serializer.validated_data["password"])
-        return Response(status=status.HTTP_200_OK, data=result["data"], headers=result["token"])
+    # permission_classes = (ServerAccessPolicy,)
+    permission_classes = (AllowAny,)
+    authentication_classes = ([])
+    serializer_class = UserSerializer
+    
     
     @extend_schema(request=UserSerializer, responses={201: UserSerializer})
     @action(detail=False, methods=["post"], url_path="signup")
@@ -58,79 +54,62 @@ class AuthViewSet(viewsets.GenericViewSet):
         data = JSONParser().parse(request)
         serializer = UserSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        result = self.auth_service.create_user(
-            request,
-            serializer.validated_data["first_name"],
-            serializer.validated_data["last_name"],
-            serializer.validated_data["avatar"],
-            serializer.validated_data["phone"],
-            serializer.validated_data["email"],
-            serializer.validated_data["password"],
-            
-        )
+        result = self.auth_service.create_user(request,serializer.validated_data["email"],serializer.validated_data["password"])
         
         if result:
             return Response({'message': 'Email already registered'}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'message': 'User successfully created, Verify your email account'},status=status.HTTP_201_CREATED)
     
     
+    @extend_schema(responses={status.HTTP_200_OK: dict})
+    @action(detail=False, methods=['get'], url_path='activate/(?P<uidb64>[^/.]+)/(?P<token>[^/.]+)', name="activate")
+    def verify_activation(self, request, uidb64, token):
+       
+            id = smart_str(urlsafe_base64_decode(uidb64))
+            user = get_object_or_404(self.User, pk=id)
+            
+            if user.is_active:
+                return Response({'message': 'Account is already activated'}, status=status.HTTP_200_OK)
+
+            if not TokenGenerator().check_token(user, token):
+                return Response({'error': 'Token is not valid, please request a new one'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+            user.is_active = True
+            user.save()
+            
+            # relative_link = f'self.auth_service.get_base_url(request)/auth/login/'
+            # abs_link = request.build_absolute_uri(relative_link)
+        
+            return redirect('http://localhost:8000/auth/login/', permanent=True)
+      
+    
     @extend_schema(request=None, responses={status.HTTP_205_RESET_CONTENT: None})
     @action(detail=False, methods=['post'], url_path='logout')
     def logout(self, request):
         data = JSONParser().parse(request)
-        
+        serializer = LogOutSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
         try:
-            RefreshToken(data['refresh']).blacklist()
+            RefreshToken(serializer.validated_data['refresh']).blacklist()
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
-        return Response(status=status.HTTP_205_RESET_CONTENT)
-    
-    
-    
-    @extend_schema(responses={status.HTTP_200_OK: dict})
-    @action(detail=False, methods=['get'], url_path='activate')
-    def verify_activation(self, request, uidb64, token):
-        id = smart_str(urlsafe_base64_decode(uidb64))
-        user = get_object_or_404(self.User, pk=id)
-
-        if not TokenGenerator().check_token(user, token):
-            return Response(
-                {'error': 'Token is not valid, please request a new one'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        user.is_active = True
-        user.save()
-
-        return Response({'message': 'Email verified, you can now login'}, status=status.HTTP_200_OK)
+        return Response(data={"Successfully logged out"}, status=status.HTTP_205_RESET_CONTENT)
         
-    @extend_schema(request=ResetPasswordSerializer, responses={200: None})
-    @action(detail=False, methods=["post"], url_path="password/reset")
-    def reset_password(self, request):
-        serializer = ResetPasswordSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        result = self.auth_service.reset_password(
-            serializer.validated_data["code"],
-            serializer.validated_data["phone"],
-            serializer.validated_data["new_password"],
-            request,
-        )
-        return Response(200, data=result["data"], headers=result["token"])
-    
-    @extend_schema(request=LoginSerializer, responses={status.HTTP_200_OK: UserSerializer})
-    @action(detail=False, methods=['post'], url_path='login')
+    @extend_schema(request=LoginSerializer, responses={200: UserSerializer})
+    @action(detail=False, methods=["post"], url_path="login")
     def login(self, request):
         data = JSONParser().parse(request)
         serializer = LoginSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        user = get_object_or_404(self.User, email=data['email'])
-        token = auth_token(user)
-        user_serializer = UserSerializer(user)
-        return Response(
-            user_serializer.data,
-            headers={'Authorization': token},
-            status=status.HTTP_400_BAD_REQUEST)
+        result = self.auth_service.login_user(
+            serializer.validated_data["email"],
+            serializer.validated_data["password"])
         
+        if result["data"] and result["token"]:
+            return Response(status=status.HTTP_200_OK, data=result["data"], headers=result["token"])  
+        return Response(status=status.HTTP_401_UNAUTHORIZED, data={"Please verify your account"})
+    
     
     @extend_schema(request=LoginSerializer, responses={status.HTTP_200_OK: UserSerializer})
     @action(detail=False, methods=['post'], url_path='login/refresh')
@@ -148,7 +127,24 @@ class AuthViewSet(viewsets.GenericViewSet):
             return Response({'error': 'Token is not valid, please request a new one'}, status=status.HTTP_401_UNAUTHORIZED)
 
         return Response({'uidb64': uidb64, 'token': token}, status=status.HTTP_200_OK)
-
+    
+    
+    
+    @extend_schema(request=ResetPasswordSerializer, responses={200: None})
+    @action(detail=False, methods=["post"], url_path="password/reset")
+    def reset_password(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = self.auth_service.reset_password(
+            serializer.validated_data["code"],
+            serializer.validated_data["phone"],
+            serializer.validated_data["new_password"],
+            request,
+        )
+        return Response(200, data=result["data"], headers=result["token"])
+    
+    
+    
     @extend_schema(request=EmailSerializer, responses={status.HTTP_200_OK: dict})
     @action(detail=False, methods=['post'], url_path='reset-password/request')
     def request_reset_password(self, request):

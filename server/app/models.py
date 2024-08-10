@@ -60,17 +60,14 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     username = None
     avatar = models.ImageField(upload_to="images/profile", null=True, blank=True)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
     email = models.EmailField(unique=True, db_index=True)
-    phone = PhoneNumberField()
     password = models.CharField(max_length=90)
     is_active = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["first_name", "last_name", "phone", "password"]
+    REQUIRED_FIELDS = ["password"]
 
     objects = UserManager()
     

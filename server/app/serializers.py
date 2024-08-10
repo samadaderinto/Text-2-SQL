@@ -21,9 +21,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "email",
-            "first_name",
-            "last_name",
-            "phone",
             "password",
             "created",
             "updated",
@@ -41,6 +38,10 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
+
+class LogOutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    
     
 class PhoneSerializer(serializers.Serializer):
     phone = PhoneNumberField()

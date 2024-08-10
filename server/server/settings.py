@@ -61,15 +61,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     
-    "app.apps.CoreConfig",
+    "app.apps.AppConfig",
     
     
-
+    "drf_spectacular",
     "corsheaders",
     "phonenumber_field",
     "rest_framework",
     "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist"
+    "rest_framework_simplejwt.token_blacklist",
+    "taggit",
+  
 ]
 
 MIDDLEWARE = [

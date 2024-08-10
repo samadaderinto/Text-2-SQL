@@ -9,7 +9,7 @@ router.register(r"", QueryViewSet, basename="query")
 router.register(r"", CustomerViewSet, basename="customers")
 router.register(r"", ProductViewSet, basename="products")
 router.register(r"", OrderViewSet, basename="orders")
-router.register(r"", SettingsViewSet, basename="orders")
+router.register(r"", SettingsViewSet, basename="settings")
 
 
 urlpatterns = router.urls

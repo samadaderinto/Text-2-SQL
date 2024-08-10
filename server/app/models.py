@@ -149,7 +149,7 @@ class Order(DatesMixin):
     ("paid", "paid"))
     
     
-    id = models.CharField(max_length=15, default=generate(size=15), unique=True, editable=False)
+    id = models.CharField(max_length=15, default=generate(size=15), unique=True, editable=False, primary_key=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     status = models.CharField(choices=ORDER_STATUS_CHOICE, max_length=15)
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)

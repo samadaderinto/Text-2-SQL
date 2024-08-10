@@ -30,14 +30,15 @@ from utils.algorithms import TokenGenerator, auth_token, send_mail
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from openai import Audio
 from pydub import AudioSegment
 
 
 
 class AuthViewSet(viewsets.GenericViewSet):
     
-    auth_service: AuthService = di[AuthService]
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.auth_service: AuthService = di[AuthService] 
     
     @extend_schema(request=LoginSerializer, responses={200: UserSerializer})
     @action(detail=False, methods=["post"], url_path="login")
@@ -184,7 +185,9 @@ class AuthViewSet(viewsets.GenericViewSet):
     
     
 class QueryViewSet(viewsets.GenericViewSet):
-    query_service: QueryService = di[QueryService]
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.query_service: QueryService = di[QueryService]
     
     
     @extend_schema(request=FileSerializer, responses={status.HTTP_200_OK: None})
@@ -208,8 +211,11 @@ class ProductViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin):
     
-    
-    product_service: ProductService = di[ProductService]
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.product_service: ProductService = di[ProductService]
+        
+        
     pagination_class = Paginator
     permission_classes = (ServerAccessPolicy,)
     serializer_class = ProductSerializer
@@ -249,8 +255,11 @@ class CustomerViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin):
     
-    
-    customer_service: CustomerService = di[CustomerService]
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.customer_service: CustomerService = di[CustomerService]
+        
+        
     pagination_class = Paginator
     permission_classes = (ServerAccessPolicy,)
     serializer_class = UserSerializer
@@ -290,7 +299,11 @@ class OrderViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin):
     
-    order_service: OrderService = di[OrderService]
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.order_service: OrderService = di[OrderService]
+        
+        
     pagination_class = Paginator
     permission_classes = (ServerAccessPolicy,)
     serializer_class = OrderSerializer
@@ -326,6 +339,8 @@ class OrderViewSet(viewsets.GenericViewSet,
     
     
 class SettingsViewSet(viewsets.GenericViewSet):
-    settings_service: SettingsService = di[SettingsService]
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.settings_service: SettingsService = di[SettingsService]
     
     

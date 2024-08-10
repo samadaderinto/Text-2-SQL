@@ -17,8 +17,16 @@ django-phonenumber-field = {extras = ["phonenumbers"], version = "*"}
 pytest-django = "*"
 faker = "*"
 pytest = "*"
+rest-framework-simplejwt = "*"
+django-taggit = "*"
+djangorestframework-simplejwt = "*"
+nanoid = "*"
+drf-access-policy = "*"
+openai = "*"
+pydub = "*"
+pillow = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.12"
+python_version = "3.7"

@@ -73,8 +73,7 @@ client = OpenAI(
 
 @inject
 class QueryService:
-    def __init__(self, User: Type[User]):
-        self.User = User
+    def __init__(self):
         self.commands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE']
 
     def sanitize_sql_query(self, query):
@@ -140,7 +139,7 @@ class ProductService:
 @inject
 class CustomerService:
     def __init__(self, User: Type[User]):
-        pass
+        self.User = User
 
     def get_customers(self):
         pass
@@ -160,8 +159,10 @@ class CustomerService:
 
 @inject
 class OrderService:
-    def __init__(self, User: Type[User]):
-        pass
+    def __init__(self, User: Type[User], Product: Type[Product]):
+        self.User = User,
+        self.Product = Product
+        
 
     def create_product(self):
         pass
@@ -179,4 +180,4 @@ class OrderService:
 @inject
 class SettingsService:
     def __init__(self, User: Type[User]):
-        pass
+        self.User = User

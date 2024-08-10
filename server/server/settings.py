@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     
     
     "drf_spectacular",
+    'drf_spectacular_sidecar',
     "corsheaders",
     "phonenumber_field",
     "rest_framework",
@@ -78,6 +79,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.staticfiles.middleware.StaticFilesMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -183,6 +185,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 15,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 PASSWORD_HASHERS = [
@@ -234,3 +237,10 @@ SPECTACULAR_SETTINGS = {
     "REDOC_DIST": "SIDECAR",
 }
 
+SPECTACULAR_SETTINGS = {
+    'SERVE_INCLUDE_SCHEMA': False,
+}
+
+
+CopySTATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles' 

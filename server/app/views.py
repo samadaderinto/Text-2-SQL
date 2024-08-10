@@ -31,9 +31,9 @@ from utils.algorithms import TokenGenerator, auth_token, send_mail
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from pydub import AudioSegment
+from pydub.utils import which
 
-
-
+AudioSegment.converter = which("ffmpeg")
 class AuthViewSet(viewsets.GenericViewSet):
     
     def __init__(self, **kwargs):
@@ -216,7 +216,7 @@ class ProductViewSet(viewsets.GenericViewSet,
         self.product_service: ProductService = di[ProductService]
         
         
-    pagination_class = Paginator
+    # pagination_class = Paginator
     permission_classes = (ServerAccessPolicy,)
     serializer_class = ProductSerializer
 
@@ -260,7 +260,7 @@ class CustomerViewSet(viewsets.GenericViewSet,
         self.customer_service: CustomerService = di[CustomerService]
         
         
-    pagination_class = Paginator
+    # pagination_class = Paginator
     permission_classes = (ServerAccessPolicy,)
     serializer_class = UserSerializer
 
@@ -304,7 +304,7 @@ class OrderViewSet(viewsets.GenericViewSet,
         self.order_service: OrderService = di[OrderService]
         
         
-    pagination_class = Paginator
+    # pagination_class = Paginator
     permission_classes = (ServerAccessPolicy,)
     serializer_class = OrderSerializer
 

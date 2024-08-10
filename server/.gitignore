@@ -10,6 +10,3 @@ assets/
 .idea
 *.log
 celerybeat-schedule
-
-# database
-db.sqlite3

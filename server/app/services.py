@@ -28,7 +28,6 @@ from .models import Product, User
 class AuthService:
     def __init__(self, User: Type[User]):
         self.User = User
-        self.Product = Product
 
     def send_activation_mail(self, request, email):
         user = get_object_or_404(self.User, email=email)

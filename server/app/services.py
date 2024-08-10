@@ -4,10 +4,12 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.http import urlsafe_base64_encode
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes
 from django.db import connection
 from django.core.files.storage import default_storage
+from django.contrib.auth import authenticate
+
 
 from typing import Type
 from kink import inject
@@ -17,7 +19,7 @@ from pydub import AudioSegment
 from rest_framework import status
 from rest_framework.response import Response
 
-from utils.algorithms import TokenGenerator, auth_token, send_mail
+from utils.algorithms import TokenGenerator, auth_token, send_email, send_mail
 
 from .serializers import ProductSerializer, UserSerializer
 from .models import Product, User
@@ -28,36 +30,51 @@ from .models import Product, User
 class AuthService:
     def __init__(self, User: Type[User]):
         self.User = User
+        
+    def get_base_url(self, request):
+        scheme = request.scheme  # 'http' or 'https'
+        host = request.get_host()  # 'example.com' or 'example.com:8000'
+        return f'{scheme}://{host}'
+
 
     def send_activation_mail(self, request, email):
         user = get_object_or_404(self.User, email=email)
-        uuidb64 = urlsafe_base64_encode(force_bytes(user.id))
+        uidb64 = urlsafe_base64_encode(force_bytes(user.id))
         token = TokenGenerator().make_token(user)
-        current_site = get_current_site(request).domain
-        relativeLink = reverse('activate', kwargs={'uidb64': uuidb64, 'token': token})
-        absolute_url = f"http://{current_site}{relativeLink}"
-        send_mail(
-            'onboarding-user',
-            user.email,
-            data={'firstname': user.first_name, 'absolute_url': absolute_url}
+        link = f'{self.get_base_url(request)}/auth/activate/{uidb64}/{token}/'
+        absolute_url = request.build_absolute_uri(link)
+        # send_mail(
+        #     'onboarding-user',
+        #     user.email,
+        #     data={'firstname': user.first_name, 'absolute_url': absolute_url}
+        # )
+        
+        send_email(
+            
+         absolute_url
         )
 
     
-    def create_user(self, request, data):
-        email = data['email']
-
+    def create_user(self, request, email, password):
+      
         if self.User.objects.filter(email=email).exists():
             return None  
 
-        self.User.objects.create_user(**data)
+        self.User.objects.create_user(email=email, password=password)
         self.send_activation_mail(request, email)
 
     
-    def login(self, request, data):
-        user = get_object_or_404(self.User, email=data['email'])
-        token = auth_token(user)
-        user_serializer = UserSerializer(user)
-        return {'token': token, 'data': user_serializer.data}
+    def login_user(self, email, password):
+        user = authenticate(email=email, password=password)
+      
+        if user.is_active:
+            token = auth_token(user)
+            user_serializer = UserSerializer(user)
+            return {'token': token, 'data': user_serializer.data}
+        return None
+    
+    def reset_password(self, request):
+        pass
        
 
 

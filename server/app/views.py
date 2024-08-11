@@ -103,12 +103,13 @@ class AuthViewSet(viewsets.GenericViewSet):
         serializer = LoginSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         result = self.auth_service.login_user(
+            request,
             serializer.validated_data["email"],
             serializer.validated_data["password"])
         
-        if result["data"] and result["token"]:
+        if result:
             return Response(status=status.HTTP_200_OK, data=result["data"], headers=result["token"])  
-        return Response(status=status.HTTP_401_UNAUTHORIZED, data={"Please verify your account"})
+        return Response(status=status.HTTP_401_UNAUTHORIZED, data={"Please verify your email account"})
     
     
     @extend_schema(request=LoginSerializer, responses={status.HTTP_200_OK: UserSerializer})

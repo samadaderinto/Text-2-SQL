@@ -21,9 +21,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "email",
-            "first_name",
-            "last_name",
-            "phone",
             "password",
             "created",
             "updated",
@@ -41,6 +38,10 @@ class UserSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
+
+class LogOutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    
     
 class PhoneSerializer(serializers.Serializer):
     phone = PhoneNumberField()
@@ -144,4 +145,5 @@ class FileSerializer(serializers.Serializer):
         if not value.name.endswith(('.mp3', '.wav', '.ogg')):
             raise serializers.ValidationError('The uploaded file must be an audio file (MP3, WAV, or OGG).')
         return value
+    
     

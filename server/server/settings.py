@@ -27,14 +27,16 @@ SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = str(os.environ.get("SECRET_KEY"))
 
 OPENAI_API_KEY = str(os.environ.get("OPENAI_API_KEY"))
-EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = os.getenv("EMAIL_PORT")
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS")
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
-SERVER_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+# EMAIL_HOST = os.getenv("EMAIL_HOST")
+# EMAIL_PORT = os.getenv("EMAIL_PORT")
+# EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS")
+# EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+# EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+# EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
+# DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+# SERVER_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "true"
@@ -61,15 +63,18 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     
-    "app.apps.CoreConfig",
+    "app.apps.AppConfig",
     
     
-
+    "drf_spectacular",
+    'drf_spectacular_sidecar',
     "corsheaders",
     "phonenumber_field",
     "rest_framework",
     "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist"
+    "rest_framework_simplejwt.token_blacklist",
+    "taggit",
+  
 ]
 
 MIDDLEWARE = [
@@ -80,7 +85,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',  # Ensure this line is correct
 ]
 
 ROOT_URLCONF = 'server.urls'
@@ -172,15 +177,23 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 
+# AUTHENTICATION_BACKENDS = [
+#     'django.contrib.auth.backends.ModelBackend'
+# ]
+
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
-    ],
+    # "DEFAULT_PERMISSION_CLASSES": [
+    #     "rest_framework.permissions.IsAuthenticated",
+    # ],
+    
+    "DEFAULT_PERMISSION_CLASSES": [ 'rest_framework.permissions.AllowAny',],
+    
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 15,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
 }
 
 PASSWORD_HASHERS = [
@@ -232,3 +245,9 @@ SPECTACULAR_SETTINGS = {
     "REDOC_DIST": "SIDECAR",
 }
 
+
+
+
+
+CopySTATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles' 

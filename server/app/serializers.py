@@ -43,17 +43,10 @@ class LogOutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
     
     
-class PhoneSerializer(serializers.Serializer):
-    phone = PhoneNumberField()
-    
 class ResetPasswordSerializer(serializers.Serializer):
-    code = serializers.CharField()
-    phone = PhoneNumberField()
+    email = serializers.EmailField()
     new_password = serializers.CharField()
 
-class VerifyOtpSerializer(serializers.Serializer):
-    code = serializers.CharField()
-    phone = PhoneNumberField()
     
 class EmailTokenObtainSerializer(TokenObtainSerializer):
     username_field = User.EMAIL_FIELD
@@ -112,27 +105,6 @@ class EmailSerializer(serializers.Serializer):
     email = serializers.EmailField()
         
 
-class SetNewPasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(min_length=6, max_length=90, write_only=True)
-    token = serializers.CharField(min_length=6, max_length=90, write_only=True)
-    uidb64 = serializers.CharField(min_length=6, max_length=90, write_only=True)
-
-    fields = ["password", "token", "uidb64"]
-
-    def validate(self, attrs):
-        try:
-            password = attrs.get("password")
-            token = attrs.get("token")
-            uidb64 = attrs.get("uidb64")
-            id = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(id=id)
-            if not PasswordResetTokenGenerator().check_token(user, token):
-                raise AuthenticationFailed("The reset link is invalid", status.HTTP_401_UNAUTHORIZED)
-            user.set_password(password)
-            user.save()
-        except:
-            raise AuthenticationFailed("The reset link is invalid", status.HTTP_401_UNAUTHORIZED)
-        return super().validate(attrs)
     
 class FileSerializer(serializers.Serializer):
     

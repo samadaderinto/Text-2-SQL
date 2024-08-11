@@ -17,6 +17,7 @@ const Home = () => {
 
   const [activeIndex, setActiveIndex] = useState< number | null>(null)
   const [active, setActive] = useState('')
+  const [menu, setMenu] = useState(false);
   const [voice, setVoice] = useState(false)
   const [listen, setListen] = useState(false)
   const [audio, setAudio] = useState<Blob | null>(null)
@@ -127,7 +128,33 @@ const Home = () => {
 
           </div>
         </section>
+        <p onClick={()=> !menu? setMenu(true): setMenu(false)} className="Mobile_Menu">Menu</p>
+        {
+          menu?
+          (
+            <article className="Mobile_Menu_Nav">
+        
 
+{
+  sideBarArrayList.map((obj, index)=> (
+    <span 
+    key={index}
+    onClick={()=> { 
+      setActive(obj.itemName)              
+      setActiveIndex(index)}} 
+    className={activeIndex === index? 'Active_List': ''}>
+    <p className="List_icon">{obj.icon}</p>
+    <p>{obj.itemName}</p>
+  </span>
+  ))
+
+  
+}
+
+
+        </article>
+          ): null
+        }
       </div>
 
       {
@@ -143,6 +170,7 @@ const Home = () => {
           setListen(false)
         }} className="Search_By_Voice Stop_Voice">Stop recording</span> : null
       }
+
 
      <div className="Main_Container">
      <nav className="Home_Sidebar">

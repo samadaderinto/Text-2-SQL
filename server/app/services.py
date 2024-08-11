@@ -64,10 +64,10 @@ class AuthService:
         self.send_activation_mail(request, email)
 
     
-    def login_user(self, email, password):
-        user = authenticate(email=email, password=password)
+    def login_user(self, request, email, password):
+        user = authenticate(request, username=email, password=password)
       
-        if user.is_active:
+        if user and user.is_active:
             token = auth_token(user)
             user_serializer = UserSerializer(user)
             return {'token': token, 'data': user_serializer.data}

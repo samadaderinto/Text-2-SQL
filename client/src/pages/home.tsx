@@ -143,7 +143,10 @@ const Home = () => {
     key={index}
     onClick={()=> { 
       setActive(obj.itemName)              
-      setActiveIndex(index)}} 
+      setActiveIndex(index)
+    setMenu(false)
+    }} 
+      
     className={activeIndex === index? 'Active_List': ''}>
     <p className="List_icon">{obj.icon}</p>
     <p>{obj.itemName}</p>

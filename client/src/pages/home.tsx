@@ -15,8 +15,8 @@ import { Settings } from "../Components/Settings";
 
 const Home = () => {
 
-  const [activeIndex, setActiveIndex] = useState< number | null>(null)
-  const [active, setActive] = useState('')
+  const [activeIndex, setActiveIndex] = useState< number>(0)
+  const [active, setActive] = useState('Dashboard')
   const [menu, setMenu] = useState(false);
   const [voice, setVoice] = useState(false)
   const [listen, setListen] = useState(false)
@@ -95,6 +95,7 @@ const Home = () => {
   } else {
     stopRecording()
   }
+  // setActive('Dashboard')
 
   return (
     <div className="Home_Container">
@@ -136,6 +137,7 @@ const Home = () => {
         
 
 {
+
   sideBarArrayList.map((obj, index)=> (
     <span 
     key={index}

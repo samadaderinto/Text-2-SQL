@@ -2,6 +2,7 @@ import { useState } from "react"
 
 export const Settings = () => {
   const [active, setActive] = useState('General')
+  const [newpassword, setNewpassword] = useState(false)
   return (
     <div className="Settings_Container">
       <h1>Settings</h1>
@@ -34,7 +35,7 @@ export const Settings = () => {
         <label htmlFor="Admin_Email"> Email Address</label>
         <input type="email" placeholder="Input email" />
         <label htmlFor="password">Password
-        <p>change password</p>
+        <p onClick={()=> !newpassword? setNewpassword(true): null}>change password</p>
         </label>
        <input type="password" placeholder="password" name="" id="password" />
       
@@ -54,6 +55,22 @@ export const Settings = () => {
           <span className="Blue_Btn">Save Changes</span>
         </div>
       </form>
+      {
+        newpassword? 
+        (<div className="Settings_forgot_password">
+          <section>
+            <p onClick={()=> newpassword? setNewpassword(false): null}>X</p>
+            <h1>Change Password</h1>
+            <label htmlFor="old_password">Old Password</label>
+            <input type="password" placeholder="Old Password" name="" id="old_password" />
+            <label htmlFor="new_password">New Password</label>
+            <input type="password" name="" placeholder="New Password" id="new_password" />
+            <label htmlFor="confirm_password">Confirm Password</label>
+            <input type="password" name="" placeholder="Confirm Password" id="confirm_password" />
+            <span>Update Status</span>
+          </section>
+        </div>): null
+      }
     </div>
   )
 }

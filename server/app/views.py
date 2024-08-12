@@ -4,9 +4,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.contrib.sites.shortcuts import get_current_site
-from django.urls import reverse
+from django.utils.http import urlsafe_base64_decode
 from django.core.files.storage import default_storage
 
 from rest_framework import viewsets, mixins
@@ -26,7 +24,7 @@ from rest_access_policy import AccessViewSetMixin
 from drf_spectacular.utils import extend_schema
 from kink import di
 
-from utils.algorithms import TokenGenerator, auth_token, send_mail
+from utils.algorithms import TokenGenerator, auth_token, send_email, send_mail
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -102,24 +100,37 @@ class AuthViewSet(viewsets.GenericViewSet):
         data = JSONParser().parse(request)
         serializer = LoginSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        result = self.auth_service.login_user(
-            request,
-            serializer.validated_data["email"],
-            serializer.validated_data["password"])
         
-        if result:
-            return Response(status=status.HTTP_200_OK, data=result["data"], headers=result["token"])  
-        return Response(status=status.HTTP_401_UNAUTHORIZED, data={"Please verify your email account"})
+        data = self.auth_service.login_user(request,serializer.validated_data["email"],serializer.validated_data["password"])
+        
+        if data.get("token", None) and data.get("data", None):
+             return Response(status=status.HTTP_200_OK, data=data["data"], headers=data["token"])
+        elif data.get("verify", None):
+            return Response(status=status.HTTP_401_UNAUTHORIZED, data={"message": data["verify"]})
+        elif data.get("invalid_info", None):
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"message": "Invalid user information"})
+          
+        
+    # @extend_schema(request=LoginSerializer, responses={status.HTTP_200_OK: UserSerializer})
+    # @action(detail=False, methods=['post'], url_path='login/refresh')
+    # def login_token_refresh(self):
+    #     return TokenRefreshView.as_view()
     
-    
-    @extend_schema(request=LoginSerializer, responses={status.HTTP_200_OK: UserSerializer})
-    @action(detail=False, methods=['post'], url_path='login/refresh')
-    def login_token_refresh(self):
-        return TokenRefreshView.as_view()
-    
+    @extend_schema(request=EmailSerializer, responses={status.HTTP_200_OK: dict})
+    @action(detail=False, methods=['post'], url_path='reset-password/request')
+    def request_reset_password(self, request):
+        data = JSONParser().parse(request)
+        serializer = EmailSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        absolute_url = self.auth_service.request_reset_password_user(request, email)
+        send_email(absolute_url)
+        return Response({'success': 'We have sent you a mail to reset your password'}, status=status.HTTP_200_OK)
+        
+        
     
     @extend_schema(request=None, responses={status.HTTP_200_OK: None})
-    @action(detail=False, methods=['post'], url_path='reset-password/verify')
+    @action(detail=False, methods=['get'], url_path='reset-password/verify/(?P<uidb64>[^/.]+)/(?P<token>[^/.]+)')
     def verify_password_reset_token(self, request, uidb64, token):
         id = smart_str(urlsafe_base64_decode(uidb64))
         user = get_object_or_404(self.User, pk=id)
@@ -127,58 +138,20 @@ class AuthViewSet(viewsets.GenericViewSet):
         if not PasswordResetTokenGenerator().check_token(user, token):
             return Response({'error': 'Token is not valid, please request a new one'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        return Response({'uidb64': uidb64, 'token': token}, status=status.HTTP_200_OK)
+        return redirect('http://localhost:8000/auth/reset-password/reset/', permanent=True)
     
     
-    
-    @extend_schema(request=ResetPasswordSerializer, responses={200: None})
-    @action(detail=False, methods=["post"], url_path="password/reset")
+    @extend_schema(request=ResetPasswordSerializer, responses={status.HTTP_205_RESET_CONTENT: None})
+    @action(detail=False, methods=["post"], url_path="reset-password/reset")
     def reset_password(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        result = self.auth_service.reset_password(
-            serializer.validated_data["code"],
-            serializer.validated_data["phone"],
-            serializer.validated_data["new_password"],
-            request,
-        )
-        return Response(200, data=result["data"], headers=result["token"])
-    
-    
-    
-    @extend_schema(request=EmailSerializer, responses={status.HTTP_200_OK: dict})
-    @action(detail=False, methods=['post'], url_path='reset-password/request')
-    def request_reset_password(self, request):
-        data = JSONParser().parse(request)
-        serializer = EmailSerializer(email=data['email'])
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        user = get_object_or_404(self.User, email=data['email'])
-        uidb64 = urlsafe_base64_encode(user.id.to_bytes())
-        token = PasswordResetTokenGenerator().make_token(user)
+        email = serializer.validated_data["email"]
+        new_password = serializer.validated_data["new_password"]
+        message = self.auth_service.reset_password_user(request, email, new_password)
+        return Response(data=message, status=status.HTTP_205_RESET_CONTENT)
 
-        current_site = get_current_site(request).domain
-        relativeLink = reverse(
-            'password_reset_confirmation', kwargs={'uidb64': uidb64, 'token': token}
-        )
-        abs_url = f"http://{current_site}{relativeLink}"
-        mail_data = {'absolute_url': abs_url, 'email': email}
 
-        send_mail('password-reset', email, data=mail_data)
-
-        return Response(
-            {'success': 'We have sent you a mail to reset your password'},
-            status=status.HTTP_200_OK
-        )
-
-    @extend_schema(request=SetNewPasswordSerializer, responses={status.HTTP_205_RESET_CONTENT: None})
-    @action(detail=False, methods=['post'], url_path='reset-password/')
-    def reset_password(self, request):
-        data = JSONParser().parse(request)
-        serializer = SetNewPasswordSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-
-        Response({'message': 'Password reset successful'}, status=status.HTTP_200_OK)
     
     
 class QueryViewSet(viewsets.GenericViewSet):

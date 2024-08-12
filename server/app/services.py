@@ -9,7 +9,7 @@ from django.utils.encoding import force_bytes
 from django.db import connection
 from django.core.files.storage import default_storage
 from django.contrib.auth import authenticate
-
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 from typing import Type
 from kink import inject
@@ -56,7 +56,6 @@ class AuthService:
 
     
     def create_user(self, request, email, password):
-      
         if self.User.objects.filter(email=email).exists():
             return None  
 
@@ -69,17 +68,29 @@ class AuthService:
       
         if user and user.is_active:
             token = auth_token(user)
-            user_serializer = UserSerializer(user)
-            return {'token': token, 'data': user_serializer.data}
-        return None
+            serializer = UserSerializer(user)
+            return {'token': token, 'data': serializer.data}
+        elif user and not user.is_active:
+            return {"verify": "Please verify your email account"}
+        return {"invalid_info": "Invalid user information"}
     
-    def reset_password(self, request):
-        pass
-       
-
-
- 
-
+    def request_reset_password_user(self, request, email):
+        user = get_object_or_404(self.User, email=email)
+        uidb64 = urlsafe_base64_encode(force_bytes(user.id))
+        token = PasswordResetTokenGenerator().make_token(user)
+        link = f'{self.get_base_url(request)}/auth/reset-password/verify/{uidb64}/{token}/'
+        
+        return request.build_absolute_uri(link)
+    
+    def reset_password_user(self, request, email, new_password):
+        user = get_object_or_404(self.User, email=email)
+        user.set_password(new_password)
+        user.save()
+        
+        return {'success': "Password updated successfully"}
+        
+      
+        
 
 client = OpenAI(
     # default max_retries is 2

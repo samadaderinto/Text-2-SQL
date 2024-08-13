@@ -21,8 +21,8 @@ from rest_framework.response import Response
 
 from utils.algorithms import TokenGenerator, auth_token, send_email, send_mail
 
-from .serializers import ProductSerializer, UserSerializer
-from .models import Product, User
+from .serializers import CustomerSerializer, ProductSerializer, UserSerializer
+from .models import Customer, Product, User
 
 
 
@@ -122,14 +122,13 @@ class QueryService:
         with open(wav_file_path, 'rb') as f:
             response = Audio.transcribe(model='whisper-1', file=f)
 
-        os.remove(file_path)
-        os.remove(wav_file_path)
-
         return response['text']
        
 
     def text_to_SQL(self, request, wav_file_path, file_path):
         text = self.audio_to_text(request, wav_file_path, file_path)
+        
+        return text
 
     def runSQLQuery(self, request, wav_file_path, file_path):
         query = self.text_to_SQL(request, wav_file_path, file_path)
@@ -166,23 +165,33 @@ class ProductService:
 
 @inject
 class CustomerService:
-    def __init__(self, User: Type[User]):
+    def __init__(self, User: Type[User], Customer: Type[Customer]):
         self.User = User
+        self.Customer = Customer
 
-    def get_customers(self):
+    def get_customers(self, data):
         pass
 
-    def get_customer(self):
-        pass
+    def get_customer(self, request, email, phone):
+     
+        customer = get_object_or_404(Customer, email=email, phone=phone)
+        
+        return customer
 
-    def ban_customer(self):
-        pass
+    def create_customer(self, request, serializer):
+        serializer.save()
+        return serializer.data
+       
 
-    def create_product(self):
-        pass
-
-    def update_product(self):
-        pass
+    def update_customer(self, data):
+        email = data["email"]
+        phone = data["phone"]
+      
+        customer = get_object_or_404(Customer, email=email, phone=phone)
+        serializer = CustomerSerializer(customer, data=data)
+        serializer.is_valid(raise_exceptions=True)
+        serializer.save()
+        return serializer.data
 
 
 @inject

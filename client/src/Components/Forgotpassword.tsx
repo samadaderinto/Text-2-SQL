@@ -1,9 +1,12 @@
 import { useNavigate } from "react-router-dom"
 import { PiDiamondsFourFill } from "react-icons/pi"
 import { FaArrowLeft } from 'react-icons/fa6'
+import { useState } from "react"
 
 
 export const Forgotpassword = () => {
+  const [pop, setPop] = useState(false)
+  const [email, setEmail] = useState('')
     const Nav = useNavigate()
   return (
     <div className="Forgot_Container">
@@ -14,13 +17,31 @@ export const Forgotpassword = () => {
         <h3>Send your email address to reset password & make new password</h3>
         <label htmlFor="email">Email</label>
             <div className="Input_Container" tabIndex={0}>
-             <input type="text" placeholder="input your registered email" />
+             <input type="text" value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="input your registered email" />
             </div>
-            <div className="Login_Btn" onClick={()=> Nav('/auth/new-password')}>LOGIN</div>
+            <div className="Login_Btn" onClick={()=> 
+              {
+                email!== ''?
+                setPop(true): alert('No Valid Email')}}>Reset Password</div>
         </section>
         <section className="Forgot_Blue">
             <h1>Easiest Way To Manage Your Store</h1>
         </section>
+
+        {
+          pop? (
+            <section className="Forgot_Pop">
+            <div>
+              <h3>Password Reset</h3>
+              <p>We have sent an email to echocart@gmail.com
+                with instructions to reset your password.please
+                check your inbox to get started.
+              </p>
+              <span className="Login_Btn">Go To Mail</span>
+            </div>
+          </section>
+          ): null
+        }
     </div>
   )
 }

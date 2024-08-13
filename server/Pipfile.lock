@@ -253,21 +253,21 @@
         },
         "faker": {
             "hashes": [
-                "sha256:7c10ebdf74aaa0cc4fe6ec6db5a71e8598ec33503524bd4b5f4494785a5670dd",
-                "sha256:97fe1e7e953dd640ca2cd4dfac4db7c4d2432dd1b7a244a3313517707f3b54e9"
+                "sha256:32c78b68d2ba97aaad78422e4035785de2b4bb46b81e428190fc11978da9036c",
+                "sha256:55ed0c4ed7bf16800c64823805f6fbbe6d4823db4b7c0903f6f890b8e4d6c34b"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
-            "version": "==26.3.0"
+            "version": "==27.0.0"
         },
         "gunicorn": {
             "hashes": [
-                "sha256:350679f91b24062c86e386e198a15438d53a7a8207235a78ba1b53df4c4378d9",
-                "sha256:4a0b436239ff76fb33f11c07a16482c521a7e09c1ce3cc293c2330afe01bec63"
+                "sha256:ec400d38950de4dfd418cff8328b2c8faed0edb0d517d3394e457c317908ca4d",
+                "sha256:f014447a0101dc57e294f6c18ca6b40227a4c90e9bdb586042628030cba004ec"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.7'",
-            "version": "==22.0.0"
+            "version": "==23.0.0"
         },
         "h11": {
             "hashes": [
@@ -419,12 +419,12 @@
         },
         "openai": {
             "hashes": [
-                "sha256:2180e9070bd36084328248b3ce668964e8ddd2e9019e1d426e31dc54cc117bb5",
-                "sha256:38068f858f310b4fd4b0ea8734c3efcfde3c15a2978311e1453bd84817231b96"
+                "sha256:2239232bcb7f4bd4ce8e02544b5769618582411cf399816d96686d1b6c1e5c8d",
+                "sha256:b36372124a779381a420a34dd96f762baa748b6bdfaf83a6b9f2745f72ccc1c5"
             ],
             "index": "pypi",
             "markers": "python_full_version >= '3.7.1'",
-            "version": "==1.40.2"
+            "version": "==1.40.6"
         },
         "packaging": {
             "hashes": [

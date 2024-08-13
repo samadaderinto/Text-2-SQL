@@ -16,7 +16,7 @@ def di_setup():
 
     di[AuthService] = AuthService(di[User])
     di[ProductService] = ProductService(di[User], di[Product])
-    di[OrderService] = OrderService(di[User], di[Product])
+    di[OrderService] = OrderService(di[User], di[Order])
     di[CustomerService] = CustomerService(di[User], di[Customer])
     di[QueryService] = QueryService()
     di[SettingsService] = SettingsService(di[User])

@@ -21,8 +21,8 @@ from rest_framework.response import Response
 
 from utils.algorithms import TokenGenerator, auth_token, send_email, send_mail
 
-from .serializers import CustomerSerializer, ProductSerializer, UserSerializer
-from .models import Customer, Product, User
+from .serializers import CustomerSerializer, OrderSerializer, ProductSerializer, UserSerializer
+from .models import Customer, Order, Product, User
 
 
 
@@ -92,17 +92,14 @@ class AuthService:
       
         
 
-client = OpenAI(
-    # default max_retries is 2
-    max_retries=3,
-    api_key=settings.OPENAI_API_KEY
-)
+
 
 
 @inject
 class QueryService:
     def __init__(self):
         self.commands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE']
+        self.client = OpenAI(max_retries=3, api_key=settings.OPENAI_API_KEY)
 
     def sanitize_sql_query(self, query):
         query = query.strip()
@@ -119,8 +116,8 @@ class QueryService:
     def audio_to_text(self, request, wav_file_path, file_path):
         
 
-        with open(wav_file_path, 'rb') as f:
-            response = Audio.transcribe(model='whisper-1', file=f)
+        with open(wav_file_path, 'rb') as audio_file:
+            response = self.client.audio.transcriptions.create(model='whisper-1', file=audio_file)
 
         return response['text']
        
@@ -172,46 +169,52 @@ class CustomerService:
     def get_customers(self, data):
         pass
 
-    def get_customer(self, request, email, phone):
-     
-        customer = get_object_or_404(Customer, email=email, phone=phone)
-        
-        return customer
+    def get_customer(self, email, phone_number):
+        customer = get_object_or_404(self.Customer, email=email, phone_number=phone_number)
+        serializer = CustomerSerializer(customer)
+        return serializer.data
 
-    def create_customer(self, request, serializer):
+    def create_customer(self, serializer):
         serializer.save()
         return serializer.data
        
 
     def update_customer(self, data):
+        
         email = data["email"]
-        phone = data["phone"]
-      
-        customer = get_object_or_404(Customer, email=email, phone=phone)
+        phone_number = data["phone_number"]
+        customer = get_object_or_404(self.Customer, email=email, phone_number=phone_number)
         serializer = CustomerSerializer(customer, data=data)
-        serializer.is_valid(raise_exceptions=True)
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
 
 
 @inject
 class OrderService:
-    def __init__(self, User: Type[User], Product: Type[Product]):
+    def __init__(self, User: Type[User], Order: Type[Order]):
         self.User = User,
-        self.Product = Product
+        self.Order = Order
         
 
-    def create_product(self):
-        pass
+    def get_order(self, id, user_id):
+        order = get_object_or_404(self.Order, id=id, user__id=user_id)
+        serializer = OrderSerializer(order)
+        return serializer.data
 
-    def update_product(self):
-        pass
-
-    def get_customers(self):
-        pass
-
-    def get_customer(self):
-        pass
+    def create_order(self, serializer):
+        serializer.save()
+        return serializer.data
+       
+    def update_order(self, data):
+        
+        id = data["id"]
+        phone_number = data["phone_number"]
+        order = get_object_or_404(self.Order, id=id, user__id=user_id)
+        serializer = CustomerSerializer(order, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
 
 
 @inject

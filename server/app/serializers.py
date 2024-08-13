@@ -118,6 +118,11 @@ class OrderSerializer(TaggitSerializer, serializers.ModelSerializer):
         
 class EmailSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+
+class CustomerSearchSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    phone_number = PhoneNumberField()
         
 
     

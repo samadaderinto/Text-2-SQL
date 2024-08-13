@@ -310,22 +310,17 @@ class OrderViewSet(viewsets.GenericViewSet):
         return Response(status=201, data=customer)
     
     @extend_schema(responses={200: UserSerializer})
+    @action(detail=False, methods=['get'], url_path='get')
     def retrieve_order(self, request):
     
         data = JSONParser().parse(request)
         serializer = OrderSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data["email"]
-        phone_number = serializer.validated_data["phone_number"]
+        email = serializer.validated_data["id"]
+        phone_number = serializer.validated_data["user_id"]
         customer = self.order_service.get_order(request, email= email, phone_number=phone_number)
         
         return Response(status=200, data=customer)
-
-
-    @extend_schema(responses={204: None})
-    def destroy(self, request, pk=None):
-        self.order_service.order_service(request.user, pk)
-        return Response(status=204)
     
     
 class SettingsViewSet(viewsets.GenericViewSet):

@@ -209,7 +209,7 @@ class OrderService:
     def update_order(self, data):
         
         id = data["id"]
-        phone_number = data["phone_number"]
+        user_id = data["user_id"]
         order = get_object_or_404(self.Order, id=id, user__id=user_id)
         serializer = CustomerSerializer(order, data=data)
         serializer.is_valid(raise_exception=True)

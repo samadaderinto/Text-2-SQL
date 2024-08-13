@@ -33,7 +33,7 @@ export const Signup = () => {
     infoArray.confirmpassword = confirmpassword
 
     try {
-      const response = await axios.post('https://your-api-endpoint.com/signup', infoArray)
+      const response = await axios.post('http://localhost:8000/auth/signup/', infoArray)
       console.log('Sign Up successful:', response.data)
       setEmail('')
       setPassword('')

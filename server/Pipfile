@@ -21,11 +21,11 @@ django-taggit = "*"
 djangorestframework-simplejwt = "*"
 nanoid = "*"
 drf-access-policy = "*"
-openai = "*"
 pydub = "*"
 pillow = "*"
 drf-spectacular-sidecar = "*"
 drf-spectacular = {extras = ["sidecar"], version = "*"}
+openai = "*"
 
 [dev-packages]
 

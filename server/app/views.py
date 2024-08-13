@@ -10,7 +10,7 @@ from django.core.files.storage import default_storage
 from rest_framework import viewsets, mixins
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.parsers import JSONParser, MultiPartParser
+from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.decorators import action, parser_classes
 from rest_framework.permissions import AllowAny
@@ -163,31 +163,28 @@ class QueryViewSet(viewsets.GenericViewSet):
         
     permission_classes = (AllowAny,)
     authentication_classes = ([])
+    parser_classes = [MultiPartParser, FormParser]
   
     
     
     @extend_schema(request=FileSerializer, responses={status.HTTP_200_OK: None})
     @action(detail=False, methods=['post'], url_path='upload')
-    @parser_classes(MultiPartParser)
     def audio_to_query(self, request):
+        serializer = FileSerializer(data=request.data)
         
-        if request.FILES.get('audio_file'):
-            audio_file = request.FILES['audio_file']
-            file_path = default_storage.save('temp_audio_file', audio_file)
+        serializer.is_valid(raise_exception=True)
+        audio_file = serializer.validated_data['file']
+        file_path = default_storage.save('temp_audio_file', audio_file)
 
-            try:
+        try:
                 audio = AudioSegment.from_file(file_path)
                 wav_file_path = file_path.rsplit('.', 1)[0] + '.wav'
                 audio.export(wav_file_path, format='wav')
-
                 result = self.query_service.runSQLQuery(request, wav_file_path, file_path)
-            finally:
+        finally:
                 os.remove(file_path)
                 os.remove(wav_file_path)
-                
-            return Response(result, status=status.HTTP_200_OK)
-                
-        return Response({'error': 'Please upload an audio recording'}, status=400)
+        return Response(result, status=status.HTTP_200_OK)
 
     
 class ProductViewSet(viewsets.GenericViewSet):

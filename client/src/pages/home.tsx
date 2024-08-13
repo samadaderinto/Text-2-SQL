@@ -6,6 +6,7 @@ import { RiSpeakLine,  RiShoppingBag3Line } from "react-icons/ri";
 import { FaEarListen } from "react-icons/fa6";
 import {  RxDashboard } from 'react-icons/rx'
 import { MdOutlineShoppingCart } from "react-icons/md";
+import { RxDropdownMenu } from "react-icons/rx";
 import { Outlet } from "react-router-dom";
 import { Dashboard } from "../Components/Dashboard";
 import { Product } from "../Components/Product";
@@ -113,7 +114,7 @@ const Home = () => {
             </>
              : 
             <>
-            <p><IoSearch /></p>
+            <p className="Header_Search_Icon"><IoSearch /></p>
             <input type="text" placeholder="Search anything..." />
             <p onClick={()=> {
               voice?setVoice(false): setVoice(true)}
@@ -129,7 +130,7 @@ const Home = () => {
 
           </div>
         </section>
-        <p onClick={()=> !menu? setMenu(true): setMenu(false)} className="Mobile_Menu">Menu</p>
+        <p onClick={()=> !menu? setMenu(true): setMenu(false)} className="Mobile_Menu"><RxDropdownMenu/></p>
         {
           menu?
           (

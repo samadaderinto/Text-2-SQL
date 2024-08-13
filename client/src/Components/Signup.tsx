@@ -33,7 +33,7 @@ export const Signup = () => {
     infoArray.confirmpassword = confirmpassword
 
     try {
-      const response = await axios.post('https://your-api-endpoint.com/signup', infoArray)
+      const response = await axios.post('http://localhost:8000/auth/signup/', infoArray)
       console.log('Sign Up successful:', response.data)
       setEmail('')
       setPassword('')
@@ -44,7 +44,7 @@ export const Signup = () => {
       // navigate('/some-other-page')
     } catch (error) {
       console.error('Error during sign-up:', error)
-      alert('Sign up failed. Please try again.')
+      alert('Sign in failed. Please try again.')
     }
   }
     

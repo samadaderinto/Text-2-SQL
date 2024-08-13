@@ -5,6 +5,7 @@ import { FaArrowLeft } from 'react-icons/fa6'
 
 export const Forgotpassword = () => {
     const Nav = useNavigate()
+    http://localhost:8000/auth/reset-password/request/
   return (
     <div className="Forgot_Container">
         <section className="Forgot_White">

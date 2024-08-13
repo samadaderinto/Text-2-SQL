@@ -3,6 +3,7 @@ import {  HiOutlineChartSquareBar } from 'react-icons/hi'
 import {  RiShoppingBag4Line } from 'react-icons/ri'
 import { GoContainer } from "react-icons/go";
 import {  IoPeopleOutline  } from 'react-icons/io5'
+import LaptopImg from '../assets/editing-laptop-2048px-231551-2x1-1.webp'
 
 export const Dashboard = () => {
 
@@ -96,7 +97,9 @@ const cardArray: card[] = [
         <article>
           <span className="Dashboard_Order_Item">
             <div className="Dashboard_Order_Item_Description">
-              <span className="Item_Img_Holder"></span>
+              <span className="Item_Img_Holder">
+                <img src={LaptopImg} alt="a laptop" />
+              </span>
               <span>
                <h2>HP EliteBook 830 Touchscreen</h2>
                <h4>Computing</h4>

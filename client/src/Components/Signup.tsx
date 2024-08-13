@@ -11,6 +11,14 @@ export const Signup = () => {
   const [confirm, setConfirm] = useState('password')
   const Nav = useNavigate()
 
+  const SignUp = ()=> {
+    
+  }
+  http://localhost:8000/auth/signup/
+//   {
+//     "email": "k@mail.com",
+//     "password": "deded"
+// }
   
   return (
     <div className="Signup_Container">

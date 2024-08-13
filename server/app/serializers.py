@@ -2,7 +2,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
-from .models import Order, Product, User
+from .models import Customer, Order, Product, User
 
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -34,7 +34,22 @@ class UserSerializer(serializers.ModelSerializer):
             user.make_password(self.password)
             user.save()
             return user
-
+    
+        
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = [
+                
+            "first_name",
+            "last_name",
+            "avatar",
+            "phone_number",
+            "email",
+            "created",
+            "updated"
+        ]
+    
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()

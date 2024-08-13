@@ -59,7 +59,6 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     username = None
-    avatar = models.ImageField(upload_to="images/profile", null=True, blank=True)
     email = models.EmailField(unique=True, db_index=True)
     password = models.CharField(max_length=90)
     is_active = models.BooleanField(default=False)
@@ -164,5 +163,12 @@ class Order(DatesMixin):
               id = generate(size)
         return id
     
+class Customer(DatesMixin):
+    first_name = models.CharField(max_length=225)
+    avatar = models.ImageField(upload_to="images/profile", null=True, blank=True)
+    last_name = models.CharField(max_length=225)
+    email = models.EmailField(unique=True)
+    phone_number = PhoneNumberField()
+    # is_active = models.BooleanField(default=False)
 
 

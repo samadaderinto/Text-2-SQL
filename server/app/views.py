@@ -10,14 +10,14 @@ from django.core.files.storage import default_storage
 from rest_framework import viewsets, mixins
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework.decorators import action
+from rest_framework.decorators import action, parser_classes
 from rest_framework.permissions import AllowAny
 
-from .models import Order, Product, User
+from .models import Customer, Order, Product, User
 from .permissions import ServerAccessPolicy
-from .serializers import EmailSerializer, LogOutSerializer, LoginSerializer, OrderSerializer, ProductSerializer, ResetPasswordSerializer, UserSerializer, SetNewPasswordSerializer, FileSerializer
+from .serializers import CustomerSerializer, EmailSerializer, LogOutSerializer, LoginSerializer, OrderSerializer, ProductSerializer, ResetPasswordSerializer, UserSerializer, FileSerializer
 from .services import AuthService, CustomerService, OrderService, ProductService, QueryService, SettingsService
 
 from rest_access_policy import AccessViewSetMixin
@@ -40,7 +40,8 @@ class AuthViewSet(viewsets.GenericViewSet):
         self.User = User
         
     
-    # permission_classes = (ServerAccessPolicy,)
+    # permission_classes = (AllowAny,)
+
     permission_classes = (AllowAny,)
     authentication_classes = ([])
     serializer_class = UserSerializer
@@ -158,28 +159,38 @@ class QueryViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.query_service: QueryService = di[QueryService]
+        
+        
+    permission_classes = (AllowAny,)
+    authentication_classes = ([])
+  
     
     
     @extend_schema(request=FileSerializer, responses={status.HTTP_200_OK: None})
-    @action(detail=False, methods=['post'], url_path='upload/')
+    @action(detail=False, methods=['post'], url_path='upload')
+    @parser_classes(MultiPartParser)
     def audio_to_query(self, request):
+        
         if request.FILES.get('audio_file'):
             audio_file = request.FILES['audio_file']
             file_path = default_storage.save('temp_audio_file', audio_file)
 
-            audio = AudioSegment.from_file(file_path)
-            wav_file_path = file_path.rsplit('.', 1)[0] + '.wav'
-            audio.export(wav_file_path, format='wav')
-            
-            return self.query_service.runSQLQuery(request, wav_file_path, file_path)
+            try:
+                audio = AudioSegment.from_file(file_path)
+                wav_file_path = file_path.rsplit('.', 1)[0] + '.wav'
+                audio.export(wav_file_path, format='wav')
+
+                result = self.query_service.runSQLQuery(request, wav_file_path, file_path)
+            finally:
+                os.remove(file_path)
+                os.remove(wav_file_path)
                 
-        return Response({'error': 'Invalid request'}, status=400)
+            return Response(result, status=status.HTTP_200_OK)
+                
+        return Response({'error': 'Please upload an audio recording'}, status=400)
 
     
-class ProductViewSet(viewsets.GenericViewSet, 
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin):
+class ProductViewSet(viewsets.GenericViewSet):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -187,7 +198,8 @@ class ProductViewSet(viewsets.GenericViewSet,
         
         
     # pagination_class = Paginator
-    permission_classes = (ServerAccessPolicy,)
+    permission_classes = (AllowAny,)
+    authentication_classes = ([])
     serializer_class = ProductSerializer
 
     def get_queryset(self):
@@ -220,10 +232,7 @@ class ProductViewSet(viewsets.GenericViewSet,
         return Response(status=204)
 
 
-class CustomerViewSet(viewsets.GenericViewSet, 
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin):
+class CustomerViewSet(viewsets.GenericViewSet):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -231,43 +240,45 @@ class CustomerViewSet(viewsets.GenericViewSet,
         
         
     # pagination_class = Paginator
-    permission_classes = (ServerAccessPolicy,)
-    serializer_class = UserSerializer
+    permission_classes = (AllowAny,)
+    authentication_classes = ([])
+  
 
-    def get_queryset(self):
-        return User.objects.filter(user=self.request.user)
     
-    @extend_schema(request=UserSerializer, responses={200: UserSerializer})
-    def create(self, request):
-        serializer = UserSerializer(data=request.data, context={'request': request})
+    @extend_schema(request=CustomerSerializer, responses={200: CustomerSerializer})
+    @action(detail=False, methods=['post'], url_path='create')
+    def create_customers(self, request):
+        data = JSONParser().parse(request)
+        serializer = CustomerSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        budget = self.customer_service.customer_service(request.user, **serializer.validated_data) 
-        return Response(status=201, data=UserSerializer(budget).data)
+        customer = self.customer_service.create_customer(request, serializer) 
+        return Response(status=201, data=customer)
     
-    @extend_schema(request=UserSerializer, responses={200: UserSerializer})
-    def update(self, request,  pk=None):
-        serializer = UserSerializer(data=request.data)
+    @extend_schema(request=CustomerSerializer, responses={200: CustomerSerializer})
+    @action(detail=False, methods=['put'], url_path='update')
+    def update_customers(self, request,  pk=None):
+        serializer = CustomerSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        budget = self.customer_service.customer_service(request.user, pk, **serializer.validated_data)
-        return Response(status=201, data=UserSerializer(budget).data)
+        customer = self.customer_service.update_customer(request, **serializer.validated_data)
+        return Response(status=201, data=customer)
     
-    
-    @extend_schema(responses={200: UserSerializer})
-    def retrieve(self, request, pk=None):
-        budget = self.get_object()
-        serializer = UserSerializer(budget)
+    @extend_schema(responses={200: CustomerSerializer})
+    @action(detail=False, methods=['get'], url_path='get')
+    def retrieve_customer(self, request, pk=None):
+        customer = self.customer_service.get_customer(request, email=serializer.validated_data["email"], phone=serializer.validated_data["phone"])
+        serializer = CustomerSerializer(customer)
         return Response(status=200, data=serializer.data)
 
     @extend_schema(responses={204: None})
-    def destroy(self, request, pk=None):
-        self.customer_service.customer_service(request.user, pk)
-        return Response(status=204)
+    @action(detail=False, methods=['post'], url_path='ban')
+    def ban(self, request):
+        data = JSONParser().parse(request)
+        serializer = CustomerSerializer(data=data)
+        user = self.customer_service.ban_customer(request.user)
+        
 
 
-class OrderViewSet(viewsets.GenericViewSet,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.DestroyModelMixin):
+class OrderViewSet(viewsets.GenericViewSet):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -275,7 +286,8 @@ class OrderViewSet(viewsets.GenericViewSet,
         
         
     # pagination_class = Paginator
-    permission_classes = (ServerAccessPolicy,)
+    permission_classes = (AllowAny,)
+    authentication_classes = ([])
     serializer_class = OrderSerializer
 
     def get_queryset(self):
@@ -285,21 +297,21 @@ class OrderViewSet(viewsets.GenericViewSet,
     def create(self, request):
         serializer = OrderSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        budget = self.order_service.order_service(request.user, **serializer.validated_data) 
-        return Response(status=201, data=UserSerializer(budget).data)
+        order = self.order_service.order_service(request.user, **serializer.validated_data) 
+        return Response(status=201, data=UserSerializer(order).data)
     
     @extend_schema(request=OrderSerializer, responses={200: OrderSerializer})
     def update(self, request,  pk=None):
         serializer = OrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        budget = self.order_service.order_service(request.user, pk, **serializer.validated_data)
-        return Response(status=201, data=OrderSerializer(budget).data)
+        order = self.order_service.order_service(request.user, pk, **serializer.validated_data)
+        return Response(status=201, data=OrderSerializer(order).data)
     
     
     @extend_schema(responses={200: UserSerializer})
     def retrieve(self, request, pk=None):
-        budget = self.get_object()
-        serializer = OrderSerializer(budget)
+        order = self.get_object()
+        serializer = OrderSerializer(order)
         return Response(status=200, data=serializer.data)
 
     @extend_schema(responses={204: None})

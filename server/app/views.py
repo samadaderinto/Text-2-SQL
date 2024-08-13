@@ -17,7 +17,7 @@ from rest_framework.permissions import AllowAny
 
 from .models import Customer, Order, Product, User
 from .permissions import ServerAccessPolicy
-from .serializers import CustomerSerializer, EmailSerializer, LogOutSerializer, LoginSerializer, OrderSerializer, ProductSerializer, ResetPasswordSerializer, UserSerializer, FileSerializer
+from .serializers import CustomerSerializer, CustomerSearchSerializer,  EmailSerializer, LogOutSerializer, LoginSerializer, OrderSerializer, ProductSerializer, ResetPasswordSerializer, UserSerializer, FileSerializer
 from .services import AuthService, CustomerService, OrderService, ProductService, QueryService, SettingsService
 
 from rest_access_policy import AccessViewSetMixin
@@ -171,7 +171,7 @@ class QueryViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['post'], url_path='upload')
     def audio_to_query(self, request):
         serializer = FileSerializer(data=request.data)
-        
+
         serializer.is_valid(raise_exception=True)
         audio_file = serializer.validated_data['file']
         file_path = default_storage.save('temp_audio_file', audio_file)
@@ -253,18 +253,22 @@ class CustomerViewSet(viewsets.GenericViewSet):
     
     @extend_schema(request=CustomerSerializer, responses={200: CustomerSerializer})
     @action(detail=False, methods=['put'], url_path='update')
-    def update_customers(self, request,  pk=None):
-        serializer = CustomerSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        customer = self.customer_service.update_customer(request, **serializer.validated_data)
+    def update_customers(self, request):
+        data = JSONParser().parse(request)
+        customer = self.customer_service.update_customer(data)
         return Response(status=201, data=customer)
     
     @extend_schema(responses={200: CustomerSerializer})
     @action(detail=False, methods=['get'], url_path='get')
     def retrieve_customer(self, request, pk=None):
-        customer = self.customer_service.get_customer(request, email=serializer.validated_data["email"], phone=serializer.validated_data["phone"])
-        serializer = CustomerSerializer(customer)
-        return Response(status=200, data=serializer.data)
+        data = JSONParser().parse(request)
+        serializer = CustomerSearchSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+        phone_number = serializer.validated_data["phone_number"]
+        customer = self.customer_service.get_customer(request, email= email, phone_number=phone_number)
+        
+        return Response(status=200, data=customer)
 
     @extend_schema(responses={204: None})
     @action(detail=False, methods=['post'], url_path='ban')
@@ -287,29 +291,36 @@ class OrderViewSet(viewsets.GenericViewSet):
     authentication_classes = ([])
     serializer_class = OrderSerializer
 
-    def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
-    
-    @extend_schema(request=OrderSerializer, responses={200: UserSerializer})
-    def create(self, request):
-        serializer = OrderSerializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        order = self.order_service.order_service(request.user, **serializer.validated_data) 
-        return Response(status=201, data=UserSerializer(order).data)
     
     @extend_schema(request=OrderSerializer, responses={200: OrderSerializer})
-    def update(self, request,  pk=None):
-        serializer = OrderSerializer(data=request.data)
+    @action(detail=False, methods=['post'], url_path='create')
+    def create_order(self, request):
+        data = JSONParser().parse(request)
+        serializer = OrderSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        order = self.order_service.order_service(request.user, pk, **serializer.validated_data)
-        return Response(status=201, data=OrderSerializer(order).data)
+        order = self.order_service.create_order(request, serializer) 
+        return Response(status=201, data=order)
+
     
+    @extend_schema(request=OrderSerializer, responses={200: OrderSerializer})
+    @action(detail=False, methods=['put'], url_path='update')
+    def update_order(self, request):
+        data = JSONParser().parse(request)
+        customer = self.order_service.update_order(data)
+        return Response(status=201, data=customer)
     
     @extend_schema(responses={200: UserSerializer})
-    def retrieve(self, request, pk=None):
-        order = self.get_object()
-        serializer = OrderSerializer(order)
-        return Response(status=200, data=serializer.data)
+    def retrieve_order(self, request):
+    
+        data = JSONParser().parse(request)
+        serializer = OrderSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+        phone_number = serializer.validated_data["phone_number"]
+        customer = self.order_service.get_order(request, email= email, phone_number=phone_number)
+        
+        return Response(status=200, data=customer)
+
 
     @extend_schema(responses={204: None})
     def destroy(self, request, pk=None):

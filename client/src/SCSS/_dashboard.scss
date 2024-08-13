@@ -238,3 +238,119 @@
         background-color: white;
     }
 }
+
+@media(max-width:1024px) {
+    .Dashboard_container {
+        height: max-content;
+        .Dashboard_Card_Container {
+            height: 100vh;
+            flex-wrap: wrap;
+            article {
+                width: 30%;
+                height: 37%;
+
+                span {
+                    div {
+                        height: 70%;
+                    }
+                }
+            }
+        }
+
+        .Graph_Container {
+            height: 280vh;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-bottom: 2%;
+
+            .Main_Graph_Container {
+                width: 100%;
+                height: 43%;
+                margin-bottom: 5%;
+            }
+
+            .Side_Graph_Container {
+                height: 34%;
+                width: 40%;
+            }
+        }
+    }
+    
+}
+
+@media(max-width:884px) {
+    .Dashboard_container {
+        height: max-content;
+        .Dashboard_Card_Container {
+            height: 100vh;
+            flex-wrap: wrap;
+            article {
+                width: 30%;
+                height: 48%;
+
+                span {
+                    div {
+                        height: 85%;
+                    }
+                }
+            }
+        }
+
+        .Graph_Container {
+            height: 280vh;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-bottom: 2%;
+
+            .Main_Graph_Container {
+                width: 100%;
+                height: 43%;
+                margin-bottom: 5%;
+            }
+
+            .Side_Graph_Container {
+                height: 34%;
+                width: 40%;
+            }
+        }
+    }
+    
+}
+
+@media(max-width:680px) {
+    .Dashboard_container {
+        height: max-content;
+        .Dashboard_Card_Container {
+            height: 100vh;
+            flex-wrap: wrap;
+            article {
+                width: 48%;
+                height: 46%;
+
+                span {
+                    div {
+                        height: 75%;
+                    }
+                }
+            }
+        }
+
+        .Graph_Container {
+            height: 280vh;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-bottom: 2%;
+
+            .Main_Graph_Container {
+                width: 100%;
+                height: 43%;
+                margin-bottom: 5%;
+            }
+
+            .Side_Graph_Container {
+                height: 34%;
+                width: 40%;
+            }
+        }
+    }
+}

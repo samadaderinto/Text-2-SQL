@@ -39,27 +39,29 @@ export const Newcustomer = () => {
            <input type="text" id="customer_phone" placeholder="input customer phone number" />
               <div>
                 <span className="Cancel_Btn">Cancel</span>
-                <span className="Add_Btn">Add Product</span>
+                <span className="Add_Btn">Add Customer</span>
               </div>
           </form>
         </div>
         <div className="Product_Media_Container">
           <h3>Customer Image</h3>
+          <label htmlFor="fileInput">
+
           <section>
          
             {
               img === null ? 
               <>
-               <label htmlFor="fileInput">
           <input type="file" onChange={Upload} style={{display: "none"}}  id="fileInput" />
               <LuImagePlus/>
               <p>click or drag image</p>
-              </label>
               </>
               : <img src={img} alt="" />
             }
             
           </section>
+          </label>
+
          <span>
            <label htmlFor="Category">Date Added</label>
             <select name="Select Date Added" id="Category">
@@ -69,8 +71,8 @@ export const Newcustomer = () => {
               <option value=""></option>
               <option value=""></option>
             </select>
-           <label htmlFor="quantity">Product Quantity</label>
-              <input type="text" placeholder="Input Product Quantity"/>
+           <label htmlFor="quantity"></label>
+              <input type="text" placeholder=""/>
           </span>
         </div>
         

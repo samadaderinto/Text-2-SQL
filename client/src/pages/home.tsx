@@ -124,7 +124,6 @@ const Home = () => {
   } else {
     stopRecording()
   }
-  // setActive('Dashboard')
 
   return (
     <div className="Home_Container">

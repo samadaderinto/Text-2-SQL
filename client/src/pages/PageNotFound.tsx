@@ -1,7 +1,7 @@
 const PageNotFound = () => {
   return (
     <div className="Not_Found_Container">
-      padf
+      page not found
     </div>
   )
 }

@@ -1,10 +1,10 @@
-import  { ReactElement,  useState, useRef } from "react";
+import { ReactElement, useState, useRef } from "react";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { IoSearch, IoPeopleOutline, IoSettingsOutline } from "react-icons/io5";
 import { PiDiamondsFourFill } from "react-icons/pi";
-import { RiSpeakLine,  RiShoppingBag3Line } from "react-icons/ri";
+import { RiSpeakLine, RiShoppingBag3Line } from "react-icons/ri";
 import { FaEarListen } from "react-icons/fa6";
-import {  RxDashboard } from 'react-icons/rx'
+import { RxDashboard } from 'react-icons/rx'
 import { RiLogoutBoxLine } from "react-icons/ri";
 import { MdOutlineShoppingCart } from "react-icons/md";
 import { RxDropdownMenu } from "react-icons/rx";
@@ -16,11 +16,12 @@ import { Customers } from "../Components/Customers";
 import { Settings } from "../Components/Settings";
 import PageNotFound from "./PageNotFound";
 import axios from "axios";
+import { API_BASE_URL } from "../utils/api"
 // import { Logout } from "../Components/Logout";
 
 const Home = () => {
 
-  const [activeIndex, setActiveIndex] = useState< number>(0)
+  const [activeIndex, setActiveIndex] = useState<number>(0)
   const [active, setActive] = useState('Dashboard')
   const [menu, setMenu] = useState(false);
   const [voice, setVoice] = useState(false)
@@ -30,22 +31,23 @@ const Home = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  const Storedtoken  = localStorage.getItem('token')
+  const Logout = async () => {
 
 
-  const Logout = async()=> {
-
-    
-    const token = Storedtoken? JSON.parse(Storedtoken): null
+    const refreshToken = localStorage.get("refreshToken", null)
 
     try {
 
-      const response = await axios.post('http://localhost:8000/auth/logout/', token)
+      const response = await axios.post(`${API_BASE_URL}/auth/logout/`, {
+        headers: {
+          'Authorization': `Bearer ${refreshToken}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      localStorage.removeItem('refreshToken');
       alert('logout successful')
-      console.log(response.data)
     } catch (error) {
       alert('logout failed')
-      console.log(error)
     }
   }
   const startRecording = async () => {
@@ -92,27 +94,27 @@ const Home = () => {
 
   const sideBarArrayList: item[] = [
     {
-      icon: <RxDashboard/>,
+      icon: <RxDashboard />,
       itemName: 'Dashboard'
     },
     {
-      icon: <RiShoppingBag3Line/>,
+      icon: <RiShoppingBag3Line />,
       itemName: 'Products'
     },
     {
-      icon: <MdOutlineShoppingCart/>,
+      icon: <MdOutlineShoppingCart />,
       itemName: 'Orders'
     },
     {
-      icon:<IoPeopleOutline/>,
+      icon: <IoPeopleOutline />,
       itemName: 'Customers'
     },
     {
-      icon: <IoSettingsOutline/>,
+      icon: <IoSettingsOutline />,
       itemName: 'Settings'
     },
     {
-      icon: <RiLogoutBoxLine/>,
+      icon: <RiLogoutBoxLine />,
       itemName: 'Logout'
     }
   ]
@@ -132,21 +134,22 @@ const Home = () => {
 
 
           {
-            listen? 
-            <>
-            <span>Listening...</span>
-            {/* <span onClick={()=> listen? setListen(false): setListen(true)}>stop</span> */}
-            <p><FaEarListen/></p>
-            </>
-             : 
-            <>
-            <p className="Header_Search_Icon"><IoSearch /></p>
-            <input type="text" placeholder="Search anything..." />
-            <p onClick={()=> {
-              voice?setVoice(false): setVoice(true)}
-  
-            } ><RiSpeakLine /></p>
-            </>
+            listen ?
+              <>
+                <span>Listening...</span>
+                {/* <span onClick={()=> listen? setListen(false): setListen(true)}>stop</span> */}
+                <p><FaEarListen /></p>
+              </>
+              :
+              <>
+                <p className="Header_Search_Icon"><IoSearch /></p>
+                <input type="text" placeholder="Search anything..." />
+                <p onClick={() => {
+                  voice ? setVoice(false) : setVoice(true)
+                }
+
+                } ><RiSpeakLine /></p>
+              </>
           }
         </section>
         <section className="RightHand_Container">
@@ -156,99 +159,101 @@ const Home = () => {
 
           </div>
         </section>
-        <p onClick={()=> !menu? setMenu(true): setMenu(false)} className="Mobile_Menu"><RxDropdownMenu/></p>
+        <p onClick={() => !menu ? setMenu(true) : setMenu(false)} className="Mobile_Menu"><RxDropdownMenu /></p>
         {
-          menu?
-          (
-            <article className="Mobile_Menu_Nav">
-        
-
-{
-
-  sideBarArrayList.map((obj, index)=> (
-    <span 
-    key={index}
-    onClick={()=> { 
-      setActive(obj.itemName)              
-      setActiveIndex(index)
-    setMenu(false)
-    }} 
-      
-    className={activeIndex === index? 'Active_List': ''}>
-    <p className="List_icon">{obj.icon}</p>
-    <p>{obj.itemName}</p>
-  </span>
-  ))
-
-  
-}
+          menu ?
+            (
+              <article className="Mobile_Menu_Nav">
 
 
-        </article>
-          ): null
+                {
+
+                  sideBarArrayList.map((obj, index) => (
+                    <span
+                      key={index}
+                      onClick={() => {
+                        setActive(obj.itemName)
+                        setActiveIndex(index)
+                        setMenu(false)
+                      }}
+
+                      className={activeIndex === index ? 'Active_List' : ''}>
+                      <p className="List_icon">{obj.icon}</p>
+                      <p>{obj.itemName}</p>
+                    </span>
+                  ))
+
+
+                }
+
+
+              </article>
+            ) : null
         }
       </div>
 
       {
-        voice? <span onClick={()=>{
+        voice ? <span onClick={() => {
           setVoice(false)
           setListen(true)
         }} className="Search_By_Voice">Search By Voice</span> : null
       }
 
       {
-        listen? <span onClick={()=>{
+        listen ? <span onClick={() => {
           // setVoice(true)
           setListen(false)
         }} className="Search_By_Voice Stop_Voice">Stop recording</span> : null
       }
 
 
-     <div className="Main_Container">
-     <nav className="Home_Sidebar">
-        <div className="Sidebar_Container">
+      <div className="Main_Container">
+        <nav className="Home_Sidebar">
+          <div className="Sidebar_Container">
 
-          {
-            sideBarArrayList.map((obj, index)=> (
-              <span 
-              key={index}
-              onClick={()=> { 
-                setActive(obj.itemName)              
-                setActiveIndex(index)}} 
-              className={activeIndex === index? 'Active_List': ''}>
-              <p className="List_icon">{obj.icon}</p>
-              <p>{obj.itemName}</p>
-            </span>
-            ))
+            {
+              sideBarArrayList.map((obj, index) => (
+                <span
+                  key={index}
+                  onClick={() => {
+                    setActive(obj.itemName)
+                    setActiveIndex(index)
+                  }}
+                  className={activeIndex === index ? 'Active_List' : ''}>
+                  <p className="List_icon">{obj.icon}</p>
+                  <p>{obj.itemName}</p>
+                </span>
+              ))
 
-            
-          }
 
-        </div>
-      </nav>
-      <section className="Home_Content__Container">
-        {
-          active === 'Dashboard'? <Dashboard/>:
-          active === 'Products'? <Product/>:
-          active === 'Orders'? <Orders/>:
-          active === 'Customers'? <Customers/>:
-          active === 'Settings'? <Settings />: 
-          active === 'Logout'?<div className="Logout_Container">
-          <article>
-          <h1>Log Out?</h1>
-          <div>
-              <span onClick={Logout} className="Blue_btn">Yes</span>
-              <span onClick={()=> {
-                setActiveIndex(0)
-                setActive('Dashboard')}} className="White_btn">No</span>
+            }
+
           </div>
-          </article>
-      </div>:
-          active === '*'? <PageNotFound/>: null
+        </nav>
+        <section className="Home_Content__Container">
+          {
+            active === 'Dashboard' ? <Dashboard /> :
+              active === 'Products' ? <Product /> :
+                active === 'Orders' ? <Orders /> :
+                  active === 'Customers' ? <Customers /> :
+                    active === 'Settings' ? <Settings /> :
+                      active === 'Logout' ? <div className="Logout_Container">
+                        <article>
+                          <h1>Log Out?</h1>
+                          <div>
+                            <span onClick={Logout} className="Blue_btn">Yes</span>
+                            <span onClick={() => {
+                              setActiveIndex(0)
+                              setActive('Dashboard')
+                            }} className="White_btn">No</span>
+                          </div>
+                        </article>
+                      </div> :
+                        active === '*' ? <PageNotFound /> : null
 
-        }
-      </section>
-     </div>
+          }
+        </section>
+      </div>
       <Outlet />
 
 

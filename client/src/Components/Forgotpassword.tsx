@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom"
 import { PiDiamondsFourFill } from "react-icons/pi"
 import { FaArrowLeft } from 'react-icons/fa6'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import axios from "axios"
 import { API_BASE_URL } from "../utils/api"
 

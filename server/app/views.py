@@ -125,10 +125,7 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         except Exception as e:
             # Handle exceptions and return an appropriate response
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None}
@@ -218,7 +215,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             )
 
         return redirect(
-            'http://localhost:4173/auth/reset-password/', permanent=True
+            f'http://localhost:4173/auth/reset-password/{user.email}', permanent=True
         )
 
     @extend_schema(

@@ -11,6 +11,10 @@ export const Forgotpassword = () => {
   const [email, setEmail] = useState('')
     const Nav = useNavigate()
 
+useEffect(() => {
+  sessionStorage.setItem('email', JSON.stringify(email))
+
+}, [email])
 
     const Reset = async()=> {
      

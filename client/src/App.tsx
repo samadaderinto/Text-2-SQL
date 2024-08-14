@@ -40,7 +40,7 @@ function App() {
           <Route path='auth/signup' element={<Signup />} />
           <Route path='auth/signin' element={<SignIn />} />
           <Route path='auth/forgot-password' element={<Forgotpassword />} />
-          <Route path='auth/reset-password' element={<Newpassword />} />
+          <Route path='auth/reset-password/:mail' element={<Newpassword />} />
 
 
           <Route path="*" element={<PageNotFound />} />

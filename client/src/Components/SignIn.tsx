@@ -12,7 +12,7 @@ export const SignIn = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-
+  
   const infoArray = {
     email: '',
     password: '',
@@ -27,16 +27,22 @@ export const SignIn = () => {
     infoArray.email = email
     infoArray.password = password
 
+    
+
 
     const TokenArray = []
     try {
       const response = await axios.post('http://localhost:8000/auth/login/', infoArray)
+
       console.log('Sign Up successful:', response.data)
       const refreshToken = response.headers['getAuthorization']
       TokenArray.push(refreshToken)
       localStorage.setItem('token', JSON.stringify(refreshToken))
+
+      alert('Sign Up successful')
       setEmail('')
       setPassword('')
+      console.log(response.data)
       
       console.log(infoArray)
 

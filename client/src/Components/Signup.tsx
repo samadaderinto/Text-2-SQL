@@ -44,7 +44,7 @@ export const Signup = () => {
       // navigate('/some-other-page')
     } catch (error) {
       console.error('Error during sign-up:', error)
-      alert('Sign up failed. Please try again.')
+      alert('Sign in failed. Please try again.')
     }
   }
     

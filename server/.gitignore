@@ -1,5 +1,6 @@
 pm.json
 pmkeypair.pem
+data
 .env
 .venv/
 __pycache__/

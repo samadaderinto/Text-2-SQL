@@ -16,7 +16,8 @@ import { Product } from './Components/Product'
 import { Settings } from './Components/Settings'
 import { Newproduct } from './Components/Newproduct'
 
-
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 
@@ -44,6 +45,8 @@ function App() {
 
           <Route path="*" element={<PageNotFound />}></Route>
         </Routes>
+
+
       </BrowserRouter>
     </>
   )

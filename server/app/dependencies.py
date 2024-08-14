@@ -1,5 +1,5 @@
 from kink import di
-from .services import AuthService, CustomerService, OrderService, ProductService, QueryService, SettingsService
+from .services import AuthService, CustomerService, OrderService, ProductService, QueryService, SettingsService, StoreService
 from .models import User, Store, Product, Cart, CartItem, Order, Customer
 
 
@@ -13,10 +13,12 @@ def di_setup():
     di[CartItem] = CartItem
     di[Order] = Order
     di[Customer] = Customer
+    di[Store] = Store
 
     di[AuthService] = AuthService(di[User])
     di[ProductService] = ProductService(di[User], di[Product])
     di[OrderService] = OrderService(di[User], di[Order])
     di[CustomerService] = CustomerService(di[User], di[Customer])
     di[QueryService] = QueryService()
+    di[StoreService] = StoreService(di[User], di[Store])
     di[SettingsService] = SettingsService(di[User])

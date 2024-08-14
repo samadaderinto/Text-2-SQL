@@ -49,8 +49,12 @@ DEBUG = os.getenv("DEBUG") == "true"
 
 
 ALLOWED_HOSTS = ["*"]
-CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_HEADERS = ["*"]
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:4173',
+
+]
+
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 SILENCED_SYSTEM_CHECKS = ["security.W019"]

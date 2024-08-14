@@ -91,6 +91,8 @@ export const Signup = () => {
           },
         });
 
+        console.log(response.data)
+
         setFormState({
           ...formState,
           email: '',

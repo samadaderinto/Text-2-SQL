@@ -15,7 +15,7 @@ import { Orders } from "../Components/Orders";
 import { Customers } from "../Components/Customers";
 import { Settings } from "../Components/Settings";
 import PageNotFound from "./PageNotFound";
-import axios from "axios";
+import axios, {AxiosResponse} from "axios";
 import { API_BASE_URL } from "../utils/api"
 // import { Logout } from "../Components/Logout";
 
@@ -34,21 +34,24 @@ const Home = () => {
   const Logout = async () => {
 
 
-    const refreshToken = localStorage.get("refreshToken", null)
+    const refreshToken = localStorage.getItem("refreshToken")
 
     try {
 
-      const response = await axios.post(`${API_BASE_URL}/auth/logout/`, {
+      const response: AxiosResponse = await axios.post(`${API_BASE_URL}/auth/logout/`, {
         headers: {
           'Authorization': `Bearer ${refreshToken}`,
           'Content-Type': 'application/json'
         }
+
       })
+    console.log(response.headers)
       localStorage.removeItem('refreshToken');
       alert('logout successful')
     } catch (error) {
       alert('logout failed')
     }
+
   }
   const startRecording = async () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {

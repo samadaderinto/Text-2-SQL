@@ -44,16 +44,17 @@ export const SignIn = () => {
       });
       
      
-      const { access, refresh } = response.data.token;
+      const { data, token } = response.data;
+      console.log(response.data);
 
-      localStorage.setItem('refreshToken', refresh);
-      localStorage.setItem('accessToken', access);
+      localStorage.setItem('refreshToken', token.refresh);
+      localStorage.setItem('accessToken', token.access);
 
 
       setFormState({
         show: false,
         pass: 'password',
-        email: '',
+        email: data.email,
         password: ''
       });
 

@@ -199,7 +199,6 @@ export const Newproduct = () => {
               <option value="computing">computing</option>
               <option value="lingerie">lingerie</option>
               <option value="books">books</option>
-
             </select>
 
             <label htmlFor="quantity">Product Quantity</label>

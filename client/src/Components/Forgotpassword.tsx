@@ -11,6 +11,10 @@ export const Forgotpassword = () => {
   const [email, setEmail] = useState('')
     const Nav = useNavigate()
 
+useEffect(() => {
+  sessionStorage.setItem('email', JSON.stringify(email))
+
+}, [email])
 
     const Reset = async()=> {
      
@@ -56,11 +60,11 @@ export const Forgotpassword = () => {
             <section className="Forgot_Pop">
             <div>
               <h3>Password Reset</h3>
-              <p>We have sent an email to echocart@gmail.com
+              <p>We have sent an email to <h4>{email}</h4>
                 with instructions to reset your password.please
                 check your inbox to get started.
               </p>
-              <span className="Login_Btn">Go To Mail</span>
+              <span onClick={()=> setPop(false)} className="Login_Btn">Go Back</span>
             </div>
           </section>
           ): null

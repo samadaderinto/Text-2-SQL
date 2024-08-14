@@ -5,6 +5,10 @@ import axios from "axios";
 import { API_BASE_URL } from "../utils/api";
 
 export const Newpassword = () => {
+  const currentUrl = window.location.href;
+  const parts = currentUrl.split('/'); 
+  const savedEmail = parts[parts.length - 1];
+
   const [formState, setFormState] = useState({
     showPassword: false,
     showConfirm: false,
@@ -12,7 +16,7 @@ export const Newpassword = () => {
     confirmType: 'password',
     passwordValue: '',
     confirmPasswordValue: '',
-    email: '',
+    email: savedEmail,
     strength: '',
     class1: '',
     class2: '',
@@ -21,7 +25,9 @@ export const Newpassword = () => {
     check1: false,
     check2: false,
     check3: false
+   
   });
+  const [pop, setPop] = useState(false)
 
   const checkStrength = (password: string) => {
     const specialCharsRegex = /[!@#$%&*]/;
@@ -96,6 +102,7 @@ export const Newpassword = () => {
         <span><PiDiamondsFourFill /> EchoCart</span>
         <h1>Create New Password</h1>
         <label htmlFor="email">Email</label>
+        <div className="Input_Container">
         <input
           type="email"
           name="email"
@@ -104,6 +111,7 @@ export const Newpassword = () => {
           id="email"
           placeholder="input email"
         />
+        </div>
         <label htmlFor="passwordValue">Password</label>
         <div className="Input_Container" tabIndex={0}>
           <input
@@ -145,6 +153,19 @@ export const Newpassword = () => {
       <section className="Newpassword_Blue">
         <h1>Easiest Way To Manage Your Store</h1>
       </section>
+      {
+        pop?(
+        <section className="Forgot_Pop">
+           <div>
+              <h3>Password Reset</h3>
+              <p>You have successfully changed your password. 
+               
+              </p>
+              <span onClick={()=> setPop(false)} className="Login_Btn">Go To Login</span>
+            </div>
+        </section>
+        ): null
+      }
     </div>
   );
 };

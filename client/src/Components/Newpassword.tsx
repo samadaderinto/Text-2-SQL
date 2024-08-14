@@ -1,6 +1,7 @@
 import { PiDiamondsFourFill } from "react-icons/pi"
 import { useState } from "react"
 import { IoEye, IoEyeOff } from 'react-icons/io5'
+import axios from "axios"
 
 // import { useNavigate } from "react-router-dom"
 export const Newpassword = () => {
@@ -12,6 +13,7 @@ export const Newpassword = () => {
   const [confirm, setConfirm ] = useState('password')
   const [Show2, setShow2 ] = useState(false)
   const [value, setValue] = useState('')
+  const [email, setEmail] = useState('')
   const [class1, setClass1] = useState('')
   const [class2, setClass2] = useState('')
   const [class3, setClass3] = useState('')
@@ -67,12 +69,32 @@ if(class3 === '') {
 }
 }
 
+const infoArray = {
+  email: email,
+  password: value
+}
+
+const Reset = async() =>{
+  try {
+  const Response = await axios.post('http://localhost:8000/auth/reset-password/reset/', infoArray)
+console.log(Response.data)
+    
+  } catch (error) {
+    console.log(error)
+    
+  }
+}
+
 
   return (
     <div className="Newpassword_Container">
         <section className="Newpassword_White">
         <span><PiDiamondsFourFill/> EchoCart</span>
         <h1>Create New Password</h1>
+        <label htmlFor="email">Email</label>
+        <input type="email" name="" value={email} onChange={
+          (e)=>setEmail(e.target.value)}
+           id="email" placeholder="input email"/>
         <label htmlFor="password">password</label>
         <div className="Input_Container" tabIndex={0}>
              <input type={pass} onChange={(e)=>{
@@ -120,7 +142,7 @@ if(class3 === '') {
             
             </div>
 
-            <div className="Login_Btn">LOGIN</div>
+            <div onClick={Reset} className="Login_Btn">Create Password</div>
 
 
         </section>

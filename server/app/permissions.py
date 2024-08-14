@@ -11,25 +11,37 @@ from .models import Store, User
 class ServerAccessPolicy(AccessPolicy):
     statements = [
         {
-            "action": [
-             "AuthViewSet",
-             'ProductViewSet',
-             'OrderViewSet'
-                
-            ],
+            "action": ["signup", "login", "verify_activation", "request_reset_password", "verify_password_reset_token", "reset_password"],
             "principal": "*",
-            "effect": "allow",
+            "effect": "allow"
         },
         {
             "action": [
-                'QueryService',
-                'CustomerViewSet',
-                'SettingsViewSet'
+                "logout"
             ],
             "principal": ["authenticated"],
             "effect": "allow",
-            "condition": "is_admin:admin",
-        }
+            
+        },
+        {
+            "action": [
+                "create_customers",
+                "update_customer",
+                "retrieve_customer",
+                "ban",
+                "audio_to_query",
+                "create_product",
+                "update_product",
+                "retrieve_product",
+                "delete_product"
+                
+                
+                
+                
+            ],
+            "principal": ["authenticated"],
+            "effect": "allow",
+            "condition": "is_admin:admin",}
     
     ]
 

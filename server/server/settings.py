@@ -27,16 +27,21 @@ SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = str(os.environ.get("SECRET_KEY"))
 
 OPENAI_API_KEY = str(os.environ.get("OPENAI_API_KEY"))
-# EMAIL_HOST = os.getenv("EMAIL_HOST")
-# EMAIL_PORT = os.getenv("EMAIL_PORT")
-# EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS")
-# EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-# EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-# EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
-# DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
-# SERVER_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+EMAIL_HOST = str(os.getenv("EMAIL_HOST"))
+EMAIL_PORT = str(os.getenv("EMAIL_PORT"))
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = str(os.getenv("EMAIL_HOST_USER"))
+EMAIL_HOST_PASSWORD = str(os.getenv("EMAIL_HOST_PASSWORD"))
+EMAIL_BACKEND = str(os.getenv("EMAIL_BACKEND"))
+DEFAULT_FROM_EMAIL = 'adesamad1234@gmail.com'
+
+
+
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "true"
@@ -67,7 +72,7 @@ INSTALLED_APPS = [
     
     
     "drf_spectacular",
-    'drf_spectacular_sidecar',
+    # 'drf_spectacular_sidecar',
     "corsheaders",
     "phonenumber_field",
     "rest_framework",
@@ -78,7 +83,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    # "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -182,12 +187,12 @@ CORS_ALLOW_METHODS = [
 # ]
 
 REST_FRAMEWORK = {
-    # "DEFAULT_PERMISSION_CLASSES": [
-    #     "rest_framework.permissions.IsAuthenticated",
-    # ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
 
     
-    "DEFAULT_PERMISSION_CLASSES": [ 'rest_framework.permissions.AllowAny',],
+    
     
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -241,9 +246,9 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "This is the official documentation for the AudQL  backend",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    "SWAGGER_UI_DIST": "SIDECAR",
-    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
-    "REDOC_DIST": "SIDECAR",
+    # "SWAGGER_UI_DIST": "SIDECAR",
+    # "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    # "REDOC_DIST": "SIDECAR",
 }
 
 

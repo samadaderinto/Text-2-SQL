@@ -101,8 +101,8 @@ class ProductSerializer(TaggitSerializer, serializers.ModelSerializer):
         ]
         
 
-class OrderSerializer(TaggitSerializer, serializers.ModelSerializer):
-    tags = TagListSerializerField()
+class OrderSerializer(serializers.ModelSerializer):
+   
     class Meta:
         model = Order
         fields = [
@@ -111,10 +111,16 @@ class OrderSerializer(TaggitSerializer, serializers.ModelSerializer):
             "status",
             "cart",
             "total",
+         
             "subtotal",
             "created",
             "updated"
         ]
+
+class OrderSearchSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    user_id = serializers.CharField()
+    
         
 class EmailSerializer(serializers.Serializer):
     email = serializers.EmailField()

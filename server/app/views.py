@@ -12,12 +12,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework.decorators import action, parser_classes
+from rest_framework.decorators import action, permission_classes
 from rest_framework.permissions import AllowAny
 
 from .models import Customer, Order, Product, User
 from .permissions import ServerAccessPolicy
-from .serializers import CustomerSerializer, CustomerSearchSerializer,  EmailSerializer, LogOutSerializer, LoginSerializer, OrderSerializer, ProductSerializer, ResetPasswordSerializer, UserSerializer, FileSerializer
+from .serializers import CustomerSerializer, CustomerSearchSerializer,  EmailSerializer, LogOutSerializer, LoginSerializer, OrderSerializer, ProductSerializer, ResetPasswordSerializer, OrderSearchSerializer, UserSerializer, FileSerializer
 from .services import AuthService, CustomerService, OrderService, ProductService, QueryService, SettingsService
 
 from rest_access_policy import AccessViewSetMixin
@@ -42,13 +42,13 @@ class AuthViewSet(viewsets.GenericViewSet):
     
     # permission_classes = (AllowAny,)
 
-    permission_classes = (AllowAny,)
-    authentication_classes = ([])
+    permission_classes = (ServerAccessPolicy,)
     serializer_class = UserSerializer
     
     
     @extend_schema(request=UserSerializer, responses={201: UserSerializer})
     @action(detail=False, methods=["post"], url_path="signup")
+   
     def signup(self, request):
         data = JSONParser().parse(request)
         serializer = UserSerializer(data=data)
@@ -60,7 +60,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         return Response({'message': 'User successfully created, Verify your email account'},status=status.HTTP_201_CREATED)
     
     
-    @extend_schema(responses={status.HTTP_200_OK: dict})
+    @extend_schema(responses={status.HTTP_200_OK: None})
     @action(detail=False, methods=['get'], url_path='activate/(?P<uidb64>[^/.]+)/(?P<token>[^/.]+)', name="activate")
     def verify_activation(self, request, uidb64, token):
        
@@ -82,7 +82,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             return redirect('http://localhost:8000/auth/login/', permanent=True)
       
     
-    @extend_schema(request=None, responses={status.HTTP_205_RESET_CONTENT: None})
+    @extend_schema(request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None})
     @action(detail=False, methods=['post'], url_path='logout')
     def logout(self, request):
         data = JSONParser().parse(request)
@@ -161,8 +161,7 @@ class QueryViewSet(viewsets.GenericViewSet):
         self.query_service: QueryService = di[QueryService]
         
         
-    permission_classes = (AllowAny,)
-    authentication_classes = ([])
+    permission_classes = (ServerAccessPolicy,)
     parser_classes = [MultiPartParser, FormParser]
   
     
@@ -196,36 +195,34 @@ class ProductViewSet(viewsets.GenericViewSet):
         
     # pagination_class = Paginator
     permission_classes = (AllowAny,)
-    authentication_classes = ([])
     serializer_class = ProductSerializer
 
-    def get_queryset(self):
-        return Product.objects.filter(user=self.request.user)
+    
     
     @extend_schema(request=ProductSerializer, responses={200: ProductSerializer})
-    def create(self, request):
+    def create_product(self, request):
         serializer = ProductSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        product = self.product_service.create_budget(request.user, **serializer.validated_data) 
+        product = self.product_service.create_product(request.user, **serializer.validated_data) 
         return Response(status=201, data=ProductSerializer(product).data)
     
     @extend_schema(request=ProductSerializer, responses={200: ProductSerializer})
-    def update(self, request,  pk=None):
+    def update_product(self, request,  pk=None):
         serializer = ProductSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        product = self.product_service.update_budget(request.user, pk, **serializer.validated_data)
+        product = self.product_service.update_product(request.user, pk, **serializer.validated_data)
         return Response(status=201, data=ProductSerializer(product).data)
     
     
     @extend_schema(responses={200: ProductSerializer})
-    def retrieve(self, request, pk=None):
+    def retrieve_product(self, request):
         product = self.get_object()
         serializer = ProductSerializer(product)
         return Response(status=200, data=serializer.data)
 
     @extend_schema(responses={204: None})
-    def destroy(self, request, pk=None):
-        self.product_service.delete_budget(request.user, pk)
+    def delete_product(self, request):
+        self.product_service.delete_product(request.user)
         return Response(status=204)
 
 
@@ -237,14 +234,13 @@ class CustomerViewSet(viewsets.GenericViewSet):
         
         
     # pagination_class = Paginator
-    permission_classes = (AllowAny,)
-    authentication_classes = ([])
+    permission_classes = (ServerAccessPolicy,)
   
 
     
     @extend_schema(request=CustomerSerializer, responses={200: CustomerSerializer})
     @action(detail=False, methods=['post'], url_path='create')
-    def create_customers(self, request):
+    def create_customer(self, request):
         data = JSONParser().parse(request)
         serializer = CustomerSerializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -253,7 +249,7 @@ class CustomerViewSet(viewsets.GenericViewSet):
     
     @extend_schema(request=CustomerSerializer, responses={200: CustomerSerializer})
     @action(detail=False, methods=['put'], url_path='update')
-    def update_customers(self, request):
+    def update_customer(self, request):
         data = JSONParser().parse(request)
         customer = self.customer_service.update_customer(data)
         return Response(status=201, data=customer)
@@ -288,7 +284,6 @@ class OrderViewSet(viewsets.GenericViewSet):
         
     # pagination_class = Paginator
     permission_classes = (AllowAny,)
-    authentication_classes = ([])
     serializer_class = OrderSerializer
 
     
@@ -314,11 +309,11 @@ class OrderViewSet(viewsets.GenericViewSet):
     def retrieve_order(self, request):
     
         data = JSONParser().parse(request)
-        serializer = OrderSerializer(data=data)
+        serializer = OrderSearchSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data["id"]
-        phone_number = serializer.validated_data["user_id"]
-        customer = self.order_service.get_order(request, email= email, phone_number=phone_number)
+        id = serializer.validated_data["id"]
+        user_id = serializer.validated_data["user_id"]
+        customer = self.order_service.get_order(request, id= id, user_id=user_id)
         
         return Response(status=200, data=customer)
     
@@ -327,5 +322,8 @@ class SettingsViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.settings_service: SettingsService = di[SettingsService]
+        
+    
+    permission_classes = (ServerAccessPolicy,)
     
     

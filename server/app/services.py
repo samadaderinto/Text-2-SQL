@@ -10,6 +10,8 @@ from django.db import connection
 from django.core.files.storage import default_storage
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core.mail import send_mail
+
 
 from typing import Type
 from kink import inject
@@ -43,16 +45,17 @@ class AuthService:
         token = TokenGenerator().make_token(user)
         link = f'{self.get_base_url(request)}/auth/activate/{uidb64}/{token}/'
         absolute_url = request.build_absolute_uri(link)
-        # send_mail(
-        #     'onboarding-user',
-        #     user.email,
-        #     data={'firstname': user.first_name, 'absolute_url': absolute_url}
-        # )
+       
         
-        send_email(
-            
-         absolute_url
-        )
+
+        send_mail(
+        'Welcome, email',
+        absolute_url,
+        'adesamad1234@gmail.com',
+        [email],
+        fail_silently=False,
+    )
+
 
     
     def create_user(self, request, email, password):

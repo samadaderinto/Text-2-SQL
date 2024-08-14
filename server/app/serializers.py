@@ -1,10 +1,18 @@
-from .models import User
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+
+from .models import Customer, Order, Product, User
 
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework import status
 
 from phonenumber_field.serializerfields import PhoneNumberField
+from taggit.serializers import TagListSerializerField, TaggitSerializer
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -13,9 +21,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "email",
-            "first_name",
-            "last_name",
-            "phone",
             "password",
             "created",
             "updated",
@@ -29,22 +34,34 @@ class UserSerializer(serializers.ModelSerializer):
             user.make_password(self.password)
             user.save()
             return user
-
-class LoginSerializer(serializers.Serializer):
-    phone = PhoneNumberField()
-    password = serializers.CharField()
     
-class PhoneSerializer(serializers.Serializer):
-    phone = PhoneNumberField()
+        
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = [
+                
+            "first_name",
+            "last_name",
+            "avatar",
+            "phone_number",
+            "email",
+            "created",
+            "updated"
+        ]
+    
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+class LogOutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+    
     
 class ResetPasswordSerializer(serializers.Serializer):
-    code = serializers.CharField()
-    phone = PhoneNumberField()
+    email = serializers.EmailField()
     new_password = serializers.CharField()
 
-class VerifyOtpSerializer(serializers.Serializer):
-    code = serializers.CharField()
-    phone = PhoneNumberField()
     
 class EmailTokenObtainSerializer(TokenObtainSerializer):
     username_field = User.EMAIL_FIELD
@@ -62,3 +79,63 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
         data["access"] = str(refresh.access_token)
 
         return data
+    
+
+class ProductSerializer(TaggitSerializer, serializers.ModelSerializer):
+    tags = TagListSerializerField()
+    class Meta:
+        model = Product
+        fields = [
+            "id",
+            "store",
+            "title",
+            "available",
+            "discount",
+            "description",
+            "price",
+            "sale_price",
+            "tags",
+            "sales",
+            "created",
+            "updated"
+        ]
+        
+
+class OrderSerializer(TaggitSerializer, serializers.ModelSerializer):
+    tags = TagListSerializerField()
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "user",
+            "status",
+            "cart",
+            "total",
+            "subtotal",
+            "created",
+            "updated"
+        ]
+        
+class EmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class CustomerSearchSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    phone_number = PhoneNumberField()
+        
+
+    
+class FileSerializer(serializers.Serializer):
+    
+    file = serializers.FileField(required=True)
+    
+    def validate_file(self, value):
+        """
+        Validate the uploaded file to ensure it is an audio file.
+        """
+        if not value.name.endswith(('.mp3', '.wav', '.ogg')):
+            raise serializers.ValidationError('The uploaded file must be an audio file (MP3, WAV, or OGG).')
+        return value
+    
+    

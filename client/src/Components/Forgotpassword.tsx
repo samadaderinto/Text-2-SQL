@@ -10,6 +10,7 @@ export const Forgotpassword = () => {
   const [email, setEmail] = useState('')
     const Nav = useNavigate()
 
+
     const Reset = async()=> {
      
       try {
@@ -25,6 +26,8 @@ export const Forgotpassword = () => {
       }
 
     }
+
+
   return (
     <div className="Forgot_Container">
         <section className="Forgot_White">

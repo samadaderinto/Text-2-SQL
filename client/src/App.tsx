@@ -32,7 +32,7 @@ function App() {
           <Route path='/' element={<Home />}/>
             <Route index path='/dashboard' element={<Dashboard />} />
             <Route path='/product' element={<Product />} />
-            <Route path='/product/new-product' element={<Newproduct />} />
+            <Route path='/product/add' element={<Newproduct />} />
             <Route path='/orders' element={<Orders />} />
             <Route path='/customers' element={<Customers />} />
             <Route path='/settings' element={<Settings />} />
@@ -40,7 +40,7 @@ function App() {
           <Route path='auth/signup' element={<Signup />} />
           <Route path='auth/signin' element={<SignIn />} />
           <Route path='auth/forgot-password' element={<Forgotpassword />} />
-          <Route path='auth/new-password' element={<Newpassword />} />
+          <Route path='auth/reset-password' element={<Newpassword />} />
 
 
           <Route path="*" element={<PageNotFound />}></Route>

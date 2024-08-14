@@ -59,7 +59,7 @@ export const Forgotpassword = () => {
                 with instructions to reset your password.please
                 check your inbox to get started.
               </p>
-              <span onClick={()=>Nav('/auth/new-password')} className="Login_Btn">Go To Mail</span>
+              <span onClick={()=> setPop(false)} className="Login_Btn">Go Back</span>
             </div>
           </section>
           ): null

@@ -5,6 +5,7 @@ import { PiDiamondsFourFill } from "react-icons/pi";
 import { RiSpeakLine,  RiShoppingBag3Line } from "react-icons/ri";
 import { FaEarListen } from "react-icons/fa6";
 import {  RxDashboard } from 'react-icons/rx'
+import { RiLogoutBoxLine } from "react-icons/ri";
 import { MdOutlineShoppingCart } from "react-icons/md";
 import { RxDropdownMenu } from "react-icons/rx";
 import { Outlet } from "react-router-dom";
@@ -13,6 +14,9 @@ import { Product } from "../Components/Product";
 import { Orders } from "../Components/Orders";
 import { Customers } from "../Components/Customers";
 import { Settings } from "../Components/Settings";
+import PageNotFound from "./PageNotFound";
+import axios from "axios";
+// import { Logout } from "../Components/Logout";
 
 const Home = () => {
 
@@ -26,6 +30,24 @@ const Home = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  const Storedtoken  = localStorage.getItem('token')
+
+
+  const Logout = async()=> {
+
+    
+    const token = Storedtoken? JSON.parse(Storedtoken): null
+
+    try {
+
+      const response = await axios.post('http://localhost:8000/auth/logout/', token)
+      alert('logout successful')
+      console.log(response.data)
+    } catch (error) {
+      alert('logout failed')
+      console.log(error)
+    }
+  }
   const startRecording = async () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -89,6 +111,10 @@ const Home = () => {
       icon: <IoSettingsOutline/>,
       itemName: 'Settings'
     },
+    {
+      icon: <RiLogoutBoxLine/>,
+      itemName: 'Logout'
+    }
   ]
 
   if (listen) {
@@ -206,7 +232,19 @@ const Home = () => {
           active === 'Products'? <Product/>:
           active === 'Orders'? <Orders/>:
           active === 'Customers'? <Customers/>:
-          active === 'Settings'? <Settings    />: null
+          active === 'Settings'? <Settings />: 
+          active === 'Logout'?<div className="Logout_Container">
+          <article>
+          <h1>Log Out?</h1>
+          <div>
+              <span onClick={Logout} className="Blue_btn">Yes</span>
+              <span onClick={()=> {
+                setActiveIndex(0)
+                setActive('Dashboard')}} className="White_btn">No</span>
+          </div>
+          </article>
+      </div>:
+          active === '*'? <PageNotFound/>: null
 
         }
       </section>

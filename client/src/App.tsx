@@ -15,6 +15,9 @@ import { Customers } from './Components/Customers'
 import { Product } from './Components/Product'
 import { Settings } from './Components/Settings'
 import { Newproduct } from './Components/Newproduct'
+import { Header } from './layouts/Header'
+import { SideBar } from './layouts/SideBar'
+import { Logout } from './Components/Logout'
 
 
 
@@ -26,7 +29,10 @@ function App() {
 
   return (
     <>
+    <Header/>
       <BrowserRouter>
+    <SideBar/>
+
         <Routes>
           <Route path='/' element={<Home />}/>
             <Route index path='/dashboard' element={<Dashboard />} />
@@ -35,6 +41,7 @@ function App() {
             <Route path='/orders' element={<Orders />} />
             <Route path='/customers' element={<Customers />} />
             <Route path='/settings' element={<Settings />} />
+            <Route path='/logout' element={<Logout/>} />
             
           <Route path='auth/signup' element={<Signup />} />
           <Route path='auth/signin' element={<SignIn />} />

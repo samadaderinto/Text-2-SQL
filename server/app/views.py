@@ -125,10 +125,7 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         except Exception as e:
             # Handle exceptions and return an appropriate response
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None}
@@ -189,7 +186,13 @@ class AuthViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
         absolute_url = self.auth_service.request_reset_password_user(request, email)
-        send_email(absolute_url)
+        send_mail(
+            f'Click on link to reset password, {email}',
+            f"This is the link to reset password. {absolute_url}",
+            'adesamad1234@gmail.com',
+            [email],
+            fail_silently=False
+        )
         return Response(
             {'success': 'We have sent you a mail to reset your password'},
             status=status.HTTP_200_OK
@@ -212,7 +215,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             )
 
         return redirect(
-            'http://localhost:8000/auth/reset-password/reset/', permanent=True
+            f'http://localhost:4173/auth/reset-password/{user.email}', permanent=True
         )
 
     @extend_schema(

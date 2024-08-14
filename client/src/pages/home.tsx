@@ -6,6 +6,11 @@ import { Product } from "../Components/Product";
 import { Orders } from "../Components/Orders";
 import { Customers } from "../Components/Customers";
 import { Settings } from "../Components/Settings";
+import { RxDashboard } from 'react-icons/rx'
+import { RiShoppingBag3Line, RiLogoutBoxLine } from 'react-icons/ri'
+import { MdOutlineShoppingCart } from 'react-icons/md'
+import { IoPeopleOutline } from 'react-icons/io5'
+import { IoSettingsOutline } from 'react-icons/io5'
 
 import { PageNotFound } from "./PageNotFound";
 import axios, {AxiosResponse } from "axios";
@@ -16,8 +21,8 @@ const Home = () => {
 
   const [activeIndex, setActiveIndex] = useState<number>(0)
   const [active, setActive] = useState('Dashboard')
-  const [menu, setMenu] = useState(false);
-  const [voice, setVoice] = useState(false)
+  // const [menu, setMenu] = useState(false);
+  // const [voice, setVoice] = useState(false)
   const [listen, setListen] = useState(false)
   const [audio, setAudio] = useState<Blob | null>(null)
   const [isRecording, setIsRecording] = useState(false);

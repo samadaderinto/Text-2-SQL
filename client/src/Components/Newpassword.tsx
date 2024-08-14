@@ -73,11 +73,19 @@ export const Newpassword = () => {
   };
 
   const togglePasswordVisibility = (field: 'password' | 'confirm') => {
-    setFormState(prevState => ({
-      ...prevState,
-      [`show${field.charAt(0).toUpperCase() + field.slice(1)}`]: !prevState[`show${field.charAt(0).toUpperCase() + field.slice(1)}`],
-      [`${field}Type`]: prevState[`show${field.charAt(0).toUpperCase() + field.slice(1)}`] ? 'password' : 'text'
-    }));
+    if (field === 'password') {
+      setFormState(prevState => ({
+        ...prevState,
+        showPassword: !prevState.showPassword,
+        passwordType: prevState.showPassword ? 'password' : 'text'
+      }));
+    } else if (field === 'confirm') {
+      setFormState(prevState => ({
+        ...prevState,
+        showConfirm: !prevState.showConfirm,
+        confirmType: prevState.showConfirm ? 'password' : 'text'
+      }));
+    }
   };
 
   const Reset = async () => {

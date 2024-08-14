@@ -2,13 +2,32 @@ import { useNavigate } from "react-router-dom"
 import { PiDiamondsFourFill } from "react-icons/pi"
 import { FaArrowLeft } from 'react-icons/fa6'
 import { useState } from "react"
+import axios from "axios"
 
 
 export const Forgotpassword = () => {
   const [pop, setPop] = useState(false)
   const [email, setEmail] = useState('')
     const Nav = useNavigate()
-    http://localhost:8000/auth/reset-password/request/
+
+
+    const Reset = async()=> {
+     
+      try {
+        if(email !== '') {
+          const Response =  await axios.post('http://localhost:8000/auth/reset-password/request/', email)
+          console.log(Response.data)
+          alert('successful')
+        }
+
+      } catch (error) {
+        alert('failed')
+        console.log(error)
+      }
+
+    }
+
+
   return (
     <div className="Forgot_Container">
         <section className="Forgot_White">
@@ -20,10 +39,11 @@ export const Forgotpassword = () => {
             <div className="Input_Container" tabIndex={0}>
              <input type="text" value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="input your registered email" />
             </div>
-            <div className="Login_Btn" onClick={()=> 
+            <div className="Login_Btn" onClick={()=> {
+            Reset()
               {
                 email!== ''?
-                setPop(true): alert('No Valid Email')}}>Reset Password</div>
+                setPop(true): alert('No Valid Email')}}}>Reset Password</div>
         </section>
         <section className="Forgot_Blue">
             <h1>Easiest Way To Manage Your Store</h1>

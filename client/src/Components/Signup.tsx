@@ -39,9 +39,7 @@ export const Signup = () => {
       setPassword('')
       setConfirmpassword('')
       console.log(infoArray)
-
-      // Handle successful sign-up (e.g., navigate to a different page)
-      // navigate('/some-other-page')
+      Nav('/auth/signin')
     } catch (error) {
       console.error('Error during sign-up:', error)
       alert('Sign up failed. Please try again.')

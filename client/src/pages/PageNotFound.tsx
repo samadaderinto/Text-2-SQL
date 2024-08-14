@@ -1,4 +1,4 @@
-const PageNotFound = () => {
+export const PageNotFound = () => {
   return (
     <div className="Not_Found_Container">
       page not found
@@ -6,4 +6,4 @@ const PageNotFound = () => {
   )
 }
 
-export default PageNotFound;
+;

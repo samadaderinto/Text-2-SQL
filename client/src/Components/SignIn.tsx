@@ -28,9 +28,13 @@ export const SignIn = () => {
     infoArray.password = password
 
 
+    const TokenArray = []
     try {
-      const response = await axios.post('https://your-api-endpoint.com/signup', infoArray)
+      const response = await axios.post('http://localhost:8000/auth/login/', infoArray)
       console.log('Sign Up successful:', response.data)
+      const refreshToken = response.headers['getAuthorization']
+      TokenArray.push(refreshToken)
+      localStorage.setItem('token', JSON.stringify(refreshToken))
       setEmail('')
       setPassword('')
       

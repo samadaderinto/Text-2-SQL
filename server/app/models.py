@@ -59,18 +59,14 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     username = None
-    avatar = models.ImageField(upload_to="images/profile", null=True, blank=True)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
     email = models.EmailField(unique=True, db_index=True)
-    phone = PhoneNumberField()
     password = models.CharField(max_length=90)
     is_active = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["first_name", "last_name", "phone", "password"]
+    REQUIRED_FIELDS = ["password"]
 
     objects = UserManager()
     
@@ -112,7 +108,7 @@ class Product(DatesMixin):
     ("beverages", "beverages"))
     
     
-    store = models.ForeignKey(Store, on_delete=models.CASCADE)
+    store = models.ForeignKey('Store', on_delete=models.CASCADE)
     title = models.CharField(max_length=225, blank=False, null=False)
     description = models.TextField(null=False, blank=False)
     price = models.DecimalField(max_digits=15, decimal_places=2, blank=False, null=False)
@@ -149,7 +145,7 @@ class Order(DatesMixin):
     ("paid", "paid"))
     
     
-    id = models.CharField(max_length=15, default=generate(size=15), unique=True, editable=False)
+    id = models.CharField(max_length=15, default=generate(size=15), unique=True, editable=False, primary_key=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     status = models.CharField(choices=ORDER_STATUS_CHOICE, max_length=15)
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
@@ -162,10 +158,17 @@ class Order(DatesMixin):
         super().save(*args, **kwargs)
 
     def _generate_unique(self, size=15):
-        marketer_id = generate(size)
-        while Order.objects.filter(username=marketer_id).exists():
-            marketer_id = generate(size)
-        return marketer_id
+        id = generate(size)
+        while Order.objects.filter(username=id).exists():
+              id = generate(size)
+        return id
     
+class Customer(DatesMixin):
+    first_name = models.CharField(max_length=225)
+    avatar = models.ImageField(upload_to="images/profile", null=True, blank=True)
+    last_name = models.CharField(max_length=225)
+    email = models.EmailField(unique=True)
+    phone_number = PhoneNumberField()
+    # is_active = models.BooleanField(default=False)
 
 

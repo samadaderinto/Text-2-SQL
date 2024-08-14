@@ -8,6 +8,7 @@ export const Forgotpassword = () => {
   const [pop, setPop] = useState(false)
   const [email, setEmail] = useState('')
     const Nav = useNavigate()
+    http://localhost:8000/auth/reset-password/request/
   return (
     <div className="Forgot_Container">
         <section className="Forgot_White">

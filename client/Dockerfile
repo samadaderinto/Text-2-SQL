@@ -1,14 +1,23 @@
-# Use an official node runtime as a parent image
-FROM node:alpine
+# Use the latest Node.js LTS version as the base image
+FROM node:lts
 
-WORKDIR /app/
+# Set the working directory to /app
+WORKDIR /app
 
-COPY package.json package-lock.json /app/
+# Copy the package.json and package-lock.json files
+COPY package*.json ./
 
-RUN npm install
+# Install dependencies
+RUN npm ci
 
-COPY . /app/
+# Copy the React app source code
+COPY . .
 
-EXPOSE 5173
+# Build the React app
+RUN npm run build
 
-CMD npm run dev
+# Expose the port that the React app will run on (usually 3000)
+EXPOSE 4173
+
+# Set the command to start the React app
+CMD ["npm", "run", "preview"]

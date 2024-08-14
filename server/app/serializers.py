@@ -2,7 +2,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
-from .models import Customer, Order, Product, User
+from .models import Customer, Order, Product, Store, User
 
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -80,7 +80,20 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
 
         return data
     
-
+class StoreSerializer(serializers.Serializer):
+    class Meta:
+        model = Store
+        fields = [
+            "id",
+            "user",
+            "username",
+            "name",
+            "bio",
+            "phone",
+            "created",
+            "updated"]
+    
+    
 class ProductSerializer(TaggitSerializer, serializers.ModelSerializer):
     tags = TagListSerializerField()
     class Meta:
@@ -101,8 +114,8 @@ class ProductSerializer(TaggitSerializer, serializers.ModelSerializer):
         ]
         
 
-class OrderSerializer(TaggitSerializer, serializers.ModelSerializer):
-    tags = TagListSerializerField()
+class OrderSerializer(serializers.ModelSerializer):
+   
     class Meta:
         model = Order
         fields = [
@@ -115,6 +128,11 @@ class OrderSerializer(TaggitSerializer, serializers.ModelSerializer):
             "created",
             "updated"
         ]
+
+class OrderSearchSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    user_id = serializers.CharField()
+    
         
 class EmailSerializer(serializers.Serializer):
     email = serializers.EmailField()

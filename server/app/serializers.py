@@ -124,7 +124,6 @@ class OrderSerializer(serializers.ModelSerializer):
             "status",
             "cart",
             "total",
-         
             "subtotal",
             "created",
             "updated"

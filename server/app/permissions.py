@@ -1,7 +1,7 @@
 from rest_access_policy import AccessPolicy
 
 
-from .models import Store
+from .models import Store, User
 
 
 
@@ -12,73 +12,30 @@ class ServerAccessPolicy(AccessPolicy):
     statements = [
         {
             "action": [
-             
-                "create_user",
-                "landing_page_products",
-                "ProductImageViewSet",
-                "get_product_reviews",
-                "redirect_url",
-                "specification",
-                "<method:get>",
+             "AuthViewSet",
+             'ProductViewSet',
+             'OrderViewSet'
+                
             ],
             "principal": "*",
             "effect": "allow",
         },
         {
             "action": [
-               
-            ],
-            "principal": ["admin"],
-            "effect": "allow",
-        },
-        {
-            "action": [
-                
-            ],
-            "principal": ["staff"],
-            "effect": "allow",
-        },
-        {
-            "action": [
-                "stores",
-                "IsOwnerSearchProduct",
-                "ProductAPIView",
+                'QueryService',
+                'CustomerViewSet',
+                'SettingsViewSet'
             ],
             "principal": ["authenticated"],
             "effect": "allow",
-            "condition": "is_store_owner:owner",
-        },
-        {
-            "action": [
-                
-            ],
-            "principal": ["authenticated"],
-            "effect": "allow",
-            "condition": "is_marketer:owner",
-        },
-        {
-            "action": [
-               "UserViewSet",
-               "wishlistViewSet",
-               "reviews",
-               "recent",
-               "Orders",
-               "address",
-               "request_refund",
-               "UserLogout",
-               "create_checkout_session",
-               "capture_checkout_session",
-            ],
-            "principal": "authenticated",
-            "effect": "allow",
-        },
-
-
+            "condition": "is_admin:admin",
+        }
+    
     ]
 
-    def is_store_owner(self, request, view, action, field) -> bool:
+    def is_admin(self, request, view, action, field) -> bool:
         try:
-            Store.objects.get(pk=request.data["store"])
+            User.objects.get(pk=request.data["user"])
         except:
             return False
         return True

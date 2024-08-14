@@ -1,0 +1,18 @@
+services:
+    server:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command: bash run.sh
+        restart: always
+        user: root
+        volumes:
+            - .:/var/www/server
+        ports:
+            - 8000:8000
+        env_file:
+            - .env
+
+  
+  
+

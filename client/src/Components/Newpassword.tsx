@@ -76,9 +76,14 @@ export const Newpassword = () => {
 
   const Reset = async () => {
     const { email, passwordValue } = formState;
+    const data = JSON.stringify({ email: email, new_password: passwordValue });
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/reset-password/reset/`, { email, password: passwordValue });
+      const response = await axios.post(`${API_BASE_URL}/auth/reset-password/reset/`, data, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       console.log(response.data);
     } catch (error) {
       console.log(error);

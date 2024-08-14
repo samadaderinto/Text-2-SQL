@@ -3,7 +3,7 @@ import './SCSS/Main.scss'
 
 
 import Home from './pages/home'
-import PageNotFound from './pages/PageNotFound'
+import { PageNotFound } from './pages/PageNotFound'
 
 import { SignIn } from './Components/SignIn'
 import { Signup } from './Components/Signup'
@@ -43,7 +43,7 @@ function App() {
           <Route path='auth/reset-password' element={<Newpassword />} />
 
 
-          <Route path="*" element={<PageNotFound />}></Route>
+          <Route path="*" element={<PageNotFound />} />
         </Routes>
 
 

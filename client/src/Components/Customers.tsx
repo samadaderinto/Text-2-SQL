@@ -3,6 +3,8 @@ import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-ic
 import { FiSearch } from "react-icons/fi";
 import { useState } from "react";
 import { Newcustomer } from "./Newcustomer";
+import Sidebar from '../layouts/SideBar'
+
 
 
 
@@ -10,6 +12,7 @@ export const Customers = () => {
   const [newcustomer, setNewcustomer] = useState(false)
   return (
     <>
+    <Sidebar/>
     {
       !newcustomer ?(
         <div className="Customer_Container">

@@ -1,8 +1,12 @@
 import { MdOutlineDownload, MdOutlineDelete } from "react-icons/md";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
+import Sidebar from "../layouts/SideBar";
+
+
 export const Orders = () => {
   return (
     <div className="Order_Container">
+      <Sidebar/>
       <section className="Order_Header">
         <h1>Order</h1>
         <span><MdOutlineDownload className="Order_Download_Icon"/>Download List</span>

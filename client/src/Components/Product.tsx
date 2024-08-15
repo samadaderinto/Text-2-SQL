@@ -4,6 +4,9 @@ import { FiSearch } from "react-icons/fi";
 // import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Newproduct } from "./Newproduct";
+import Sidebar from "../layouts/SideBar";
+
+
 
 export const Product = () => {
   const [newproduct, setNewproduct] = useState(false)
@@ -14,6 +17,7 @@ export const Product = () => {
       !newproduct? (
     
       <div className="Product_Container">
+        <Sidebar/>
       <section className="Add_Product">
         <h1>All Products</h1>
         <span onClick={()=> setNewproduct(true) }> <IoIosAddCircleOutline className="Product_Icon"/>Add new Product</span>

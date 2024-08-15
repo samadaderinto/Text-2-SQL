@@ -1,26 +1,22 @@
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-icons/md";
 import { FiSearch } from "react-icons/fi";
-// import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Newproduct } from "./Newproduct";
+// import { Newproduct } from "./Newproduct";
 import Sidebar from "../layouts/SideBar";
+import { useNavigate } from "react-router-dom";
 
 
 
 export const Product = () => {
-  const [newproduct, setNewproduct] = useState(false)
-  // const Nav = useNavigate()
+  // const [newproduct, setNewproduct] = useState(false)
+  const Nav = useNavigate()
   return (
-    <>
-    {
-      !newproduct? (
-    
       <div className="Product_Container">
         <Sidebar/>
       <section className="Add_Product">
         <h1>All Products</h1>
-        <span onClick={()=> setNewproduct(true) }> <IoIosAddCircleOutline className="Product_Icon"/>Add new Product</span>
+        <span onClick={()=> Nav('/product/add') }> <IoIosAddCircleOutline className="Product_Icon"/>Add new Product</span>
       </section>
       <section className="Product_Table_Section">
         <div>
@@ -66,12 +62,9 @@ export const Product = () => {
         </div>
       </section>
     </div>
-      
-      )
-      : ( <Newproduct/>)
-    }
 
-    </>
+
+   
       
     )
 }

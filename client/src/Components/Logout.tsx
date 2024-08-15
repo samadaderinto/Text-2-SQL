@@ -2,6 +2,7 @@
 
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
+import { API_BASE_URL } from "../utils/api"
 
 export const Logout = () => {
 
@@ -12,13 +13,20 @@ export const Logout = () => {
   const handleLogout = async () => {
 
 
-    const refresh = localStorage.getItem('refreshToken')
+    const refresh = localStorage.getItem('refresh')
+    const access = localStorage.getItem('access')
+
     const data = JSON.stringify({ refresh });
+
     try {
 
-      const response = await axios.post('http://localhost:8000/auth/logout/', data)
+      const response = await axios.post(`${API_BASE_URL}/auth/logout/`, data, {
+        headers: {
+          Authorization: `Bearer ${access}`,
+        },
+      })
       if (response.status == 205) {
-        Nav('/auth/signin')
+        Nav('/auth/signin/')
       }
 
     } catch (error) {
@@ -35,8 +43,7 @@ export const Logout = () => {
         <div>
           <span onClick={handleLogout} className="Blue_btn">Yes</span>
           <span onClick={() => {
-            Nav('/dashboard')
-            window.location.reload()
+            Nav(-1)
           }} className="White_btn">No</span>
         </div>
       </article>

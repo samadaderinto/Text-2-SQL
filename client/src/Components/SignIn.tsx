@@ -58,7 +58,7 @@ export const SignIn = () => {
       });
 
       toast.success('Sign in successful! Redirecting to dashboard...');
-      Nav('/'); 
+      Nav('/dashboard'); 
     } catch (error) {
       console.error('Error during sign-in:', error);
       toast.error('Sign in failed. Please try again.');

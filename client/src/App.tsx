@@ -16,13 +16,12 @@ import { Product } from './Components/Product'
 import { Settings } from './Components/Settings'
 import { Newproduct } from './Components/Newproduct'
 import { Header } from './layouts/Header'
-// import { SideBar } from './layouts/SideBar'
 
 
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { Logout } from './Components/Logout'
 import ProtectedRoute from './utils/hooks'
+import { useState } from 'react'
+import { AuthContext } from './contexts/user-contexts'
 
 
 
@@ -30,11 +29,19 @@ import ProtectedRoute from './utils/hooks'
 
 function App() {
 
-  return (
-    <>
-      <BrowserRouter>
-        <Header />
+  const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
 
+  return (
+    <AuthContext.Provider
+        value={{
+          isSignedIn,
+          setIsSignedIn,
+          user: null,
+        }}
+      >
+      
+        <Header />
+        
         <Routes>
           <Route path='/' element={<Home />} />
           <Route index path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -43,21 +50,20 @@ function App() {
           <Route path='/orders' element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path='/customers' element={<ProtectedRoute><Customers /></ProtectedRoute>} />
           <Route path='/settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          
+          <Route path='logout' element={<ProtectedRoute><Logout /></ProtectedRoute>} />
 
           <Route path='auth/signup' element={<Signup />} />
           <Route path='auth/signin' element={<SignIn />} />
           <Route path='auth/forgot-password' element={<Forgotpassword />} />
           <Route path='auth/reset-password/:mail' element={<Newpassword />} />
-          <Route path='auth/logout' element={<ProtectedRoute><Logout /></ProtectedRoute>} />
+          
 
 
           <Route path="*" element={<PageNotFound />} />
         </Routes>
 
 
-      </BrowserRouter>
-    </>
+    </AuthContext.Provider>
   )
 }
 

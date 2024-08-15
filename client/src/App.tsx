@@ -29,8 +29,8 @@ function App() {
 
   return (
     <>
-    <Header/>
       <BrowserRouter>
+    <Header/>
     <SideBar/>
 
         <Routes>

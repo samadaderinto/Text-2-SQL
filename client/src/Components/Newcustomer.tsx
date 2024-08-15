@@ -23,7 +23,7 @@ export const Newcustomer = () => {
   
   }
   return (
-    <div className="Newproduct_Container">
+    <div className="Newcustomer_Container">
       <h1>Create New Customer</h1>
       <section className="Product_Form_Container">
         <div className="GenProduct_Container">

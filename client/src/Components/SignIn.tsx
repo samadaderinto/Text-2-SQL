@@ -45,10 +45,9 @@ export const SignIn = () => {
       
      
       const { data, token } = response.data;
-      console.log(response.data);
 
-      localStorage.setItem('refreshToken', token.refresh);
-      localStorage.setItem('accessToken', token.access);
+      localStorage.setItem('refresh', token.refresh);
+      localStorage.setItem('access', token.access);
 
 
       setFormState({

@@ -8,9 +8,8 @@ import { toast } from 'react-toastify';
 
 
 
-
-
 export const Signup = () => {
+  const [pop, setPop] = useState(false)
   const [formState, setFormState] = useState({
     show: false,
     show1: false,
@@ -89,6 +88,7 @@ export const Signup = () => {
           headers: {
             'Content-Type': 'application/json',
           },
+          
         });
 
         setFormState({
@@ -97,7 +97,10 @@ export const Signup = () => {
           password: '',
           confirmpassword: '',
         });
-        toast.success('Sign up successful!, Verification link has been sent to youe email address');
+        console.log("dwdw")
+        toast.success('Sign up successful!, Verification link has been sent to your email address');
+        setPop(true)
+
       } catch (error: any) {
         if (error.response && error.response.status === 400) {
           toast.error('Invalid signup details, please check your input.');
@@ -162,6 +165,19 @@ export const Signup = () => {
       <section className="Blue_Section">
         <span><PiDiamondsFourFill /> EchoCart</span>
       </section>
+      {
+
+        pop? (
+          <article className='Signup_Pop_Container'>
+          <span className='Popup_span'>
+          <h4 onClick={()=> setPop(false)} className='Signup_Popup_Cancel'>X</h4>
+     <h5>A verification mail has been sent to your email address.</h5>
+            
+          </span>
+        </article>
+          
+        ): null
+      }
     </div>
   );
 };

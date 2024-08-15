@@ -18,6 +18,7 @@ from rest_framework.permissions import AllowAny
 from .models import Customer, Order, Product, User
 from .permissions import ServerAccessPolicy
 from .serializers import (
+    AdminSerializer,
     CustomerSerializer,
     CustomerSearchSerializer,
     EmailSerializer,
@@ -27,6 +28,7 @@ from .serializers import (
     ProductSerializer,
     ResetPasswordSerializer,
     OrderSearchSerializer,
+    StoreSearchSerializer,
     StoreSerializer,
     UserSerializer,
     FileSerializer
@@ -236,6 +238,7 @@ class QueryViewSet(viewsets.GenericViewSet):
         super().__init__(**kwargs)
         self.query_service: QueryService = di[QueryService]
 
+    # permission_classes = (ServerAccessPolicy,)
     permission_classes = (ServerAccessPolicy,)
     parser_classes = [MultiPartParser, FormParser]
 
@@ -265,7 +268,7 @@ class ProductViewSet(viewsets.GenericViewSet):
         self.product_service: ProductService = di[ProductService]
 
     # pagination_class = Paginator
-    permission_classes = (AllowAny,)
+    permission_classes = (ServerAccessPolicy,)
     serializer_class = ProductSerializer
 
     @extend_schema(request=ProductSerializer, responses={200: ProductSerializer})
@@ -274,10 +277,8 @@ class ProductViewSet(viewsets.GenericViewSet):
         data = JSONParser().parse(request)
         serializer = ProductSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        product = self.product_service.create_product(
-            request.user, **serializer.validated_data
-        )
-        return Response(status=201, data=ProductSerializer(product).data)
+        product = self.product_service.create_product(serializer)
+        return Response(status=201, data=product)
 
     @extend_schema(request=ProductSerializer, responses={200: ProductSerializer})
     def update_product(self, request, pk=None):
@@ -305,7 +306,8 @@ class CustomerViewSet(viewsets.GenericViewSet):
         super().__init__(**kwargs)
         self.customer_service: CustomerService = di[CustomerService]
 
-    # pagination_class = Paginator
+    pagination_class = Paginator
+
     permission_classes = (ServerAccessPolicy,)
 
     @extend_schema(request=CustomerSerializer, responses={200: CustomerSerializer})
@@ -351,6 +353,8 @@ class StoreViewSet(viewsets.GenericViewSet):
         super().__init__(**kwargs)
         self.store_service: StoreService = di[StoreService]
 
+    permission_classes = (ServerAccessPolicy,)
+
     @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
     @action(detail=False, methods=['post'], url_path='create')
     def create_store(self, request):
@@ -371,7 +375,7 @@ class StoreViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['get'], url_path='get')
     def retrieve_store(self, request):
         data = JSONParser().parse(request)
-        serializer = CustomerSearchSerializer(data=data)
+        serializer = StoreSearchSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
         phone_number = serializer.validated_data['phone_number']
@@ -392,8 +396,8 @@ class OrderViewSet(viewsets.GenericViewSet):
         super().__init__(**kwargs)
         self.order_service: OrderService = di[OrderService]
 
-    # pagination_class = Paginator
-    permission_classes = (AllowAny,)
+    pagination_class = Paginator
+    permission_classes = (ServerAccessPolicy,)
     serializer_class = OrderSerializer
 
     @extend_schema(request=OrderSerializer, responses={200: OrderSerializer})
@@ -412,7 +416,7 @@ class OrderViewSet(viewsets.GenericViewSet):
         customer = self.order_service.update_order(data)
         return Response(status=201, data=customer)
 
-    @extend_schema(responses={200: UserSerializer})
+    @extend_schema(responses={200: OrderSerializer})
     @action(detail=False, methods=['get'], url_path='get')
     def retrieve_order(self, request):
         data = JSONParser().parse(request)
@@ -429,5 +433,40 @@ class SettingsViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.settings_service: SettingsService = di[SettingsService]
+        self.store_service: StoreService = di[StoreService]
 
     permission_classes = (ServerAccessPolicy,)
+
+    @extend_schema(responses={200: AdminSerializer})
+    @action(detail=False, methods=['get'], url_path='admin/get')
+    def get_admin(self, request):
+        admin_info = self.settings_service.get_admin_info(request.user.email)
+        return Response(status=200, data=AdminSerializer(admin_info).data)
+
+    @extend_schema(responses={200: AdminSerializer})
+    @action(detail=False, methods=['put'], url_path='admin/update')
+    def edit_admin_info(self, request):
+        data = JSONParser().parse(request)
+        admin_info = self.settings_service.edit_admin_info(request.user.email, data)
+        return Response(status=200, data=AdminSerializer(admin_info).data)
+
+    @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
+    @action(detail=False, methods=['put'], url_path='store/update')
+    def update_store(self, request):
+        data = JSONParser().parse(request)
+        store = self.store_service.update_store(request, data)
+        return Response(status=201, data=store)
+
+    @extend_schema(responses={200: StoreSerializer})
+    @action(detail=False, methods=['get'], url_path='store/get')
+    def notification(self, request):
+        stores = self.store_service.get_stores_by_user(request)
+        return Response(status=200, data=stores)
+    
+    @extend_schema(responses={200: StoreSerializer})
+    @action(detail=False, methods=['get'], url_path='store/get')
+    def list_stores(self, request):
+        stores = self.store_service.get_stores_by_user(request)
+        return Response(status=200, data=stores)
+    
+    

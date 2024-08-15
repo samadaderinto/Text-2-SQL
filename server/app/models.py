@@ -111,10 +111,12 @@ class Product(DatesMixin):
     store = models.ForeignKey('Store', on_delete=models.CASCADE)
     title = models.CharField(max_length=225, blank=False, null=False)
     description = models.TextField(null=False, blank=False)
+    image = models.ImageField(upload_to="products/")
     price = models.DecimalField(max_digits=15, decimal_places=2, blank=False, null=False)
     discount = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)])
     available = models.IntegerField(null=False, blank=False, validators=[MinValueValidator(0)])
     category = models.CharField(choices=CATEGORIES_CHOICE, max_length=15)
+    currency = models.CharField(max_length=89, default="USD")
     rating = models.DecimalField(max_digits=4,decimal_places=2,default=0.00,validators=[MinValueValidator(0), MaxValueValidator(5)])
     tags = TaggableManager()
     sales = models.IntegerField(validators=[MinValueValidator(0)], default=0)
@@ -170,5 +172,9 @@ class Customer(DatesMixin):
     email = models.EmailField(unique=True)
     phone_number = PhoneNumberField()
     # is_active = models.BooleanField(default=False)
+    
+class Notification(DatesMixin):
+    email_notification = models.BooleanField(default=True)
+    sms_notification = models.BooleanField(default=False)
 
 

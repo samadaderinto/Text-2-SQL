@@ -3,6 +3,8 @@ import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-ic
 import { FiSearch } from "react-icons/fi";
 import { useState } from "react";
 import { Newcustomer } from "./Newcustomer";
+import Sidebar from '../layouts/SideBar'
+
 
 
 
@@ -10,6 +12,7 @@ export const Customers = () => {
   const [newcustomer, setNewcustomer] = useState(false)
   return (
     <>
+    <Sidebar/>
     {
       !newcustomer ?(
         <div className="Customer_Container">
@@ -35,7 +38,7 @@ export const Customers = () => {
         </div>
         <p>Email</p>
         <div>
-          <p>Date Joined</p>
+          <p className="Date_Joined">Date Joined</p>
           <p>Orders</p>
           <p>Spending</p>
         </div>
@@ -45,7 +48,7 @@ export const Customers = () => {
         <article>
         <span>
           <input type="checkbox" name="" id="" />
-          <p>ID12344</p>
+          <p className="Id_customer">ID12344</p>
           <div>
             <img src="" alt="" />
           </div>
@@ -53,9 +56,9 @@ export const Customers = () => {
         </span>
         <p>ronin@gmai.com</p>
         <span>
-          <p>July 20 2024</p>
+          <p className="Date_Joined">July 20 2024</p>
           <p>50 Orders</p>
-          <p>$23,000.00</p>
+          <p>$23,000</p>
         </span>
         <p className="Customer_Action_Icon">
           <MdOutlineEdit/>

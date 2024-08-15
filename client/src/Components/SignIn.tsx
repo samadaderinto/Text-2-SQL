@@ -45,10 +45,9 @@ export const SignIn = () => {
       
      
       const { data, token } = response.data;
-      console.log(response.data);
 
-      localStorage.setItem('refreshToken', token.refresh);
-      localStorage.setItem('accessToken', token.access);
+      localStorage.setItem('refresh', token.refresh);
+      localStorage.setItem('access', token.access);
 
 
       setFormState({
@@ -59,7 +58,7 @@ export const SignIn = () => {
       });
 
       toast.success('Sign in successful! Redirecting to dashboard...');
-      Nav('/'); 
+      Nav('/dashboard'); 
     } catch (error) {
       console.error('Error during sign-in:', error);
       toast.error('Sign in failed. Please try again.');

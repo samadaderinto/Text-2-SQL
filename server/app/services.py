@@ -1,10 +1,10 @@
 import os
+import secrets
+
 
 from django.conf import settings
-from django.shortcuts import get_object_or_404
-from django.contrib.sites.shortcuts import get_current_site
+from django.shortcuts import get_object_or_404, get_list_or_404
 from django.utils.http import urlsafe_base64_encode
-from django.urls import reverse, reverse_lazy
 from django.utils.encoding import force_bytes
 from django.db import connection
 from django.core.files.storage import default_storage
@@ -21,9 +21,12 @@ from pydub import AudioSegment
 from rest_framework import status
 from rest_framework.response import Response
 
-from utils.algorithms import TokenGenerator, auth_token, send_email, send_mail
+
+
+from utils.algorithms import TokenGenerator, auth_token, send_mail
 
 from .serializers import (
+    AdminSerializer,
     CustomerSerializer,
     OrderSerializer,
     ProductSerializer,
@@ -102,13 +105,11 @@ class StoreService:
 
     def create_store(self, request, name, description, location):
         user = request.user
-        store = self.Store.objects.create(
-            user=user, name=name, description=description, location=location
-        )
+        store = self.Store.objects.create(user=user, name=name, description=description, location=location)
         return store
 
     def get_stores_by_user(self, request):
-        stores = self.Store.objects.filter(user=request.user)
+        stores = get_list_or_404(self.Store, user=request.user)
         serializer = StoreSerializer(stores, many=True)
         return serializer.data
 
@@ -117,12 +118,11 @@ class StoreService:
         store.delete()
         return {'success': 'Store deleted successfully'}
 
-    def update_store(self, request, name=None, description=None, location=None):
+    def update_store(self, request, data):
         store = get_object_or_404(self.Store, user=request.user)
-        store.name = name if name else store.name
-        store.description = description if description else store.description
-        store.save()
-        serializer = StoreSerializer(store)
+        serializer = StoreSerializer(store, data)
+        serializer.is_valid(raise_exceptions=True)
+        serializer.save()
         return serializer.data
 
 
@@ -172,22 +172,33 @@ class ProductService:
         self.User = User
         self.Product = Product
 
-    def get_products(self, product_id):
-        product = get_object_or_404(self.Product, id=product_id)
+    def get_products(self, data):
+        store = data['store']
+        product_id = data['id']
+        product = get_object_or_404(self.Product, store=store, pk=product_id)
         serializer = ProductSerializer(product)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def delete_product(self, product_id):
-        product = get_object_or_404(self.Product, id=product_id)
+    def delete_product(self, data):
+        store = data['store']
+        product_id = data['id']
+        product = get_object_or_404(self.Product, store=store, pk=product_id)
         product.delete()
         return Response(status=status.HTTP_202_ACCEPTED)
 
-    def create_product(self):
-        pass
+    def create_product(self, serializer):
+        serializer.save()
+        return serializer.data
 
-    def update_product(self):
-        pass
+    def update_product(self, data):
+        store = data['store']
+        product_id = data['id']
+        product = get_object_or_404(self.Product, store=store, pk=product_id)
+        serializer = ProductSerializer(product, data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data
 
 
 @inject
@@ -251,3 +262,18 @@ class OrderService:
 class SettingsService:
     def __init__(self, User: Type[User]):
         self.User = User
+
+    def get_admin_info(self, email):
+        admin = self.User.objects.get(email=email)
+
+        return {
+            'email': admin.email,
+            'first_name': admin.first_name,
+            'password': secrets.token_hex(16)
+        }
+
+    def edit_admin_info(self, email, data):
+        serializer = AdminSerializer(data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        admin = self.User.objects.get(email=email)
+        UserSerializer(admin)

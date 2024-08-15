@@ -5,19 +5,16 @@ import { GoContainer } from "react-icons/go";
 import {  IoPeopleOutline  } from 'react-icons/io5'
 import LaptopImg from '../assets/editing-laptop-2048px-231551-2x1-1.webp'
 
+import { DashboardCardProps } from "../types/dashboard";
+import SideBar from "../layouts/SideBar";
+
 export const Dashboard = () => {
 
   const  [Active, setActive] = useState< number | null>(null)
 
-interface card {
-  icon: ReactElement,
-  title: string,
-  value: number,
-  percent: number,
-  increment: number
-}
 
-const cardArray: card[] = [
+
+const cardArray: DashboardCardProps[] = [
 
   {
     icon: <HiOutlineChartSquareBar/>,
@@ -35,7 +32,7 @@ const cardArray: card[] = [
 },
 {
   icon: <GoContainer/>,
-  title: 'Total Salesrt',
+  title: 'Total Sales',
   value: 271568.09,
   percent: 25.5,
   increment: 15
@@ -52,6 +49,8 @@ const cardArray: card[] = [
 
   return (
     <div className="Dashboard_container">
+        <SideBar />
+
      <h1>Welcome Back, Wahab</h1>
      <p>Here's what's happening with your store today.</p>
      <section className="Dashboard_Card_Container">

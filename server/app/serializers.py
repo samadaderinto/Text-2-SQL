@@ -93,7 +93,8 @@ class StoreSerializer(serializers.Serializer):
             "created",
             "updated"]
     
-    
+class StoreSearchSerializer(serializers.Serializer):
+    pass 
 class ProductSerializer(TaggitSerializer, serializers.ModelSerializer):
     tags = TagListSerializerField()
     class Meta:
@@ -106,6 +107,8 @@ class ProductSerializer(TaggitSerializer, serializers.ModelSerializer):
             "discount",
             "description",
             "price",
+            "image",
+            "currency",
             "sale_price",
             "tags",
             "sales",
@@ -156,4 +159,10 @@ class FileSerializer(serializers.Serializer):
             raise serializers.ValidationError('The uploaded file must be an audio file (MP3, WAV, or OGG).')
         return value
     
+class AdminSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=225)  
+    email = serializers.EmailField()
+    password = serializers.CharField(max_length=220, read_only=True)
+    
+
     

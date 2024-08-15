@@ -6,15 +6,12 @@ import axios from "axios"
 import { API_BASE_URL } from "../utils/api"
 
 
+
 export const Forgotpassword = () => {
   const [pop, setPop] = useState(false)
   const [email, setEmail] = useState('')
     const Nav = useNavigate()
 
-useEffect(() => {
-  sessionStorage.setItem('email', JSON.stringify(email))
-
-}, [email])
 
     const Reset = async()=> {
      
@@ -27,8 +24,8 @@ useEffect(() => {
         
 
       } catch (error) {
-        alert('failed')
-        console.log(error)
+      
+       
       }
 
     }
@@ -64,7 +61,10 @@ useEffect(() => {
                 with instructions to reset your password.please
                 check your inbox to get started.
               </p>
+
+  
               <span onClick={()=> setPop(false)} className="Login_Btn">Go Back</span>
+
             </div>
           </section>
           ): null

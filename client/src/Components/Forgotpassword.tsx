@@ -63,7 +63,10 @@ useEffect(() => {
                 with instructions to reset your password.please
                 check your inbox to get started.
               </p>
+
+  
               <span onClick={()=> setPop(false)} className="Login_Btn">Go Back</span>
+
             </div>
           </section>
           ): null

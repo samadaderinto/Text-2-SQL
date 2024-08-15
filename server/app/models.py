@@ -145,7 +145,7 @@ class Order(DatesMixin):
     ("paid", "paid"))
     
     
-    id = models.CharField(max_length=15, default=generate(size=15), unique=True, editable=False, primary_key=True)
+    id = models.CharField(max_length=15, default=generate(size=15), unique=True, primary_key=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     status = models.CharField(choices=ORDER_STATUS_CHOICE, max_length=15)
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
@@ -153,8 +153,8 @@ class Order(DatesMixin):
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     
     def save(self, *args, **kwargs):
-        if not self.orderId:
-            self.orderId = self._generate_unique()
+        if not self.id:
+            self.id = self._generate_unique()
         super().save(*args, **kwargs)
 
     def _generate_unique(self, size=15):

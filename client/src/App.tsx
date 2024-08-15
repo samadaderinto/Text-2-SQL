@@ -3,7 +3,7 @@ import './SCSS/Main.scss'
 
 
 import Home from './pages/home'
-import PageNotFound from './pages/PageNotFound'
+import { PageNotFound } from './pages/PageNotFound'
 
 import { SignIn } from './Components/SignIn'
 import { Signup } from './Components/Signup'
@@ -19,7 +19,8 @@ import { Header } from './layouts/Header'
 import { SideBar } from './layouts/SideBar'
 import { Logout } from './Components/Logout'
 
-
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 
@@ -37,7 +38,7 @@ function App() {
           <Route path='/' element={<Home />}/>
             <Route index path='/dashboard' element={<Dashboard />} />
             <Route path='/product' element={<Product />} />
-            <Route path='/product/new-product' element={<Newproduct />} />
+            <Route path='/product/add' element={<Newproduct />} />
             <Route path='/orders' element={<Orders />} />
             <Route path='/customers' element={<Customers />} />
             <Route path='/settings' element={<Settings />} />
@@ -46,11 +47,13 @@ function App() {
           <Route path='auth/signup' element={<Signup />} />
           <Route path='auth/signin' element={<SignIn />} />
           <Route path='auth/forgot-password' element={<Forgotpassword />} />
-          <Route path='auth/new-password' element={<Newpassword />} />
+          <Route path='auth/reset-password/:mail' element={<Newpassword />} />
 
 
-          <Route path="*" element={<PageNotFound />}></Route>
+          <Route path="*" element={<PageNotFound />} />
         </Routes>
+
+
       </BrowserRouter>
     </>
   )

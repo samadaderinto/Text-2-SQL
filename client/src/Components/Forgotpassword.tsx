@@ -3,6 +3,7 @@ import { PiDiamondsFourFill } from "react-icons/pi"
 import { FaArrowLeft } from 'react-icons/fa6'
 import { useState } from "react"
 import axios from "axios"
+import { API_BASE_URL } from "../utils/api"
 
 
 export const Forgotpassword = () => {
@@ -10,14 +11,18 @@ export const Forgotpassword = () => {
   const [email, setEmail] = useState('')
     const Nav = useNavigate()
 
+useEffect(() => {
+  sessionStorage.setItem('email', JSON.stringify(email))
+
+}, [email])
 
     const Reset = async()=> {
      
       try {
         if(email !== '') {
-          const Response =  await axios.post('http://localhost:8000/auth/reset-password/request/', email)
-          console.log(Response.data)
-          alert('successful')
+          const data = JSON.stringify({email});
+          const Response =  await axios.post(`${API_BASE_URL}/auth/reset-password/request/`, data)
+          
         }
 
       } catch (error) {
@@ -58,7 +63,10 @@ export const Forgotpassword = () => {
                 with instructions to reset your password.please
                 check your inbox to get started.
               </p>
-              <span onClick={()=>Nav('/auth/new-password')} className="Login_Btn">Go Back</span>
+
+  
+              <span onClick={()=> setPop(false)} className="Login_Btn">Go Back</span>
+
             </div>
           </section>
           ): null

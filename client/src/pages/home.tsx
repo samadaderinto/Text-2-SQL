@@ -34,9 +34,9 @@ const Home = () => {
           // active === 'Logout'?:
           // active === '*'? <PageNotFound/>: null
 
-        }
-      </section>
-     </div>
+          }
+        </section>
+      </div>
       <Outlet />
 
 

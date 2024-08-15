@@ -2,6 +2,8 @@ import { useState } from "react";
 import { LuImagePlus } from "react-icons/lu";
 import axios from 'axios';  // Make sure to install axios
 import { API_BASE_URL } from "../utils/api";
+import SideBar from "../layouts/SideBar";
+
 
 export const Newproduct = () => {
   const [formState, setFormState] = useState({
@@ -100,6 +102,7 @@ export const Newproduct = () => {
 
   return (
     <div className="Newproduct_Container">
+      <SideBar/>
       <h1>Create New Product</h1>
       <section className="Product_Form_Container">
         <div className="GenProduct_Container">

@@ -250,6 +250,8 @@
 @media(max-width:1024px) {
     .Dashboard_container {
         height: max-content;
+        padding-left: 3%;
+        padding-top: 25%;
         .Dashboard_Card_Container {
             height: 100vh;
             flex-wrap: wrap;
@@ -289,6 +291,11 @@
 @media(max-width:884px) {
     .Dashboard_container {
         height: max-content;
+        padding-top: 28%;
+        
+        h1 {
+            font-size: 35px;
+        }
         .Dashboard_Card_Container {
             height: 100vh;
             flex-wrap: wrap;

@@ -9,6 +9,7 @@ import { RiShoppingBag3Line } from "react-icons/ri";
 import {  RxDashboard } from 'react-icons/rx'
 import { RiLogoutBoxLine } from "react-icons/ri";
 import { MdOutlineShoppingCart } from "react-icons/md";
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -18,6 +19,7 @@ export const Header = () => {
   const [listen, setListen] = useState(false)
   const [voice, setVoice] = useState(false)
   const [activeIndex, setActiveIndex] = useState< number>(0)
+  const Nav = useNavigate()
 //   const [active, setActive] = useState('')
   const [audio, setAudio] = useState<Blob | null>(null)
   const [isRecording, setIsRecording] = useState(false);
@@ -32,27 +34,27 @@ export const Header = () => {
   const sideBarArrayList: item[] = [
     {
       icon: <RxDashboard/>,
-      itemName: 'Dashboard'
+      itemName: 'dashboard'
     },
     {
       icon: <RiShoppingBag3Line/>,
-      itemName: 'Products'
+      itemName: 'product'
     },
     {
       icon: <MdOutlineShoppingCart/>,
-      itemName: 'Orders'
+      itemName: 'orders'
     },
     {
       icon:<IoPeopleOutline/>,
-      itemName: 'Customers'
+      itemName: 'customers'
     },
     {
       icon: <IoSettingsOutline/>,
-      itemName: 'Settings'
+      itemName: 'settings'
     },
     {
       icon: <RiLogoutBoxLine/>,
-      itemName: 'Logout'
+      itemName: 'logout'
     }
   ]
 
@@ -145,6 +147,7 @@ export const Header = () => {
     //   setActive(obj.itemName)              
       setActiveIndex(index)
     setMenu(false)
+    Nav(`/${obj.itemName}`)
     }} 
       
     className={activeIndex === index? 'Active_List': ''}>

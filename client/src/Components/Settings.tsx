@@ -3,6 +3,7 @@ import axios from "axios";
 import Sidebar from '../layouts/SideBar';
 import { API_BASE_URL } from "../utils/api";
 import { useNavigate } from "react-router-dom";
+import { Header } from "../layouts/Header";
 
 export const Settings = () => {
   const [active, setActive] = useState('General');
@@ -221,5 +222,6 @@ export const Settings = () => {
         </div>
       </form>
     </div>
+    </>
   );
 };

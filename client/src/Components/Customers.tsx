@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Newcustomer } from "./Newcustomer";
 import { Header } from "../layouts/Header"
 import Sidebar from '../layouts/SideBar'
-import { Header } from "../layouts/Header";
+// import { Header } from "../layouts/Header";
 
 
 

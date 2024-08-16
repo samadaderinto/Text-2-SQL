@@ -56,10 +56,10 @@ export const Forgotpassword = () => {
             <section className="Forgot_Pop">
             <div>
               <h3>Password Reset</h3>
-              <p>We have sent an email to <h4>{email}</h4>
+              <h4>We have sent an email to <p>{email}</p>
                 with instructions to reset your password.please
                 check your inbox to get started.
-              </p>
+              </h4>
 
   
               <span onClick={()=> setPop(false)} className="Login_Btn">Go Back</span>

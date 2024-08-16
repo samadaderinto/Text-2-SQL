@@ -4,6 +4,7 @@ import { FiSearch } from "react-icons/fi";
 import { useState } from "react";
 import { Newcustomer } from "./Newcustomer";
 import Sidebar from '../layouts/SideBar'
+import { Header } from "../layouts/Header";
 
 
 
@@ -12,6 +13,7 @@ export const Customers = () => {
   const [newcustomer, setNewcustomer] = useState(false)
   return (
     <>
+    <Header/>
     <Sidebar/>
     {
       !newcustomer ?(

@@ -15,7 +15,7 @@ import { Customers } from './Components/Customers'
 import { Product } from './Components/Product'
 import { Settings } from './Components/Settings'
 import { Newproduct } from './Components/Newproduct'
-import { Header } from './layouts/Header'
+// import { Header } from './layouts/Header'
 
 
 import { Logout } from './Components/Logout'
@@ -40,7 +40,6 @@ function App() {
         }}
       >
       
-        <Header />
         
         <Routes>
           <Route path='/' element={<Home />} />

@@ -49,8 +49,10 @@ const cardArray: DashboardCardProps[] = [
 ]
 
   return (
-    <div className="Dashboard_container">
+    <>
     <Header/>
+
+    <div className="Dashboard_container">
         <SideBar />
 
      <h1>Welcome Back, Wahab</h1>
@@ -120,5 +122,6 @@ const cardArray: DashboardCardProps[] = [
      <section className="Bottom_Graph_Container"></section>
 
     </div>
+    </>
   )
 }

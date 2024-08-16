@@ -1,11 +1,16 @@
 import { MdOutlineDownload, MdOutlineDelete } from "react-icons/md";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
 import Sidebar from "../layouts/SideBar";
+import { Header } from "../layouts/Header";
+
 
 
 export const Orders = () => {
   return (
+    <> 
+    <Header/>
     <div className="Order_Container">
+      
       <Sidebar/>
       <section className="Order_Header">
         <h1>Order</h1>
@@ -58,6 +63,7 @@ export const Orders = () => {
         </div>
       </section>
     </div>
+    </>
   )
 }
 

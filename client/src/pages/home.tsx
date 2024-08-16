@@ -6,6 +6,18 @@ import { Outlet } from "react-router-dom";
 // import { Orders } from "../Components/Orders";
 // import { Customers } from "../Components/Customers";
 // import { Settings } from "../Components/Settings";
+// import { PageNotFound } from "./PageNotFound";
+// import axios from "axios";
+// import { API_BASE_URL } from "../utils/api"
+// import { RiLogoutBoxLine, RiShoppingBag3Line } from "react-icons/ri";
+// import { RxDashboard } from "react-icons/rx";
+// import { IoPeopleOutline, IoSettingsOutline } from "react-icons/io5";
+// import { MdOutlineShoppingCart } from "react-icons/md";
+// import { Dashboard } from "../Components/Dashboard";
+// import { Product } from "../Components/Product";
+// import { Orders } from "../Components/Orders";
+// import { Customers } from "../Components/Customers";
+// import { Settings } from "../Components/Settings";
 // import { RxDashboard } from 'react-icons/rx'
 // import { RiShoppingBag3Line, RiLogoutBoxLine } from 'react-icons/ri'
 // import { MdOutlineShoppingCart } from 'react-icons/md'

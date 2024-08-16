@@ -22,28 +22,29 @@ from rest_framework import status
 from rest_framework.response import Response
 
 
-
 from utils.algorithms import TokenGenerator, auth_token, send_mail
 
 from .serializers import (
     AdminSerializer,
     CustomerSerializer,
+    NotificationSerializer,
     OrderSerializer,
     ProductSerializer,
     StoreSerializer,
     UserSerializer
 )
-from .models import Customer, Order, Product, Store, User
+from .models import Customer, Notification, Order, Product, Store, User
 
 
 @inject
 class AuthService:
-    def __init__(self, User: Type[User]):
+    def __init__(self, User: Type[User], Store: Type[Store]):
         self.User = User
+        self.Store = Store
 
     def get_base_url(self, request):
-        scheme = request.scheme  # 'http' or 'https'
-        host = request.get_host()  # 'example.com' or 'example.com:8000'
+        scheme = request.scheme
+        host = request.get_host()
         return f'{scheme}://{host}'
 
     def send_activation_mail(self, request, email):
@@ -66,6 +67,7 @@ class AuthService:
             return None
 
         self.User.objects.create_user(email=email, password=password)
+        self.Store.objects.get_or_create(email=email)
         self.send_activation_mail(request, email)
 
     def login_user(self, request, email, password):
@@ -103,9 +105,9 @@ class StoreService:
         self.User = User
         self.Store = Store
 
-    def create_store(self, request, name, description, location):
+    def create_store(self, request, data):
         user = request.user
-        store = self.Store.objects.create(user=user, name=name, description=description, location=location)
+        store = self.Store.objects.get_or_create(user=user, **data)
         return store
 
     def get_stores_by_user(self, request):
@@ -121,6 +123,13 @@ class StoreService:
     def update_store(self, request, data):
         store = get_object_or_404(self.Store, user=request.user)
         serializer = StoreSerializer(store, data)
+        serializer.is_valid(raise_exceptions=True)
+        serializer.save()
+        return serializer.data
+
+    def partially_update_store(self, request, data):
+        store = get_object_or_404(self.Store, user=request.user)
+        serializer = StoreSerializer(store, data, partial=True)
         serializer.is_valid(raise_exceptions=True)
         serializer.save()
         return serializer.data
@@ -236,13 +245,12 @@ class CustomerService:
 @inject
 class OrderService:
     def __init__(self, User: Type[User], Order: Type[Order]):
-        self.User = (User,)
+        self.User = User
         self.Order = Order
 
-    def get_order(self, id, user_id):
-        order = get_object_or_404(self.Order, id=id, user__id=user_id)
-        serializer = OrderSerializer(order)
-        return serializer.data
+    def get_orders(self, id, user_id):
+        order = get_list_or_404(self.Order, id=id, user__id=user_id)
+        return order
 
     def create_order(self, serializer):
         serializer.save()
@@ -260,8 +268,9 @@ class OrderService:
 
 @inject
 class SettingsService:
-    def __init__(self, User: Type[User]):
+    def __init__(self, User: Type[User], Notification: Type[Notification]):
         self.User = User
+        self.Notification = Notification
 
     def get_admin_info(self, email):
         admin = self.User.objects.get(email=email)
@@ -273,7 +282,24 @@ class SettingsService:
         }
 
     def edit_admin_info(self, email, data):
-        serializer = AdminSerializer(data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
         admin = self.User.objects.get(email=email)
-        UserSerializer(admin)
+
+        # Serialize and validate the data (with partial updates allowed)
+        serializer = UserSerializer(admin, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Save the updated data
+        serializer.save()
+
+        # Return the updated admin instance
+        return admin
+
+    def get_notification_info(self, email):
+        notification_settings = self.Notification.objects.get(email=email)
+
+        return notification_settings
+
+    def update_notification_info(self, email, data):
+        notification_settings = self.Notification.objects.get(email=email)
+
+        serializer = NotificationSerializer(notification_settings, data)

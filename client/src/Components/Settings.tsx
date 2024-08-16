@@ -114,6 +114,8 @@ export const Settings = () => {
   };
 
   return (
+    <>
+    <Header/>
     <div className="Settings_Container">
       <Sidebar />
       <h1>Settings</h1>

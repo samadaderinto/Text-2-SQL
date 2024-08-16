@@ -24,6 +24,7 @@ from .serializers import (
     EmailSerializer,
     LogOutSerializer,
     LoginSerializer,
+    NotificationSerializer,
     OrderSerializer,
     ProductSerializer,
     ResetPasswordSerializer,
@@ -379,16 +380,10 @@ class StoreViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
         phone_number = serializer.validated_data['phone_number']
-        customer = self.customer_service.get_customer(
-            request, email=email, phone_number=phone_number
-        )
+        customer = self.store_service.get_customer(request, email=email, phone_number=phone_number)
 
         return Response(status=200, data=customer)
 
-    @extend_schema(responses={204: None})
-    @action(detail=False, methods=['post'], url_path='delete')
-    def delete_store(self, request):
-        pass
 
 
 class OrderViewSet(viewsets.GenericViewSet):
@@ -443,7 +438,7 @@ class SettingsViewSet(viewsets.GenericViewSet):
         admin_info = self.settings_service.get_admin_info(request.user.email)
         return Response(status=200, data=AdminSerializer(admin_info).data)
 
-    @extend_schema(responses={200: AdminSerializer})
+    @extend_schema(request=AdminSerializer, responses={200: AdminSerializer})
     @action(detail=False, methods=['put'], url_path='admin/update')
     def edit_admin_info(self, request):
         data = JSONParser().parse(request)
@@ -459,14 +454,18 @@ class SettingsViewSet(viewsets.GenericViewSet):
 
     @extend_schema(responses={200: StoreSerializer})
     @action(detail=False, methods=['get'], url_path='store/get')
-    def notification(self, request):
-        stores = self.store_service.get_stores_by_user(request)
-        return Response(status=200, data=stores)
-    
-    @extend_schema(responses={200: StoreSerializer})
-    @action(detail=False, methods=['get'], url_path='store/get')
     def list_stores(self, request):
         stores = self.store_service.get_stores_by_user(request)
         return Response(status=200, data=stores)
-    
-    
+
+    @extend_schema(responses={200: NotificationSerializer})
+    @action(detail=False, methods=['get'], url_path='notification/get')
+    def get_notification_info(self, request):
+        stores = self.store_service.get_stores_by_user(request)
+        return Response(status=200, data=stores)
+
+    @extend_schema(responses={200: NotificationSerializer})
+    @action(detail=False, methods=['get'], url_path='notification/update')
+    def update_notification_info(self, request):
+        stores = self.store_service.get_stores_by_user(request)
+        return Response(status=200, data=stores)

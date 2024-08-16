@@ -21,7 +21,8 @@ import { Newproduct } from './Components/Newproduct'
 import { Logout } from './Components/Logout'
 import ProtectedRoute from './utils/hooks'
 import { useState } from 'react'
-import { AuthContext } from './contexts/user-contexts'
+import { AuthContext } from './contexts/user-context'
+import { UserProps } from './types/user'
 
 
 
@@ -30,13 +31,14 @@ import { AuthContext } from './contexts/user-contexts'
 function App() {
 
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
+  const [user, setUser] = useState<null | undefined | UserProps>(null)
 
   return (
     <AuthContext.Provider
         value={{
           isSignedIn,
           setIsSignedIn,
-          user: null,
+          user: user,
         }}
       >
       

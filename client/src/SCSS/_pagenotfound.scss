@@ -1,6 +1,45 @@
 .Not_Found_Container {
     width: 100%;
     height: 100vh;
-    padding-left: 30%;
-    padding-top: 10%;
+    
+
+    .Content_container {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+
+        h1 {
+            color: rgb(68, 71, 90);
+            font-weight: 600;
+            font-size: 40px;
+            padding: 1%;
+        }
+
+        p {
+            color: rgb(170, 169, 169);
+            font-size: 14px;
+        }
+    }
+}
+
+
+@media(max-width: 884px) {
+    .Not_Found_Container {
+        padding: 4%;
+        .Content_container {
+            h1 {
+                font-size: 35px;
+                padding-bottom: 4%;
+            }
+
+            p {
+                font-size: 17px;
+                text-align: center;
+            }
+
+        }
+    }
 }

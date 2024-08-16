@@ -327,19 +327,27 @@ class CustomerViewSet(viewsets.GenericViewSet):
         customer = self.customer_service.update_customer(data)
         return Response(status=201, data=customer)
 
-    @extend_schema(responses={200: CustomerSerializer})
+    @extend_schema(responses={200: CustomerSerializer(many=True)})
     @action(detail=False, methods=['get'], url_path='get')
     def retrieve_customer(self, request, pk=None):
+
         data = JSONParser().parse(request)
+        paginator = self.pagination_class()
+
         serializer = CustomerSearchSerializer(data=data)
         serializer.is_valid(raise_exception=True)
+
+        order_id = serializer.validated_data['id']
         email = serializer.validated_data['email']
         phone_number = serializer.validated_data['phone_number']
-        customer = self.customer_service.get_customer(
+
+        customers = self.customer_service.get_customer(
             request, email=email, phone_number=phone_number
         )
+        paginated_orders = paginator.paginate_queryset(customers, request)
 
-        return Response(status=200, data=customer)
+        serializer = OrderSerializer(paginated_orders, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(responses={204: None})
     @action(detail=False, methods=['post'], url_path='ban')
@@ -362,7 +370,7 @@ class StoreViewSet(viewsets.GenericViewSet):
         data = JSONParser().parse(request)
         serializer = StoreSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        customer = self.store_service.create_store(request, serializer)
+        customer = self.store_service.create_store(request, **serializer.data)
         return Response(status=201, data=customer)
 
     @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
@@ -380,10 +388,11 @@ class StoreViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
         phone_number = serializer.validated_data['phone_number']
-        customer = self.store_service.get_customer(request, email=email, phone_number=phone_number)
+        customer = self.store_service.get_customer(
+            request, email=email, phone_number=phone_number
+        )
 
         return Response(status=200, data=customer)
-
 
 
 class OrderViewSet(viewsets.GenericViewSet):
@@ -411,17 +420,23 @@ class OrderViewSet(viewsets.GenericViewSet):
         customer = self.order_service.update_order(data)
         return Response(status=201, data=customer)
 
-    @extend_schema(responses={200: OrderSerializer})
+    @extend_schema(responses={200: OrderSerializer(many=True)})
     @action(detail=False, methods=['get'], url_path='get')
     def retrieve_order(self, request):
         data = JSONParser().parse(request)
+        paginator = self.pagination_class()
+
         serializer = OrderSearchSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        id = serializer.validated_data['id']
-        user_id = serializer.validated_data['user_id']
-        customer = self.order_service.get_order(request, id=id, user_id=user_id)
 
-        return Response(status=200, data=customer)
+        order_id = serializer.validated_data['id']
+        user_id = serializer.validated_data['user_id']
+
+        orders = self.order_service.get_orders(request, id=order_id, user=user_id)
+        paginated_orders = paginator.paginate_queryset(orders, request)
+
+        serializer = OrderSerializer(paginated_orders, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class SettingsViewSet(viewsets.GenericViewSet):
@@ -438,34 +453,40 @@ class SettingsViewSet(viewsets.GenericViewSet):
         admin_info = self.settings_service.get_admin_info(request.user.email)
         return Response(status=200, data=AdminSerializer(admin_info).data)
 
-    @extend_schema(request=AdminSerializer, responses={200: AdminSerializer})
+    @extend_schema(request=UserSerializer, responses={201: AdminSerializer})
     @action(detail=False, methods=['put'], url_path='admin/update')
     def edit_admin_info(self, request):
         data = JSONParser().parse(request)
+
         admin_info = self.settings_service.edit_admin_info(request.user.email, data)
+
         return Response(status=200, data=AdminSerializer(admin_info).data)
+
+    @extend_schema(responses={200: StoreSerializer})
+    @action(detail=False, methods=['get'], url_path='store/get')
+    def get_store(self, request):
+        store = self.Store.objects.get(user=request.user)
+        return Response(status=200, data=StoreSerializer(store).data)
 
     @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
     @action(detail=False, methods=['put'], url_path='store/update')
     def update_store(self, request):
         data = JSONParser().parse(request)
-        store = self.store_service.update_store(request, data)
+        store = self.store_service.partially_update_store(request, data)
         return Response(status=201, data=store)
-
-    @extend_schema(responses={200: StoreSerializer})
-    @action(detail=False, methods=['get'], url_path='store/get')
-    def list_stores(self, request):
-        stores = self.store_service.get_stores_by_user(request)
-        return Response(status=200, data=stores)
 
     @extend_schema(responses={200: NotificationSerializer})
     @action(detail=False, methods=['get'], url_path='notification/get')
     def get_notification_info(self, request):
-        stores = self.store_service.get_stores_by_user(request)
-        return Response(status=200, data=stores)
+        notification_info = self.store_service.get_notification_info(request.user.email)
+        return Response(status=200, data=NotificationSerializer(notification_info).data)
 
     @extend_schema(responses={200: NotificationSerializer})
-    @action(detail=False, methods=['get'], url_path='notification/update')
+    @action(detail=False, methods=['put'], url_path='notification/update')
     def update_notification_info(self, request):
-        stores = self.store_service.get_stores_by_user(request)
+        data = JSONParser().parse(request)
+        serializer = NotificationSerializer
+        stores = self.store_service.update_notification_info(
+            request.user.email, serializer.validated_data(data)
+        )
         return Response(status=200, data=stores)

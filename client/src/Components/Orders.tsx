@@ -2,9 +2,15 @@ import { MdOutlineDownload, MdOutlineDelete } from "react-icons/md";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
 import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/SideBar";
+import axios from "axios";
 
 
 export const Orders = () => {
+
+
+  axios.get("");
+  
+
   return (
     <>
       <Header/>

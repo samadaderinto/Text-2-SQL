@@ -160,10 +160,11 @@ class FileSerializer(serializers.Serializer):
 
 
 class AdminSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=225)
+    first_name = serializers.CharField(max_length=225)
     email = serializers.EmailField()
     password = serializers.CharField(max_length=220, read_only=True)
-    
+
+
 class NotificationSerializer(serializers.Serializer):
     email_notification = serializers.BooleanField(default=False)
     sms_notification = serializers.BooleanField(default=False)

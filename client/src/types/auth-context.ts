@@ -1,7 +1,8 @@
-import { User } from "./user";
+import { UserProps } from "./user";
 
 export interface AuthContextType {
     isSignedIn: boolean;
     setIsSignedIn: (signedIn: boolean) => void;
-    user: User | undefined | null;
+    user: UserProps | undefined | null;
+
 }

@@ -7,6 +7,7 @@ import LaptopImg from '../assets/editing-laptop-2048px-231551-2x1-1.webp'
 
 import { DashboardCardProps } from "../types/dashboard";
 import SideBar from "../layouts/SideBar";
+import { Header } from "../layouts/Header"
 
 export const Dashboard = () => {
 
@@ -49,6 +50,7 @@ const cardArray: DashboardCardProps[] = [
 
   return (
     <div className="Dashboard_container">
+    <Header/>
         <SideBar />
 
      <h1>Welcome Back, Wahab</h1>

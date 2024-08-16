@@ -3,6 +3,7 @@ import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-ic
 import { FiSearch } from "react-icons/fi";
 // import { useState } from "react";
 // import { Newproduct } from "./Newproduct";
+import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/SideBar";
 import { useNavigate } from "react-router-dom";
 
@@ -13,6 +14,7 @@ export const Product = () => {
   const Nav = useNavigate()
   return (
       <div className="Product_Container">
+        <Header/>
         <Sidebar/>
       <section className="Add_Product">
         <h1>All Products</h1>

@@ -1,16 +1,48 @@
+import { useState } from 'react';
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-icons/md";
 import { FiSearch } from "react-icons/fi";
-// import { useState } from "react";
-// import { Newproduct } from "./Newproduct";
 import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/SideBar";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../utils/api";
+import axios from 'axios'
 
 
 
 export const Product = () => {
-  // const [newproduct, setNewproduct] = useState(false)
+  const [currentPage, setCurrentpage] = useState(0)
+  const itemsPerPage = 15;
+  const offset = currentPage * itemsPerPage;
+  const [input, setInput] = useState('')
+  const strInput = JSON.stringify({input})
+
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/products/search/?offset=${offset}&limit=${itemsPerPage}`, {strInput}, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        }
+      })
+      const data = response.data;
+
+      return data;
+    }
+    catch (error) {
+      console.error("error fetching data", error)
+    }
+  }
+
+  // const currentItems = data.slice(offset, offset + itemsPerPage);
+ 
+
+  const handlePageClick = (event) => {
+    const selectedPage = event.selected;
+    setCurrentPage(selectedPage);
+  };
+
+  const access = localStorage.getItem('access')
+  const accessToken = JSON.stringify({ access });
   const Nav = useNavigate()
   return (
       <div className="Product_Container">
@@ -24,7 +56,11 @@ export const Product = () => {
         <div>
           <span>
             <FiSearch className="Search_Icon"/>
-          <input type="text" placeholder="Search Name" />
+          <input type="text" value={input} onChange={(e)=>{
+            setInput(e.target.value)
+            
+
+          }} placeholder="Search Name" />
           </span>
           <MdOutlineCalendarToday/>
         </div>
@@ -43,24 +79,42 @@ export const Product = () => {
           <p>Action</p>
         </div>
         <div className="Product_Table_List_content">
-          <span>
-            <input type="checkbox" />
-            <article className="Product_Img_Container">
-            <img src="" alt="" />
-            </article>
-            <p>Gold Stainless Spoons & Forks</p> 
-          </span>
-          <span className="Product_Details">
-            <p className="Product_Category">Furniture</p>
-            <p className="Product_Available">available</p>
-            <p>$500</p>
-            <p>335</p>
-            <p>$15643.00</p>
-          </span>
-          <p className="Product_Icons">
-            <MdOutlineEdit/>
-            <MdOutlineDelete/>
-          </p>
+        {
+          data.map((key, index)=>(
+            <nav key={index}>
+            <span>
+               <input type="checkbox" />
+               <article className="Product_Img_Container">
+               <img src="" alt="" />
+               </article>
+               <p>Gold Stainless Spoons & Forks</p> 
+             </span>
+             <span className="Product_Details">
+               <p className="Product_Category">Furniture</p>
+               <p className="Product_Available">available</p>
+               <p>$500</p>
+               <p>335</p>
+               <p>$15643.00</p>
+             </span>
+             <p className="Product_Icons">
+               <MdOutlineEdit/>
+               <MdOutlineDelete/>
+             </p>
+            </nav>
+          ))
+        }
+
+<ReactPaginate
+        previousLabel={'previous'}
+        nextLabel={'next'}
+        breakLabel={'...'}
+        pageCount={Math.ceil(data.length / itemsPerPage)}
+        marginPagesDisplayed={2}
+        pageRangeDisplayed={5}
+        onPageChange={handlePageClick}
+        containerClassName={'Order_pagination'}
+        activeClassName={'Order_page_active'}
+      />
         </div>
       </section>
     </div>

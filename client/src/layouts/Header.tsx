@@ -9,7 +9,9 @@ import { RiShoppingBag3Line } from "react-icons/ri";
 import { RxDashboard } from 'react-icons/rx';
 import { RiLogoutBoxLine } from "react-icons/ri";
 import { MdOutlineShoppingCart } from "react-icons/md";
+import { API_BASE_URL } from "../utils/api";
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export const Header = () => {
   const [menu, setMenu] = useState(false);
@@ -101,6 +103,28 @@ export const Header = () => {
     stopRecording();
   }
 
+  
+  const access = localStorage.getItem('access')
+
+  const accessToken = JSON.stringify({ access });
+
+  const handleUpload = async()=> {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/query/upload/{file:${audio}}`,  {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    
+    );
+    console.log(response.data)
+    }
+    catch(error) {
+      console.error(error)
+    }
+  
+  }
+ 
   return (
     <div className='Header_Container'>
       <span><PiDiamondsFourFill /> EchoCart</span>
@@ -155,7 +179,10 @@ export const Header = () => {
         }} className="Search_By_Voice">Search By Voice</span>
       }
       {
-        listen && <span onClick={() => setListen(false)} className="Search_By_Voice Stop_Voice">Stop recording</span>
+        listen && <span onClick={() => {
+          setListen(false)
+          handleUpload()
+        }} className="Search_By_Voice Stop_Voice">Stop recording</span>
       }
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { MdOutlineDownload, MdOutlineDelete } from "react-icons/md";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
 import { Header } from "../layouts/Header";
@@ -16,6 +16,7 @@ export const Orders = () => {
   const [currentPage, setCurrentPage] = useState(0)
   const access = localStorage.getItem('access')
   const accessToken = JSON.stringify({ access });
+  const [datas, setData] = useState<string[]>([])
 
   // const handleSearch = () => {
   //   if(input !== '') {
@@ -31,16 +32,21 @@ export const Orders = () => {
           Authorization: `Bearer ${accessToken}`,
         }
       })
-      const data = response.data;
+      const datum: string[] = response.data;
 
-      return data;
+      setData(datum)
     }
     catch (error) {
       console.error("error fetching data", error)
     }
   }
+  
 
-  fetchData()
+  useEffect(() => {
+    fetchData()
+
+  }, [])
+  
 
   const offset = currentPage * itemsPerPage;
 
@@ -94,7 +100,7 @@ export const Orders = () => {
           <div className="Order_List_Item">
 
               {
-                data.map((item:PageClickEvent, index:number)=>(
+                datas.map((item:string, index:number)=>(
                   <article key={index}>
                      <input type="checkbox" name="" id="" />
                       <p style={{ color: 'black' }}>#123456789</p>
@@ -111,7 +117,7 @@ export const Orders = () => {
         previousLabel={'previous'}
         nextLabel={'next'}
         breakLabel={'...'}
-        pageCount={Math.ceil(data.length / itemsPerPage)}
+        pageCount={Math.ceil(datas.length / itemsPerPage)}
         marginPagesDisplayed={2}
         pageRangeDisplayed={5}
         onPageChange={handlePageClick}

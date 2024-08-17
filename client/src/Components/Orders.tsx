@@ -40,9 +40,15 @@ export const Orders = () => {
     }
   }
 
+  fetchData()
+
   const offset = currentPage * itemsPerPage;
 
-  const handlePageClick = (event) => {
+  interface PageClickEvent {
+    selected: number;
+  }
+
+  const handlePageClick = (event:PageClickEvent) => {
     const selectedPage = event.selected;
     setCurrentPage(selectedPage);
   };
@@ -88,7 +94,7 @@ export const Orders = () => {
           <div className="Order_List_Item">
 
               {
-                data.map((item, index)=>(
+                data.map((item:PageClickEvent, index:number)=>(
                   <article key={index}>
                      <input type="checkbox" name="" id="" />
                       <p style={{ color: 'black' }}>#123456789</p>

@@ -80,7 +80,8 @@ class Store(DatesMixin):
     bio = models.TextField()
     phone = PhoneNumberField(null=True, blank=True)
     currency = models.CharField(max_length=89, default='USD')
-
+    
+    
     def save(self, *args, **kwargs):
         if not self.username:
             self.username = self._generate_unique_username()
@@ -140,12 +141,12 @@ class Product(DatesMixin):
 
     def set_availability(self, quantity_bought: int):
         self.available -= quantity_bought
-
+        
     def save(self, *args, **kwargs):
         self.currency = self.store.currency
-
+        
         super().save(*args, **kwargs)
-
+            
 
 class Cart(DatesMixin):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

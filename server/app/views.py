@@ -268,7 +268,6 @@ class ProductViewSet(viewsets.GenericViewSet):
         super().__init__(**kwargs)
         self.product_service: ProductService = di[ProductService]
 
-    # pagination_class = Paginator
     permission_classes = (ServerAccessPolicy,)
     serializer_class = ProductSerializer
 
@@ -282,6 +281,7 @@ class ProductViewSet(viewsets.GenericViewSet):
         return Response(status=201, data=product)
 
     @extend_schema(request=ProductSerializer, responses={200: ProductSerializer})
+    @action(detail=False, methods=['put'], url_path='update')
     def update_product(self, request, pk=None):
         serializer = ProductSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -290,13 +290,19 @@ class ProductViewSet(viewsets.GenericViewSet):
         )
         return Response(status=201, data=ProductSerializer(product).data)
 
-    @extend_schema(responses={200: ProductSerializer})
+    @extend_schema(responses={200: ProductSerializer(many=True)})
+    @action(detail=False, methods=['get'], url_path='search')
     def retrieve_product(self, request):
-        product = self.get_object()
-        serializer = ProductSerializer(product)
-        return Response(status=200, data=serializer.data)
+        products = Product.objects.all()
+        page_number = request.GET.get('offset', 1)
+        per_page = request.GET.get('limit', 15)
+        paginator = Paginator(products, per_page=per_page)
+        paginator_products = paginator.get_page(page_number)
+        serializer = ProductSerializer(paginator_products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(responses={204: None})
+    @action(detail=False, methods=['delete'], url_path='search')
     def delete_product(self, request):
         self.product_service.delete_product(request.user)
         return Response(status=204)
@@ -306,8 +312,6 @@ class CustomerViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.customer_service: CustomerService = di[CustomerService]
-
-    pagination_class = Paginator
 
     permission_classes = (ServerAccessPolicy,)
 
@@ -330,24 +334,23 @@ class CustomerViewSet(viewsets.GenericViewSet):
     @extend_schema(responses={200: CustomerSerializer(many=True)})
     @action(detail=False, methods=['get'], url_path='get')
     def retrieve_customer(self, request, pk=None):
-
         data = JSONParser().parse(request)
-        paginator = self.pagination_class()
-
         serializer = CustomerSearchSerializer(data=data)
         serializer.is_valid(raise_exception=True)
 
-        order_id = serializer.validated_data['id']
         email = serializer.validated_data['email']
         phone_number = serializer.validated_data['phone_number']
 
         customers = self.customer_service.get_customer(
             request, email=email, phone_number=phone_number
         )
-        paginated_orders = paginator.paginate_queryset(customers, request)
 
-        serializer = OrderSerializer(paginated_orders, many=True)
-        return paginator.get_paginated_response(serializer.data)
+        page_number = request.GET.get('offset', 1)
+        per_page = request.GET.get('limit', 15)
+        paginator = Paginator(customers, per_page=per_page)
+        paginator_customers = paginator.get_page(page_number)
+        serializer = CustomerSerializer(paginator_customers, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(responses={204: None})
     @action(detail=False, methods=['post'], url_path='ban')
@@ -400,7 +403,6 @@ class OrderViewSet(viewsets.GenericViewSet):
         super().__init__(**kwargs)
         self.order_service: OrderService = di[OrderService]
 
-    pagination_class = Paginator
     permission_classes = (ServerAccessPolicy,)
     serializer_class = OrderSerializer
 
@@ -421,11 +423,9 @@ class OrderViewSet(viewsets.GenericViewSet):
         return Response(status=201, data=customer)
 
     @extend_schema(responses={200: OrderSerializer(many=True)})
-    @action(detail=False, methods=['get'], url_path='get')
+    @action(detail=False, methods=['get'], url_path='search')
     def retrieve_order(self, request):
         data = JSONParser().parse(request)
-        paginator = self.pagination_class()
-
         serializer = OrderSearchSerializer(data=data)
         serializer.is_valid(raise_exception=True)
 
@@ -433,10 +433,14 @@ class OrderViewSet(viewsets.GenericViewSet):
         user_id = serializer.validated_data['user_id']
 
         orders = self.order_service.get_orders(request, id=order_id, user=user_id)
-        paginated_orders = paginator.paginate_queryset(orders, request)
+
+        page_number = request.GET.get('offset', 1)
+        per_page = request.GET.get('limit', 15)
+        paginator = Paginator(orders, per_page=per_page)
+        paginated_orders = paginator.get_page(page_number)
 
         serializer = OrderSerializer(paginated_orders, many=True)
-        return paginator.get_paginated_response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SettingsViewSet(viewsets.GenericViewSet):

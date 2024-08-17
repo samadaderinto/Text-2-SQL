@@ -128,6 +128,27 @@
             justify-content: space-between;
             font-size: 13px;
 
+            .pagination {
+                display: flex;
+                list-style: none;
+                padding: 0;
+                margin: 0;
+              }
+              
+              .Order_pagination a {
+                margin: 0 5px;
+                padding: 10px;
+                text-decoration: none;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+              }
+              
+              .Order_pagination .Order_page_active a {
+                background-color: #007bff;
+                color: white;
+              }
+              
+
             article {
                 width: 35%;
                 height: 100%;

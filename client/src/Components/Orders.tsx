@@ -6,7 +6,7 @@ import Sidebar from "../layouts/SideBar";
 import axios from "axios";
 import Reactpaginate from 'react-paginate'
 import { API_BASE_URL } from "../utils/api";
-import { data } from "autoprefixer";
+// import { data } from "autoprefixer";
 
 
 export const Orders = () => {

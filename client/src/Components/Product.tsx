@@ -5,13 +5,14 @@ import { FiSearch } from "react-icons/fi";
 import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/SideBar";
 import { useNavigate } from "react-router-dom";
+import ReactPaginate from 'react-paginate';
 import { API_BASE_URL } from "../utils/api";
 import axios from 'axios'
 
 
 
 export const Product = () => {
-  const [currentPage, setCurrentpage] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0)
   const itemsPerPage = 15;
   const offset = currentPage * itemsPerPage;
   const [input, setInput] = useState('')
@@ -33,10 +34,12 @@ export const Product = () => {
     }
   }
 
+  fetchData()
+
   // const currentItems = data.slice(offset, offset + itemsPerPage);
  
 
-  const handlePageClick = (event) => {
+  const handlePageClick = (event: ReactEventHandler) => {
     const selectedPage = event.selected;
     setCurrentPage(selectedPage);
   };

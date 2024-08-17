@@ -1,4 +1,5 @@
 import os
+import logging
 
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect
@@ -55,8 +56,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from pydub import AudioSegment
 from pydub.utils import which
 
+logger = logging.getLogger(__name__)
+
 AudioSegment.converter = which('ffmpeg')
 
+from openai import OpenAI
+from django.conf import settings
 
 class AuthViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
@@ -238,9 +243,11 @@ class QueryViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.query_service: QueryService = di[QueryService]
+        self.client = OpenAI(max_retries=3, api_key=settings.OPENAI_API_KEY)
+
 
     # permission_classes = (ServerAccessPolicy,)
-    permission_classes = (ServerAccessPolicy,)
+    permission_classes = (AllowAny,)
     parser_classes = [MultiPartParser, FormParser]
 
     @extend_schema(request=FileSerializer, responses={status.HTTP_200_OK: None})
@@ -256,10 +263,21 @@ class QueryViewSet(viewsets.GenericViewSet):
             audio = AudioSegment.from_file(file_path)
             wav_file_path = file_path.rsplit('.', 1)[0] + '.wav'
             audio.export(wav_file_path, format='wav')
-            result = self.query_service.runSQLQuery(request, wav_file_path, file_path)
+            # result = self.query_service.runSQLQuery(request, wav_file_path, file_path)
+            with open(wav_file_path, 'rb') as audio_file:
+                response = self.client.audio.transcriptions.create(
+                    model='whisper-1', file=audio_file
+                )
+
+            return Response(data=response['text'])
+        except Exception as e:
+             logger.error(f"Error processing audio file: {e}")
+             return Response({"detail": "Error processing file."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         finally:
-            os.remove(file_path)
-            os.remove(wav_file_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            if os.path.exists(wav_file_path):
+                os.remove(wav_file_path)
         return Response(result, status=status.HTTP_200_OK)
 
 

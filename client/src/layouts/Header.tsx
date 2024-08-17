@@ -5,7 +5,9 @@ import { RiSpeakLine } from "react-icons/ri";
 import { PiDiamondsFourFill } from "react-icons/pi";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { IoPeopleOutline, IoSearch, IoSettingsOutline } from "react-icons/io5";
+import { IoPeopleOutline, IoSearch, IoSettingsOutline } from "react-icons/io5";
 import { RiShoppingBag3Line } from "react-icons/ri";
+import { RxDashboard } from 'react-icons/rx';
 import { RxDashboard } from 'react-icons/rx';
 import { RiLogoutBoxLine } from "react-icons/ri";
 import { MdOutlineShoppingCart } from "react-icons/md";
@@ -18,10 +20,18 @@ export const Header = () => {
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const Nav = useNavigate();
   const [audio, setAudio] = useState<Blob | null>(null);
+  const [listen, setListen] = useState(false);
+  const [voice, setVoice] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+  const Nav = useNavigate();
+  const [audio, setAudio] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  interface Item {
+    icon: ReactElement;
+    itemName: string;
   interface Item {
     icon: ReactElement;
     itemName: string;

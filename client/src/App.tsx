@@ -23,6 +23,7 @@ import ProtectedRoute from './utils/hooks'
 import { useState } from 'react'
 import { AuthContext } from './contexts/user-context'
 import { UserProps } from './types/user'
+import { Newcustomer } from './Components/Newcustomer'
 
 
 
@@ -50,6 +51,7 @@ function App() {
           <Route path='/product/add' element={<ProtectedRoute><Newproduct /></ProtectedRoute>} />
           <Route path='/orders' element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path='/customers' element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+          <Route path='/customers/add' element={<ProtectedRoute><Newcustomer /></ProtectedRoute>} />
           <Route path='/settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path='logout' element={<ProtectedRoute><Logout /></ProtectedRoute>} />
 

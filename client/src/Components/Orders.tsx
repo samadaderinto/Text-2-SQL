@@ -101,6 +101,7 @@ export const Orders = () => {
 
               {
                 datas.map((item:string, index:number)=>(
+                  <>
                   <article key={index}>
                      <input type="checkbox" name="" id="" />
                       <p style={{ color: 'black' }}>#123456789</p>
@@ -109,6 +110,16 @@ export const Orders = () => {
                        </span>
                         <p style={{ color: 'black' }}>Wahab Adetunji</p>
                   </article>
+                  <article>
+              <p className="Order_Status">pending</p>
+              <p>Jul 3, at 3:54pm</p>
+              <p>$3500</p>
+            <p className="Order_Icon_action">
+              <MdOutlineDownload />
+              <MdOutlineDelete />
+            </p>
+            </article>
+                  </>
 
                 ))
               }
@@ -126,15 +137,7 @@ export const Orders = () => {
       />
               
             {/* </article> */}
-            <article>
-              <p className="Order_Status">pending</p>
-              <p>Jul 3, at 3:54pm</p>
-              <p>$3500</p>
-            <p className="Order_Icon_action">
-              <MdOutlineDownload />
-              <MdOutlineDelete />
-            </p>
-            </article>
+          
           </div>
         </section>
       </div>

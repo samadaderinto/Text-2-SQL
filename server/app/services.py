@@ -1,3 +1,4 @@
+import io
 import os
 import secrets
 
@@ -38,9 +39,12 @@ from .models import Customer, Notification, Order, Product, Store, User
 
 @inject
 class AuthService:
-    def __init__(self, User: Type[User], Store: Type[Store]):
+    def __init__(
+        self, User: Type[User], Store: Type[Store], Notification: Type[Notification]
+    ):
         self.User = User
         self.Store = Store
+        self.Notification = Notification
 
     def get_base_url(self, request):
         scheme = request.scheme
@@ -66,8 +70,9 @@ class AuthService:
         if self.User.objects.filter(email=email).exists():
             return None
 
-        self.User.objects.create_user(email=email, password=password)
-        self.Store.objects.get_or_create(email=email)
+        user = self.User.objects.create_user(email=email, password=password)
+        self.Store.objects.create(user=user)
+        self.Notification.objects.create(user=user)
         self.send_activation_mail(request, email)
 
     def login_user(self, request, email, password):
@@ -123,14 +128,14 @@ class StoreService:
     def update_store(self, request, data):
         store = get_object_or_404(self.Store, user=request.user)
         serializer = StoreSerializer(store, data)
-        serializer.is_valid(raise_exceptions=True)
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
 
     def partially_update_store(self, request, data):
         store = get_object_or_404(self.Store, user=request.user)
         serializer = StoreSerializer(store, data, partial=True)
-        serializer.is_valid(raise_exceptions=True)
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
 
@@ -143,32 +148,27 @@ class QueryService:
 
     def sanitize_sql_query(self, query):
         query = query.strip()
-        # Extract the command (first word) from the query
         command = query.split(' ', 1)[0].upper()
 
         if command in self.commands:
-            # Perform basic sanitization
-            # This should be extended with more thorough checks for a production environment
             return query
         else:
             raise ValueError('Disallowed SQL command')
 
-    def audio_to_text(self, request, wav_file_path, file_path):
-        with open(wav_file_path, 'rb') as audio_file:
+    def audio_to_text(self, request, audio_data):
+        with io.BytesIO(audio_data) as audio_file:
             response = self.client.audio.transcriptions.create(
                 model='whisper-1', file=audio_file
             )
-
         return response['text']
 
-    def text_to_SQL(self, request, wav_file_path, file_path):
-        text = self.audio_to_text(request, wav_file_path, file_path)
-
+    def text_to_SQL(self, request, audio_data):
+        text = self.audio_to_text(request, audio_data)
         return text
 
-    def runSQLQuery(self, request, wav_file_path, file_path):
-        query = self.text_to_SQL(request, wav_file_path, file_path)
-        sanitized_query = self.sanitize_query(query)
+    def runSQLQuery(self, request, audio_data):
+        query = self.text_to_SQL(request, audio_data)
+        sanitized_query = self.sanitize_sql_query(query)
         with connection.cursor() as cursor:
             cursor.execute(sanitized_query)
             data = cursor.fetchall()
@@ -283,23 +283,15 @@ class SettingsService:
 
     def edit_admin_info(self, email, data):
         admin = self.User.objects.get(email=email)
-
-        # Serialize and validate the data (with partial updates allowed)
         serializer = UserSerializer(admin, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
-
-        # Save the updated data
         serializer.save()
-
-        # Return the updated admin instance
         return admin
 
-    def get_notification_info(self, email):
-        notification_settings = self.Notification.objects.get(email=email)
-
+    def get_notification_info(self, user):
+        notification_settings = get_object_or_404(self.Notification, user=user)
         return notification_settings
 
-    def update_notification_info(self, email, data):
-        notification_settings = self.Notification.objects.get(email=email)
-
+    def update_notification_info(self, user, data):
+        notification_settings = get_object_or_404(self.Notification, user=user)
         serializer = NotificationSerializer(notification_settings, data)

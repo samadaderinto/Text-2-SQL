@@ -22,14 +22,13 @@ export const Settings = () => {
 
   const access = localStorage.getItem('access')
 
-  const accessToken = JSON.stringify({ access });
 
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/settings/admin/get/`, {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${access}`,
           },
         });
         const adminData = response.data;
@@ -49,7 +48,7 @@ export const Settings = () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/settings/store/get/`, {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${access}`,
           },
         });
         const storeData = response.data;
@@ -65,11 +64,11 @@ export const Settings = () => {
       }
     };
 
-    const fetchNoticationData = async () => {
+    const fetchNotificationData = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/settings/notifications/get/`, {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${access}`,
           },
         });
         const notificationData = response.data;
@@ -79,6 +78,8 @@ export const Settings = () => {
           emailNotifications: notificationData.emailNotifications || false,
           smsNotifications: notificationData.smsNotifications || false,
         }));
+
+
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -86,7 +87,7 @@ export const Settings = () => {
 
     fetchAdminData();
     fetchStoreData();
-    fetchNoticationData();
+    fetchNotificationData();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -103,10 +104,14 @@ export const Settings = () => {
 
       if (active === 'General') {
         // API endpoint for updating general information
-        response = await axios.post(`${API_BASE_URL}/settings/store/update/`, {
+        response = await axios.put(`${API_BASE_URL}/settings/store/update/`, {
           name: formData.storeName,
           email: formData.storeEmail,
           currency: formData.currency,
+        }, {
+          headers: {
+            Authorization: `Bearer ${access}`,
+          },
         });
       } else if (active === 'Account') {
         // API endpoint for updating account information
@@ -114,12 +119,20 @@ export const Settings = () => {
           adminName: formData.adminName,
           adminEmail: formData.adminEmail,
           password: formData.password,
+        }, {
+          headers: {
+            Authorization: `Bearer ${access}`,
+          },
         });
       } else if (active === 'Notifications') {
         // API endpoint for updating notification settings
-        response = await axios.post(`${API_BASE_URL}/api/settings/notifications/`, {
+        response = await axios.put(`${API_BASE_URL}/api/settings/notifications/`, {
           emailNotifications: formData.emailNotifications,
           smsNotifications: formData.smsNotifications,
+        }, {
+          headers: {
+            Authorization: `Bearer ${access}`,
+          },
         });
       }
 

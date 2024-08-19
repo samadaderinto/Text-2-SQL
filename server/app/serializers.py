@@ -1,14 +1,13 @@
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_str
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+import base64
+from django.core.files.base import ContentFile
+
 
 from .models import Customer, Order, Product, Store, User
 
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework import status
+
 
 from phonenumber_field.serializerfields import PhoneNumberField
 from taggit.serializers import TagListSerializerField, TaggitSerializer
@@ -77,16 +76,13 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
 class StoreSerializer(serializers.Serializer):
     class Meta:
         model = Store
-        fields = [
-            'id',
-            'user',
-            'username',
-            'name',
-            'bio',
-            'phone',
-            'created',
-            'updated'
-        ]
+        fields = '__all__'
+        
+        def update(self, instance, validated_data):
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+            return instance
 
 
 class StoreSearchSerializer(serializers.Serializer):
@@ -150,13 +146,12 @@ class FileSerializer(serializers.Serializer):
 
     def validate_file(self, value):
         """
-        Validate the uploaded file to ensure it is an audio file.
+        Validate the uploaded file to ensure it is an MP3 file.
         """
-        if not value.name.endswith(('.mp3', '.wav', '.ogg')):
-            raise serializers.ValidationError(
-                'The uploaded file must be an audio file (MP3, WAV, or OGG).'
-            )
+        if not value.name.endswith('.mp3'):
+            raise serializers.ValidationError('The uploaded file must be an MP3 file.')
         return value
+
 
 
 class AdminSerializer(serializers.Serializer):

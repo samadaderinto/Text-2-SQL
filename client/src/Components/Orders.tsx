@@ -10,13 +10,13 @@ import { API_BASE_URL } from "../utils/api";
 
 
 export const Orders = () => {
-  
+
   const itemsPerPage = 15;
   const [input, setInput] = useState('')
   const [currentPage, setCurrentPage] = useState(0)
   const access = localStorage.getItem('access')
-  const accessToken = JSON.stringify({ access });
-  const [datas, setData] = useState<string[]>([])
+
+  const [data, setData] = useState<string[]>([])
 
   // const handleSearch = () => {
   //   if(input !== '') {
@@ -29,7 +29,7 @@ export const Orders = () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/orders/search/?offset=${offset}&limit=${itemsPerPage}`, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${access}`,
         }
       })
       const datum: string[] = response.data;
@@ -40,13 +40,13 @@ export const Orders = () => {
       console.error("error fetching data", error)
     }
   }
-  
+
 
   useEffect(() => {
     fetchData()
 
   }, [])
-  
+
 
   const offset = currentPage * itemsPerPage;
 
@@ -54,7 +54,7 @@ export const Orders = () => {
     selected: number;
   }
 
-  const handlePageClick = (event:PageClickEvent) => {
+  const handlePageClick = (event: PageClickEvent) => {
     const selectedPage = event.selected;
     setCurrentPage(selectedPage);
   };
@@ -99,45 +99,42 @@ export const Orders = () => {
 
           <div className="Order_List_Item">
 
-              {
-                datas.map((item:string, index:number)=>(
-                  <>
-                  <article key={index}>
-                     <input type="checkbox" name="" id="" />
-                      <p style={{ color: 'black' }}>#123456789</p>
-                        <span>
-                         <img src="" alt="" />
-                       </span>
-                        <p style={{ color: 'black' }}>Wahab Adetunji</p>
-                  </article>
-                  <article>
+            {
+              data.map((_item: string, index: number) => (
+                <article key={index}>
+                  <input type="checkbox" name="" id="" />
+                  <p style={{ color: 'black' }}>#123456789</p>
+                  <span>
+                    <img src="" alt="" />
+                  </span>
+                  <p style={{ color: 'black' }}>Wahab Adetunji</p>
+                </article>
+
+              ))
+            }
+
+            <Reactpaginate
+              previousLabel={'previous'}
+              nextLabel={'next'}
+              breakLabel={'...'}
+              pageCount={Math.ceil(data.length / itemsPerPage)}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={5}
+              onPageChange={handlePageClick}
+              containerClassName={'Order_pagination'}
+              activeClassName={'Order_page_active'}
+            />
+
+            {/* </article> */}
+            <article>
               <p className="Order_Status">pending</p>
               <p>Jul 3, at 3:54pm</p>
               <p>$3500</p>
-            <p className="Order_Icon_action">
-              <MdOutlineDownload />
-              <MdOutlineDelete />
-            </p>
+              <p className="Order_Icon_action">
+                <MdOutlineDownload />
+                <MdOutlineDelete />
+              </p>
             </article>
-                  </>
-
-                ))
-              }
-
-     <Reactpaginate
-        previousLabel={'previous'}
-        nextLabel={'next'}
-        breakLabel={'...'}
-        pageCount={Math.ceil(datas.length / itemsPerPage)}
-        marginPagesDisplayed={2}
-        pageRangeDisplayed={5}
-        onPageChange={handlePageClick}
-        containerClassName={'Order_pagination'}
-        activeClassName={'Order_page_active'}
-      />
-              
-            {/* </article> */}
-          
           </div>
         </section>
       </div>

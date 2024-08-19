@@ -21,7 +21,6 @@ class ServerAccessPolicy(AccessPolicy):
             'principal': '*',
             'effect': 'allow'
         },
-        {'action': ['logout'], 'principal': ['authenticated'], 'effect': 'allow'},
         {
             'action': [
                 'create_customers',
@@ -42,7 +41,8 @@ class ServerAccessPolicy(AccessPolicy):
                 'update_notification_info',
                 'retrieve_order',
                 'update_order',
-                'create_order'
+                'create_order',
+                'logout'
             ],
             'principal': ['authenticated'],
             'effect': 'allow'

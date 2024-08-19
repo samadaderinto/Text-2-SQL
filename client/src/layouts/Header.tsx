@@ -19,10 +19,9 @@ export const Header = () => {
   const [voice, setVoice] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const Nav = useNavigate();
-  const [audio, setAudio] = useState<Blob | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
 
   interface Item {
     icon: ReactElement;
@@ -30,63 +29,34 @@ export const Header = () => {
   }
 
   const sideBarArrayList: Item[] = [
-    {
-      icon: <RxDashboard />,
-      itemName: 'dashboard'
-    },
-    {
-      icon: <RiShoppingBag3Line />,
-      itemName: 'product'
-    },
-    {
-      icon: <MdOutlineShoppingCart />,
-      itemName: 'orders'
-    },
-    {
-      icon: <IoPeopleOutline />,
-      itemName: 'customers'
-    },
-    {
-      icon: <IoSettingsOutline />,
-      itemName: 'settings'
-    },
-    {
-      icon: <RiLogoutBoxLine />,
-      itemName: 'logout'
-    }
+    { icon: <RxDashboard />, itemName: 'dashboard' },
+    { icon: <RiShoppingBag3Line />, itemName: 'product' },
+    { icon: <MdOutlineShoppingCart />, itemName: 'orders' },
+    { icon: <IoPeopleOutline />, itemName: 'customers' },
+    { icon: <IoSettingsOutline />, itemName: 'settings' },
+    { icon: <RiLogoutBoxLine />, itemName: 'logout' }
   ];
 
   const startRecording = async () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream);
-
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         mediaRecorderRef.current = mediaRecorder;
-        mediaRecorderRef.current.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
-          }
-        };
 
-        mediaRecorderRef.current.onstop = () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-          const audioUrl = URL.createObjectURL(audioBlob);
-          setAudio(audioBlob);
-          console.log(audio);
-          console.log('Recording stopped. Audio URL:', audioUrl);
-          audioChunksRef.current = [];
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            setAudioBlob(event.data);
+          }
         };
 
         mediaRecorder.start();
         setIsRecording(true);
       } catch (error) {
         console.error('Error accessing microphone:', error);
-        alert('Permission denied. Please allow access to the microphone.');
       }
     } else {
       console.error('getUserMedia not supported on this browser.');
-      alert('getUserMedia is not supported on this browser.');
     }
   };
 
@@ -103,45 +73,45 @@ export const Header = () => {
     stopRecording();
   }
 
-  
-  const access = localStorage.getItem('access')
+  const access = localStorage.getItem('access');
 
-  const accessToken = JSON.stringify({ access });
+  const handleUpload = async () => {
+    if (audioBlob) {
+      const formData = new FormData();
+      formData.append('file', new File([audioBlob], 'audio.mp3', { type: 'audio/mp3' }));
 
-  const handleUpload = async()=> {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/query/upload/{file:${audio}}`,  {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+      try {
+        const response = await axios.post(`${API_BASE_URL}/query/upload/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${access}`,
+          },
+        });
+        console.log(response.data);
+      } catch (error) {
+        console.error('Error uploading audio:', error);
       }
-    
-    );
-    console.log(response.data)
+    } else {
+      console.error('No audio data available for upload.');
     }
-    catch(error) {
-      console.error(error)
-    }
-  
-  }
- 
+  };
+
   return (
     <div className='Header_Container'>
       <span><PiDiamondsFourFill /> EchoCart</span>
       <section className="Search_Container">
-        {
-          listen ?
-            <>
-              <span>Listening...</span>
-              <p><FaEarListen /></p>
-            </>
-            :
-            <>
-              <p className="Header_Search_Icon"><IoSearch /></p>
-              <input type="text" placeholder="Search anything..." />
-              <p onClick={() => setVoice(!voice)}><RiSpeakLine /></p>
-            </>
-        }
+        {listen ? (
+          <>
+            <span>Listening...</span>
+            <p><FaEarListen /></p>
+          </>
+        ) : (
+          <>
+            <p className="Header_Search_Icon"><IoSearch /></p>
+            <input type="text" placeholder="Search anything..." />
+            <p onClick={() => setVoice(!voice)}><RiSpeakLine /></p>
+          </>
+        )}
       </section>
       <section className="RightHand_Container">
         <p className="Exclusive_Store">Exclusive Store</p>
@@ -149,41 +119,46 @@ export const Header = () => {
         <div className="Image_Container"></div>
       </section>
       <p onClick={() => setMenu(!menu)} className="Mobile_Menu"><RxDropdownMenu /></p>
-      {
-        menu &&
-        (
-          <article className="Mobile_Menu_Nav">
-            {
-              sideBarArrayList.map((obj, index) => (
-                <span
-                  key={index}
-                  onClick={() => {
-                    setActiveIndex(index);
-                    setMenu(false);
-                    Nav(`/${obj.itemName}`);
-                  }}
-                  className={activeIndex === index ? 'Active_List' : ''}
-                >
-                  <p className="List_icon">{obj.icon}</p>
-                  <p>{obj.itemName}</p>
-                </span>
-              ))
-            }
-          </article>
-        )
-      }
-      {
-        voice && <span onClick={() => {
-          setVoice(false);
-          setListen(true);
-        }} className="Search_By_Voice">Search By Voice</span>
-      }
-      {
-        listen && <span onClick={() => {
-          setListen(false)
-          handleUpload()
-        }} className="Search_By_Voice Stop_Voice">Stop recording</span>
-      }
+      {menu && (
+        <article className="Mobile_Menu_Nav">
+          {sideBarArrayList.map((obj, index) => (
+            <span
+              key={index}
+              onClick={() => {
+                setActiveIndex(index);
+                setMenu(false);
+                Nav(`/${obj.itemName}`);
+              }}
+              className={activeIndex === index ? 'Active_List' : ''}
+            >
+              <p className="List_icon">{obj.icon}</p>
+              <p>{obj.itemName}</p>
+            </span>
+          ))}
+        </article>
+      )}
+      {voice && (
+        <span
+          onClick={() => {
+            setVoice(false);
+            setListen(true);
+          }}
+          className="Search_By_Voice"
+        >
+          Search By Voice
+        </span>
+      )}
+      {listen && (
+        <span
+          onClick={() => {
+            setListen(false);
+            handleUpload();
+          }}
+          className="Search_By_Voice Stop_Voice"
+        >
+          Stop recording
+        </span>
+      )}
     </div>
   );
 };

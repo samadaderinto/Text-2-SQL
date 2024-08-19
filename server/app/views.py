@@ -1,3 +1,4 @@
+import io
 import os
 import logging
 
@@ -7,22 +8,24 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
 from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
-from rest_framework import viewsets, mixins
+
+from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
-from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 
-from .models import Customer, Order, Product, User
+from .models import Customer, Order, Product, Store, User
 from .permissions import ServerAccessPolicy
 from .serializers import (
     AdminSerializer,
     CustomerSerializer,
     CustomerSearchSerializer,
     EmailSerializer,
+    FileSerializer,
     LogOutSerializer,
     LoginSerializer,
     NotificationSerializer,
@@ -32,8 +35,7 @@ from .serializers import (
     OrderSearchSerializer,
     StoreSearchSerializer,
     StoreSerializer,
-    UserSerializer,
-    FileSerializer
+    UserSerializer
 )
 from .services import (
     AuthService,
@@ -60,8 +62,11 @@ logger = logging.getLogger(__name__)
 
 AudioSegment.converter = which('ffmpeg')
 
+
+
 from openai import OpenAI
 from django.conf import settings
+
 
 class AuthViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
@@ -77,24 +82,32 @@ class AuthViewSet(viewsets.GenericViewSet):
     @extend_schema(request=UserSerializer, responses={201: UserSerializer})
     @action(detail=False, methods=['post'], url_path='signup')
     def signup(self, request):
-        data = JSONParser().parse(request)
-        serializer = UserSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        result = self.auth_service.create_user(
-            request,
-            serializer.validated_data['email'],
-            serializer.validated_data['password']
-        )
-
-        if result:
-            return Response(
-                {'message': 'Email already registered'},
-                status=status.HTTP_400_BAD_REQUEST
+        try:
+            data = JSONParser().parse(request)
+            serializer = UserSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            result = self.auth_service.create_user(
+                request,
+                serializer.validated_data['email'],
+                serializer.validated_data['password']
             )
-        return Response(
-            {'message': 'User successfully created, Verify your email account'},
-            status=status.HTTP_201_CREATED
-        )
+
+            if result:
+                return Response(
+                    {'message': 'Email already registered'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            return Response(
+                {'message': 'User successfully created, Verify your email account'},
+                status=status.HTTP_201_CREATED
+            )
+
+        except Exception as e:
+            logger.error(f"Error in signup: {e}")
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={'message': 'Invalid user information'}
+            )
 
     @extend_schema(responses={301: None})
     @action(
@@ -144,10 +157,11 @@ class AuthViewSet(viewsets.GenericViewSet):
         serializer = LogOutSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         try:
-            RefreshToken(serializer.validated_data['refresh']).blacklist()
+            refresh = RefreshToken(serializer.validated_data['refresh'])
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+        refresh.blacklist()
         return Response(
             data={'Successfully logged out'}, status=status.HTTP_205_RESET_CONTENT
         )
@@ -243,10 +257,7 @@ class QueryViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.query_service: QueryService = di[QueryService]
-        self.client = OpenAI(max_retries=3, api_key=settings.OPENAI_API_KEY)
 
-
-    # permission_classes = (ServerAccessPolicy,)
     permission_classes = (AllowAny,)
     parser_classes = [MultiPartParser, FormParser]
 
@@ -254,30 +265,32 @@ class QueryViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['post'], url_path='upload')
     def audio_to_query(self, request):
         serializer = FileSerializer(data=request.data)
-
         serializer.is_valid(raise_exception=True)
+
         audio_file = serializer.validated_data['file']
-        file_path = default_storage.save('temp_audio_file', audio_file)
+        file_path = default_storage.save('uploaded_audio.mp3', audio_file)
+        wav_file_path = None
 
         try:
-            audio = AudioSegment.from_file(file_path)
+            audio = AudioSegment.from_mp3(file_path)
             wav_file_path = file_path.rsplit('.', 1)[0] + '.wav'
             audio.export(wav_file_path, format='wav')
-            # result = self.query_service.runSQLQuery(request, wav_file_path, file_path)
-            with open(wav_file_path, 'rb') as audio_file:
-                response = self.client.audio.transcriptions.create(
-                    model='whisper-1', file=audio_file
-                )
 
-            return Response(data=response['text'])
+            # Assuming you have a method to process the WAV file and generate the query
+            result = self.query_service.runSQLQuery(request, wav_file_path, file_path)
         except Exception as e:
-             logger.error(f"Error processing audio file: {e}")
-             return Response({"detail": "Error processing file."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error processing audio file: {e}")
+            return Response(
+                {'detail': 'Error processing file.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         finally:
-            if os.path.exists(file_path):
+            # Safely remove files if they exist
+            if file_path and os.path.exists(file_path):
                 os.remove(file_path)
-            if os.path.exists(wav_file_path):
+            if wav_file_path and os.path.exists(wav_file_path):
                 os.remove(wav_file_path)
+
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -383,7 +396,8 @@ class StoreViewSet(viewsets.GenericViewSet):
         super().__init__(**kwargs)
         self.store_service: StoreService = di[StoreService]
 
-    permission_classes = (ServerAccessPolicy,)
+    # permission_classes = (ServerAccessPolicy,)
+    permission_classes = (AllowAny,)
 
     @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
     @action(detail=False, methods=['post'], url_path='create')
@@ -467,7 +481,8 @@ class SettingsViewSet(viewsets.GenericViewSet):
         self.settings_service: SettingsService = di[SettingsService]
         self.store_service: StoreService = di[StoreService]
 
-    permission_classes = (ServerAccessPolicy,)
+    # permission_classes = (ServerAccessPolicy,)
+    permission_classes = (AllowAny,)
 
     @extend_schema(responses={200: AdminSerializer})
     @action(detail=False, methods=['get'], url_path='admin/get')
@@ -487,7 +502,7 @@ class SettingsViewSet(viewsets.GenericViewSet):
     @extend_schema(responses={200: StoreSerializer})
     @action(detail=False, methods=['get'], url_path='store/get')
     def get_store(self, request):
-        store = self.Store.objects.get(user=request.user)
+        store = Store.objects.get(user=request.user)
         return Response(status=200, data=StoreSerializer(store).data)
 
     @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
@@ -498,17 +513,17 @@ class SettingsViewSet(viewsets.GenericViewSet):
         return Response(status=201, data=store)
 
     @extend_schema(responses={200: NotificationSerializer})
-    @action(detail=False, methods=['get'], url_path='notification/get')
+    @action(detail=False, methods=['get'], url_path='notifications/get')
     def get_notification_info(self, request):
-        notification_info = self.store_service.get_notification_info(request.user.email)
+        notification_info = self.settings_service.get_notification_info(request.user)
         return Response(status=200, data=NotificationSerializer(notification_info).data)
 
     @extend_schema(responses={200: NotificationSerializer})
-    @action(detail=False, methods=['put'], url_path='notification/update')
+    @action(detail=False, methods=['put'], url_path='notifications/update')
     def update_notification_info(self, request):
         data = JSONParser().parse(request)
         serializer = NotificationSerializer
-        stores = self.store_service.update_notification_info(
-            request.user.email, serializer.validated_data(data)
+        stores = self.settings_service.update_notification_info(
+            request.user, serializer.validated_data(data)
         )
         return Response(status=200, data=stores)

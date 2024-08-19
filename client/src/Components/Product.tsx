@@ -18,7 +18,6 @@ export const Product = () => {
 
   const offset = currentPage * itemsPerPage;
   const access = localStorage.getItem('access');
-  const accessToken = access ? `Bearer ${access}` : '';
   const navigate = useNavigate();
 
   // Fetch data when currentPage or input changes
@@ -27,7 +26,7 @@ export const Product = () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/products/search/?offset=${offset}&limit=${itemsPerPage}&query=${input}`, {
           headers: {
-            Authorization: accessToken,
+            Authorization: `Bearer ${access}`,
           }
         });
         setData(response.data.items); // Adjust based on your API response
@@ -38,7 +37,7 @@ export const Product = () => {
     };
 
     fetchData();
-  }, [currentPage, input, accessToken, itemsPerPage]);
+  }, [currentPage, input, itemsPerPage]);
 
   const handlePageClick = (event: { selected: number }) => {
     setCurrentPage(event.selected);

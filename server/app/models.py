@@ -73,7 +73,7 @@ class User(AbstractUser):
 
 
 class Store(DatesMixin):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
     username = models.CharField(max_length=17, unique=True)
     email = models.EmailField(blank=True, null=True)
     name = models.CharField(max_length=100)
@@ -88,7 +88,7 @@ class Store(DatesMixin):
         super().save(*args, **kwargs)
 
     def _generate_unique_username(self, size=15):
-        username = generate(size)
+        username = generate(size=size)
         while Store.objects.filter(username=username).exists():
             username = generate(size)
         return username
@@ -183,7 +183,7 @@ class Order(DatesMixin):
     def _generate_unique(self, size=15):
         id = generate(size)
         while Order.objects.filter(username=id).exists():
-            id = generate(size)
+            id = generate(size=size)
         return id
 
 

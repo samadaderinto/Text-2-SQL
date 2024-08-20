@@ -1,4 +1,4 @@
-import {  Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import './SCSS/Main.scss'
 
 
@@ -25,6 +25,8 @@ import { AuthContext } from './contexts/user-context'
 import { UserProps } from './types/user'
 import { Newcustomer } from './Components/Newcustomer'
 
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from 'react-toastify';
 
 
 
@@ -36,34 +38,34 @@ function App() {
 
   return (
     <AuthContext.Provider
-        value={{
-          isSignedIn,
-          setIsSignedIn,
-          user: user,
-        }}
-      >
-      
-        
-        <Routes>
-          <Route path='/' element={<Home />} />
-          <Route index path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path='/product' element={<ProtectedRoute><Product /></ProtectedRoute>} />
-          <Route path='/product/add' element={<ProtectedRoute><Newproduct /></ProtectedRoute>} />
-          <Route path='/orders' element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-          <Route path='/customers' element={<ProtectedRoute><Customers /></ProtectedRoute>} />
-          <Route path='/customers/add' element={<ProtectedRoute><Newcustomer /></ProtectedRoute>} />
-          <Route path='/settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path='logout' element={<ProtectedRoute><Logout /></ProtectedRoute>} />
+      value={{
+        isSignedIn,
+        setIsSignedIn,
+        user: user,
+      }}
+    >
 
-          <Route path='auth/signup' element={<Signup />} />
-          <Route path='auth/signin' element={<SignIn />} />
-          <Route path='auth/forgot-password' element={<Forgotpassword />} />
-          <Route path='auth/reset-password/:mail' element={<Newpassword />} />
-          
+      <ToastContainer />
+      <Routes>
+        <Route path='/' element={<Home />} />
+        <Route index path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path='/product' element={<ProtectedRoute><Product /></ProtectedRoute>} />
+        <Route path='/product/add' element={<ProtectedRoute><Newproduct /></ProtectedRoute>} />
+        <Route path='/orders' element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+        <Route path='/customers' element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+        <Route path='/customers/add' element={<ProtectedRoute><Newcustomer /></ProtectedRoute>} />
+        <Route path='/settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path='logout' element={<ProtectedRoute><Logout /></ProtectedRoute>} />
+
+        <Route path='auth/signup' element={<Signup />} />
+        <Route path='auth/signin' element={<SignIn />} />
+        <Route path='auth/forgot-password' element={<Forgotpassword />} />
+        <Route path='auth/reset-password/:mail' element={<Newpassword />} />
 
 
-          <Route path="*" element={<PageNotFound />} />
-        </Routes>
+
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
 
 
     </AuthContext.Provider>

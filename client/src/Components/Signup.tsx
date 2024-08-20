@@ -29,8 +29,53 @@ export const Signup = () => {
   const Nav = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormState({ ...formState, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // Update form state
+    setFormState({ ...formState, [name]: value });
+
+    // Perform real-time validation
+    let errorMessages = { ...errors };
+
+    if (name === 'email') {
+      if (!value) {
+        errorMessages.email = 'Email is required';
+      } else {
+        errorMessages.email = ''; // Clear error when valid
+      }
+    }
+
+    if (name === 'password') {
+      if (!value) {
+        errorMessages.password = 'Password is required';
+      } else if (!validatePassword(value)) {
+        errorMessages.password = 'Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, one digit, and one special character';
+      } else {
+        errorMessages.password = ''; // Clear error when valid
+      }
+
+      // Also validate confirm password if it's already entered
+      if (formState.confirmpassword && value !== formState.confirmpassword) {
+        errorMessages.confirmpassword = 'Passwords do not match';
+      } else {
+        errorMessages.confirmpassword = ''; // Clear error when valid
+      }
+    }
+
+    if (name === 'confirmpassword') {
+      if (!value) {
+        errorMessages.confirmpassword = 'Confirmation password is required';
+      } else if (value !== formState.password) {
+        errorMessages.confirmpassword = 'Passwords do not match';
+      } else {
+        errorMessages.confirmpassword = ''; // Clear error when valid
+      }
+    }
+
+    // Update error state
+    setErrors(errorMessages);
   };
+
 
   const validatePassword = (password: string) => {
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -82,36 +127,45 @@ export const Signup = () => {
     if (validateForm()) {
       try {
         const { email, password } = formState;
-        const data = JSON.stringify({ email, password});
+        const data = JSON.stringify({ email, password });
 
         const response = await axios.post(`${API_BASE_URL}/auth/signup/`, data, {
           headers: {
             'Content-Type': 'application/json',
           },
-          
         });
 
-        console.log(response.data)
+        console.log(response.data);
 
+        // Clear form and show success message
         setFormState({
           ...formState,
           email: '',
           password: '',
           confirmpassword: '',
         });
-        console.log("dwdw")
-        toast.success('Sign up successful!, Verification link has been sent to your email address');
-        setPop(true)
+        toast.success('Sign up successful! A verification link has been sent to your email address.');
+        // setPop(true);
 
       } catch (error: any) {
         if (error.response && error.response.status === 400) {
-          toast.error('Invalid signup details, please check your input.');
-          setErrors({ ...errors, ...error.response.data });
+          const errorData = error.response.data;
+          console.log(errorData)
+
+          // Check if the error is related to email already existing
+          if (errorData.email && errorData.email.includes('exists')) {
+            setErrors({ ...errors, email: 'Email already exists. Please use a different email.' });
+            toast.error('Email already exists. Please use a different email.');
+          } else {
+            setErrors({ ...errors, ...errorData });
+            toast.error('Invalid signup details, please check your input.');
+          }
         } else {
           toast.error('Sign up failed. Please try again.');
         }
       }
-    } 
+    }
+
   };
 
   return (
@@ -169,16 +223,16 @@ export const Signup = () => {
       </section>
       {
 
-        pop? (
+        pop ? (
           <article className='Signup_Pop_Container'>
-          <span className='Popup_span'>
-          <h4 onClick={()=> setPop(false)} className='Signup_Popup_Cancel'>X</h4>
-     <h5>A verification mail has been sent to your email address.</h5>
-            
-          </span>
-        </article>
-          
-        ): null
+            <span className='Popup_span'>
+              <h4 onClick={() => setPop(false)} className='Signup_Popup_Cancel'>X</h4>
+              <h5>A verification mail has been sent to your email address.</h5>
+
+            </span>
+          </article>
+
+        ) : null
       }
     </div>
   );

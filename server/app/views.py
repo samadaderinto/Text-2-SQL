@@ -1,7 +1,7 @@
 import io
 import os
 import logging
-
+import subprocess
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
@@ -63,7 +63,6 @@ logger = logging.getLogger(__name__)
 AudioSegment.converter = which('ffmpeg')
 
 
-
 from openai import OpenAI
 from django.conf import settings
 
@@ -82,32 +81,24 @@ class AuthViewSet(viewsets.GenericViewSet):
     @extend_schema(request=UserSerializer, responses={201: UserSerializer})
     @action(detail=False, methods=['post'], url_path='signup')
     def signup(self, request):
-        try:
-            data = JSONParser().parse(request)
-            serializer = UserSerializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            result = self.auth_service.create_user(
-                request,
-                serializer.validated_data['email'],
-                serializer.validated_data['password']
-            )
+        data = JSONParser().parse(request)
+        serializer = UserSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        result = self.auth_service.create_user(
+            request,
+            serializer.validated_data['email'],
+            serializer.validated_data['password']
+        )
 
-            if result:
-                return Response(
-                    {'message': 'Email already registered'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+        if result:
             return Response(
-                {'message': 'User successfully created, Verify your email account'},
-                status=status.HTTP_201_CREATED
+                {'message': 'Email already registered'},
+                status=status.HTTP_400_BAD_REQUEST
             )
-
-        except Exception as e:
-            logger.error(f"Error in signup: {e}")
-            return Response(
-                status=status.HTTP_400_BAD_REQUEST,
-                data={'message': 'Invalid user information'}
-            )
+        return Response(
+            {'message': 'User successfully created, Verify your email account'},
+            status=status.HTTP_201_CREATED
+        )
 
     @extend_schema(responses={301: None})
     @action(
@@ -187,7 +178,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             )
         elif data.get('verify', None):
             return Response(
-                status=status.HTTP_401_UNAUTHORIZED, data={'message': data['verify']}
+                status=403, data={'message': data['verify']}
             )
         elif data.get('invalid_info', None):
             return Response(
@@ -269,17 +260,45 @@ class QueryViewSet(viewsets.GenericViewSet):
 
         audio_file = serializer.validated_data['file']
         file_path = default_storage.save('uploaded_audio.mp3', audio_file)
-        wav_file_path = None
+        wav_file_path = file_path.rsplit('.', 1)[0] + '.wav'
 
         try:
-            audio = AudioSegment.from_mp3(file_path)
-            wav_file_path = file_path.rsplit('.', 1)[0] + '.wav'
-            audio.export(wav_file_path, format='wav')
+            # Use FFmpeg to convert MP3 to WAV with error handling
+            result = subprocess.run(
+                [
+                    'ffmpeg',
+                    '-y',  # Overwrite output file if it exists
+                    '-analyzeduration',
+                    '100M',
+                    '-probesize',
+                    '100M',
+                    '-i',
+                    file_path,
+                    '-acodec',
+                    'pcm_s16le',
+                    '-ar',
+                    '44100',
+                    '-ac',
+                    '2',
+                    wav_file_path
+                ],
+                capture_output=True,
+                text=True,
+                check=True
+            )
 
-            # Assuming you have a method to process the WAV file and generate the query
-            result = self.query_service.runSQLQuery(request, wav_file_path, file_path)
+            # If FFmpeg succeeds, process the WAV file
+            with open(wav_file_path, 'rb') as wav_file:
+                result = self.query_service.runSQLQuery(request, wav_file.read())
+
+        except subprocess.CalledProcessError as e:
+            logger.error(f"FFmpeg Error: {e.stderr}")
+            return Response(
+                {'detail': 'Error processing audio file.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         except Exception as e:
-            logger.error(f"Error processing audio file: {e}")
+            logger.error(f"Error processing audio file: {str(e)}")
             return Response(
                 {'detail': 'Error processing file.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -457,14 +476,7 @@ class OrderViewSet(viewsets.GenericViewSet):
     @extend_schema(responses={200: OrderSerializer(many=True)})
     @action(detail=False, methods=['get'], url_path='search')
     def retrieve_order(self, request):
-        data = JSONParser().parse(request)
-        serializer = OrderSearchSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-
-        order_id = serializer.validated_data['id']
-        user_id = serializer.validated_data['user_id']
-
-        orders = self.order_service.get_orders(request, id=order_id, user=user_id)
+        orders = self.order_service.get_orders(request, user=request.user)
 
         page_number = request.GET.get('offset', 1)
         per_page = request.GET.get('limit', 15)

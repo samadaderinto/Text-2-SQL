@@ -15,24 +15,19 @@ export const Orders = () => {
   const [input, setInput] = useState('')
   const [currentPage, setCurrentPage] = useState(0)
   const access = localStorage.getItem('access')
-
+  
   const [data, setData] = useState<string[]>([])
 
-  // const handleSearch = () => {
-  //   if(input !== '') {
-
-  //   }
-  // }
 
 
   const fetchData = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/orders/search/?offset=${offset}&limit=${itemsPerPage}`, {
+      const response = await axios.post(`${API_BASE_URL}/orders/search/?offset=${offset}&limit=${itemsPerPage}`, {
         headers: {
           Authorization: `Bearer ${access}`,
         }
       })
-      const datum: string[] = response.data;
+      const datum: any[] = response.data;
 
       setData(datum)
     }

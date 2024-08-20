@@ -144,7 +144,7 @@ class StoreService:
 class QueryService:
     def __init__(self):
         self.commands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE']
-        self.client = OpenAI(max_retries=3, api_key=settings.OPENAI_API_KEY)
+        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
     def sanitize_sql_query(self, query):
         query = query.strip()
@@ -158,9 +158,9 @@ class QueryService:
     def audio_to_text(self, request, audio_data):
         with io.BytesIO(audio_data) as audio_file:
             response = self.client.audio.transcriptions.create(
-                model='whisper-1', file=audio_file
+                model='whisper-1', file=audio_file, response_format="text"
             )
-        return response['text']
+        return response
 
     def text_to_SQL(self, request, audio_data):
         text = self.audio_to_text(request, audio_data)
@@ -248,8 +248,8 @@ class OrderService:
         self.User = User
         self.Order = Order
 
-    def get_orders(self, id, user_id):
-        order = get_list_or_404(self.Order, id=id, user__id=user_id)
+    def get_orders(self, user):
+        order = get_list_or_404(self.Order, user=user)
         return order
 
     def create_order(self, serializer):

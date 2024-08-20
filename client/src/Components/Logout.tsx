@@ -6,16 +6,11 @@ import { API_BASE_URL } from "../utils/api"
 
 export const Logout = () => {
 
-  const Nav = useNavigate()
-
-
+  const nav = useNavigate()
 
   const handleLogout = async () => {
-
-
     const refresh = localStorage.getItem('refresh')
     const access = localStorage.getItem('access')
-
     const data = JSON.stringify({ refresh });
 
     try {
@@ -26,7 +21,7 @@ export const Logout = () => {
         },
       })
       if (response.status == 205) {
-        Nav('/auth/signin/')
+        nav('/auth/signin/')
       }
 
     } catch (error) {
@@ -43,7 +38,7 @@ export const Logout = () => {
         <div>
           <span onClick={handleLogout} className="Blue_btn">Yes</span>
           <span onClick={() => {
-            Nav(-1)
+            nav(-1)
           }} className="White_btn">No</span>
         </div>
       </article>

@@ -43,12 +43,10 @@ export const SignIn = () => {
         password,
       });
       
-     
       const { data, token } = response.data;
 
       localStorage.setItem('refresh', token.refresh);
       localStorage.setItem('access', token.access);
-
 
       setFormState({
         show: false,
@@ -59,9 +57,14 @@ export const SignIn = () => {
 
       toast.success('Sign in successful! Redirecting to dashboard...');
       Nav('/dashboard'); 
-    } catch (error) {
-      console.error('Error during sign-in:', error);
-      toast.error('Sign in failed. Please try again.');
+    } catch (error: any) {
+      
+      // Check if the error is due to unverified account
+      if (error.response && error.response.status === 403) {
+        toast.error('Please verify your account before logging in.');
+      } else {
+        toast.error('Invalid user information. Please try again');
+      }
     }
   };
 

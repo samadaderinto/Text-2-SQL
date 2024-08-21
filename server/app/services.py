@@ -82,9 +82,10 @@ class AuthService:
             token = auth_token(user)
             serializer = UserSerializer(user)
             return {'token': token, 'data': serializer.data}
-        elif user and not user.is_active:
+        elif user and user.is_active == False:
             return {'verify': 'Please verify your email account'}
-        return {'invalid_info': 'Invalid user information'}
+        else: 
+            return {'invalid_info': 'Invalid user information'}
 
     def request_reset_password_user(self, request, email):
         user = get_object_or_404(self.User, email=email)
@@ -249,7 +250,7 @@ class OrderService:
         self.Order = Order
 
     def get_orders(self, user):
-        order = get_list_or_404(self.Order, user=user)
+        order = get_list_or_404(self.Order)
         return order
 
     def create_order(self, serializer):

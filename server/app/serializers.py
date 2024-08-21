@@ -113,11 +113,13 @@ class ProductSerializer(TaggitSerializer, serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    name = UserSerializer(related_name)
     class Meta:
         model = Order
         fields = [
             'id',
             'user',
+            # 'name',
             'status',
             'cart',
             'total',

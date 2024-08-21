@@ -11,7 +11,7 @@ import { API_BASE_URL } from '../utils/api';
 
 export const Product = () => {
   const [currentPage, setCurrentPage] = useState(0);
-  const [itemsPerPage] = useState(15);
+  const itemsPerPage = 15;
   const [input, setInput] = useState('');
   const [data, setData] = useState<any[]>([]);
   const [totalPages, setTotalPages] = useState(0);
@@ -24,12 +24,15 @@ export const Product = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/products/search/?offset=${offset}&limit=${itemsPerPage}&query=${input}`, {
-          headers: {
-            Authorization: `Bearer ${access}`,
+        const response = await axios.get(
+          `${API_BASE_URL}/products/search/?offset=${offset}&limit=${itemsPerPage}&query=${input}`, 
+          {
+            headers: {
+              Authorization: `Bearer ${access}`,
+            },
           }
-        });
-        setData(response.data.items); // Adjust based on your API response
+        );
+        setData(response.data.items || []); // Adjust based on your API response
         setTotalPages(Math.ceil(response.data.totalCount / itemsPerPage)); // Adjust based on your API response
       } catch (error) {
         console.error("Error fetching data", error);
@@ -37,7 +40,7 @@ export const Product = () => {
     };
 
     fetchData();
-  }, [currentPage, input, itemsPerPage]);
+  }, [currentPage, input]);
 
   const handlePageClick = (event: { selected: number }) => {
     setCurrentPage(event.selected);

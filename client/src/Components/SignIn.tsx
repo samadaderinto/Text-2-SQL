@@ -58,9 +58,10 @@ export const SignIn = () => {
       toast.success('Sign in successful! Redirecting to dashboard...');
       Nav('/dashboard'); 
     } catch (error: any) {
+      console.log(error);
       
       // Check if the error is due to unverified account
-      if (error.response && error.response.status === 403) {
+      if (error.response.status === 403) {
         toast.error('Please verify your account before logging in.');
       } else {
         toast.error('Invalid user information. Please try again');

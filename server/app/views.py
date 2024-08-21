@@ -169,17 +169,15 @@ class AuthViewSet(viewsets.GenericViewSet):
             serializer.validated_data['email'],
             serializer.validated_data['password']
         )
-
-        if data.get('token', None) and data.get('data', None):
+        if data.get('verify'):
+            return Response(status=403, data={'message': data['verify']})
+        elif data.get('token') and data.get('data'):
             return Response(
                 status=status.HTTP_200_OK,
                 data=data,
                 # headers={'refresh': data["token"]["refresh"], 'access': data["token"]["access"]}
             )
-        elif data.get('verify', None):
-            return Response(
-                status=403, data={'message': data['verify']}
-            )
+        
         elif data.get('invalid_info', None):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -476,7 +474,7 @@ class OrderViewSet(viewsets.GenericViewSet):
     @extend_schema(responses={200: OrderSerializer(many=True)})
     @action(detail=False, methods=['get'], url_path='search')
     def retrieve_order(self, request):
-        orders = self.order_service.get_orders(request, user=request.user)
+        orders = self.order_service.get_orders(user=request.user)
 
         page_number = request.GET.get('offset', 1)
         per_page = request.GET.get('limit', 15)

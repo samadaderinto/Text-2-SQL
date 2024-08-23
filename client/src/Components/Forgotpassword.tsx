@@ -19,7 +19,7 @@ export const Forgotpassword = () => {
       if (email !== '') {
         const data = JSON.stringify({ email });
         const Response = await axios.post(`${API_BASE_URL}/auth/reset-password/request/`, data)
-        console.log(Response.data)
+        
       }
 
 

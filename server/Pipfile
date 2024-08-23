@@ -26,6 +26,7 @@ pillow = "*"
 drf-spectacular-sidecar = "*"
 drf-spectacular = {extras = ["sidecar"], version = "*"}
 openai = "*"
+django-filter = "*"
 
 [dev-packages]
 

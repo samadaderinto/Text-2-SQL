@@ -77,7 +77,7 @@ class StoreSerializer(serializers.Serializer):
     class Meta:
         model = Store
         fields = '__all__'
-        
+
         def update(self, instance, validated_data):
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
@@ -89,9 +89,7 @@ class StoreSearchSerializer(serializers.Serializer):
     pass
 
 
-class ProductSerializer(TaggitSerializer, serializers.ModelSerializer):
-    tags = TagListSerializerField()
-
+class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
@@ -99,27 +97,28 @@ class ProductSerializer(TaggitSerializer, serializers.ModelSerializer):
             'store',
             'title',
             'available',
-            'discount',
             'description',
             'price',
             'image',
             'currency',
             'sale_price',
-            'tags',
             'sales',
             'created',
             'updated'
         ]
 
+        extra_kwargs = {'sales': {'read_only': True}, 'available': {'read_only': True}}
+
 
 class OrderSerializer(serializers.ModelSerializer):
-    name = UserSerializer(related_name)
+    name = serializers.CharField(source='customer.first_name', read_only=True)
+
     class Meta:
         model = Order
         fields = [
             'id',
             'user',
-            # 'name',
+            'name',
             'status',
             'cart',
             'total',
@@ -153,7 +152,6 @@ class FileSerializer(serializers.Serializer):
         if not value.name.endswith('.mp3'):
             raise serializers.ValidationError('The uploaded file must be an MP3 file.')
         return value
-
 
 
 class AdminSerializer(serializers.Serializer):

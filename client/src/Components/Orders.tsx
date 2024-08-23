@@ -23,7 +23,7 @@ export const Orders = () => {
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/orders/search/?offset=${offset}&limit=${itemsPerPage}`,
+        `${API_BASE_URL}/orders/search/?offset=${1}&limit=${itemsPerPage}`,
  
         {
           headers: {
@@ -32,6 +32,7 @@ export const Orders = () => {
         }
       );
       setData(response.data);
+      console.log(response)
     
     } catch (error) {
       console.error("Error fetching data:", error);

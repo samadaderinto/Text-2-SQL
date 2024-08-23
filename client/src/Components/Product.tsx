@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useReducer, useEffect, Key } from 'react';
 import { IoIosAddCircleOutline } from 'react-icons/io';
 import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from 'react-icons/md';
 import { FiSearch } from 'react-icons/fi';
@@ -9,41 +9,62 @@ import ReactPaginate from 'react-paginate';
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/api';
 
-export const Product = () => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 15;
-  const [input, setInput] = useState('');
-  const [data, setData] = useState<any[]>([]);
-  const [totalPages, setTotalPages] = useState(0);
+const initialState = {
+  currentPage: 0,
+  input: '',
+  data: [],
+  totalPages: 0,
+};
 
+function reducer(state: any, action: { type: any; payload: any; }) {
+  switch (action.type) {
+    case 'SET_CURRENT_PAGE':
+      return { ...state, currentPage: action.payload };
+    case 'SET_INPUT':
+      return { ...state, input: action.payload };
+    case 'SET_DATA':
+      return { ...state, data: action.payload };
+    case 'SET_TOTAL_PAGES':
+      return { ...state, totalPages: action.payload };
+    default:
+      return state;
+  }
+}
+
+export const Product = () => {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { currentPage, input, data, totalPages } = state;
+  const itemsPerPage = 15;
   const offset = currentPage * itemsPerPage;
   const access = localStorage.getItem('access');
   const navigate = useNavigate();
 
-  // Fetch data when currentPage or input changes
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/products/search/?offset=${offset}&limit=${itemsPerPage}&query=${input}`, 
+          `${API_BASE_URL}/products/search/?offset=${currentPage * itemsPerPage}&limit=${itemsPerPage}&query=${input}`,
           {
             headers: {
               Authorization: `Bearer ${access}`,
             },
           }
         );
-        setData(response.data.items || []); // Adjust based on your API response
-        setTotalPages(Math.ceil(response.data.totalCount / itemsPerPage)); // Adjust based on your API response
+        const totalItems = response.data.totalCount || 0;
+        dispatch({ type: 'SET_DATA', payload: response.data.items || [] });
+        dispatch({ type: 'SET_TOTAL_PAGES', payload: Math.ceil(totalItems / itemsPerPage) });
       } catch (error) {
         console.error("Error fetching data", error);
+        dispatch({ type: 'SET_TOTAL_PAGES', payload: 1 });  // Fallback to 1 page in case of an error
       }
     };
 
     fetchData();
   }, [currentPage, input]);
 
-  const handlePageClick = (event: { selected: number }) => {
-    setCurrentPage(event.selected);
+
+  const handlePageClick = (event: { selected: any; }) => {
+    dispatch({ type: 'SET_CURRENT_PAGE', payload: event.selected });
   };
 
   return (
@@ -64,7 +85,7 @@ export const Product = () => {
             <input
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => dispatch({ type: 'SET_INPUT', payload: e.target.value })}
               placeholder="Search Name"
             />
           </span>
@@ -85,7 +106,7 @@ export const Product = () => {
           <p>Action</p>
         </div>
         <div className="Product_Table_List_content">
-          {data.map((item, index) => (
+          {data.map((item: { imageUrl: any; name: any; category: any; status: any; price: any; sold: any; sales: any; }, index: Key | null | undefined) => (
             <nav key={index}>
               <span>
                 <input type="checkbox" />
@@ -109,8 +130,8 @@ export const Product = () => {
           ))}
 
           <ReactPaginate
-            previousLabel={'previous'}
-            nextLabel={'next'}
+            previousLabel={'<'}
+            nextLabel={'>'}
             breakLabel={'...'}
             pageCount={totalPages}
             marginPagesDisplayed={2}

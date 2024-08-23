@@ -52,10 +52,11 @@ export const Newproduct = () => {
     return valid;
   };
 
+
   const Upload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const url = URL.createObjectURL(e.target.files[0]);
-      setFormState({ ...formState, img: url });
+      const file = e.target.files[0];
+      setFormState({ ...formState, img: file });
     }
   };
 
@@ -73,18 +74,17 @@ export const Newproduct = () => {
   const handleCreateProduct = async () => {
     if (validateForm()) {
       const formData = new FormData();
-      formData.append('productName', formState.productName);
-      formData.append('productDescription', formState.productDescription);
-      formData.append('productPrice', formState.productPrice);
+      formData.append('title', formState.productName);
+      formData.append('description', formState.productDescription);
+      formData.append('price', formState.productPrice);
       formData.append('currency', formState.currency);
       formData.append('category', formState.category);
       formData.append('quantity', formState.quantity);
-
+  
       if (formState.img) {
-        const imageFile = await fetch(formState.img).then(r => r.blob());
-        formData.append('image', imageFile);
+        formData.append('image', formState.img);  // Directly append the file
       }
-
+  
       try {
         await axios.post(`${API_BASE_URL}/product/create/`, formData, {
           headers: {

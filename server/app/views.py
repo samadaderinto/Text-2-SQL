@@ -1,22 +1,26 @@
-import io
 import os
 import logging
 import subprocess
+
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
 from django.core.files.storage import default_storage
-from django.core.files.uploadedfile import InMemoryUploadedFile
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 
-from rest_framework import viewsets
-from rest_framework import status
+from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
-from rest_framework.decorators import action
+from rest_framework.decorators import action, parser_classes
 from rest_framework.permissions import AllowAny
+from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.generics import ListAPIView
+from rest_framework import serializers
+
 
 from .models import Customer, Order, Product, Store, User
 from .permissions import ServerAccessPolicy
@@ -47,16 +51,16 @@ from .services import (
     StoreService
 )
 
+from pydub import AudioSegment
+from pydub.utils import which
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_access_policy import AccessViewSetMixin
 from drf_spectacular.utils import extend_schema
 from kink import di
 
+
 from utils.algorithms import TokenGenerator, auth_token, send_email, send_mail
 
-from rest_framework_simplejwt.tokens import RefreshToken
-
-from pydub import AudioSegment
-from pydub.utils import which
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +181,7 @@ class AuthViewSet(viewsets.GenericViewSet):
                 data=data,
                 # headers={'refresh': data["token"]["refresh"], 'access': data["token"]["access"]}
             )
-        
+
         elif data.get('invalid_info', None):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -311,22 +315,47 @@ class QueryViewSet(viewsets.GenericViewSet):
         return Response(result, status=status.HTTP_200_OK)
 
 
+
 class ProductViewSet(viewsets.GenericViewSet):
+    permission_classes = (AllowAny,)
+    serializer_class = ProductSerializer
+    filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
+    
+    search_fields = [
+        'title',
+        'description',
+        'category',
+        'discount',
+        'average_rating',
+        'tags',
+        'store',
+        'price'
+    ]
+    
+    ordering_fields = ['price', 'average_rating', 'discount']
+    filterset_fields = ['category', 'store', 'price']  # Add fields you want to filter on
+    
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.product_service: ProductService = di[ProductService]
 
-    permission_classes = (ServerAccessPolicy,)
-    serializer_class = ProductSerializer
-
     @extend_schema(request=ProductSerializer, responses={200: ProductSerializer})
     @action(detail=False, methods=['post'], url_path='create')
+    @parser_classes([MultiPartParser])
     def create_product(self, request):
-        data = JSONParser().parse(request)
-        serializer = ProductSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        product = self.product_service.create_product(serializer)
-        return Response(status=201, data=product)
+        try:
+            serializer = ProductSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            product = self.product_service.create_product(serializer)
+            return Response(status=201, data=product)
+        except serializers.ValidationError as e:
+            logger.error(f"Validation error: {e.detail}")
+            return Response(status=400, data={'error': e.detail})
+
+        except Exception as e:
+            logger.error(f"error: {e}")
+            return Response(status=400)
 
     @extend_schema(request=ProductSerializer, responses={200: ProductSerializer})
     @action(detail=False, methods=['put'], url_path='update')
@@ -341,7 +370,15 @@ class ProductViewSet(viewsets.GenericViewSet):
     @extend_schema(responses={200: ProductSerializer(many=True)})
     @action(detail=False, methods=['get'], url_path='search')
     def retrieve_product(self, request):
+        query = request.GET.get('query', '')
+
         products = Product.objects.all()
+        if query:
+            products = products.filter(name__icontains=query)
+        
+        # Applying search, filter, and ordering
+        products = self.filter_queryset(products)
+
         page_number = request.GET.get('offset', 1)
         per_page = request.GET.get('limit', 15)
         paginator = Paginator(products, per_page=per_page)
@@ -350,7 +387,7 @@ class ProductViewSet(viewsets.GenericViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(responses={204: None})
-    @action(detail=False, methods=['delete'], url_path='search')
+    @action(detail=False, methods=['delete'], url_path='delete')
     def delete_product(self, request):
         self.product_service.delete_product(request.user)
         return Response(status=204)

@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     
     "drf_spectacular",
     # 'drf_spectacular_sidecar',
+    'django_filters',
     "corsheaders",
     "phonenumber_field",
     "rest_framework",

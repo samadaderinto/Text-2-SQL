@@ -163,6 +163,7 @@ class QueryService:
             )
         return response
 
+
     def text_to_SQL(self, request, audio_data):
         text = self.audio_to_text(request, audio_data)
         return text
@@ -185,9 +186,8 @@ class ProductService:
     def get_products(self, data):
         store = data['store']
         product_id = data['id']
-        product = get_object_or_404(self.Product, store=store, pk=product_id)
+        product = get_object_or_404(self.Product)
         serializer = ProductSerializer(product)
-
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete_product(self, data):
@@ -209,6 +209,7 @@ class ProductService:
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
+
 
 
 @inject
@@ -250,7 +251,7 @@ class OrderService:
         self.Order = Order
 
     def get_orders(self, user):
-        order = get_list_or_404(self.Order)
+        order = get_list_or_404(self.Order, user=user)
         return order
 
     def create_order(self, serializer):

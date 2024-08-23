@@ -2,60 +2,53 @@ import axios from "axios";
 import ReactPaginate from "react-paginate";
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-icons/md";
+import { FaAngleRight, FaAngleLeft } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
 import { useState, useEffect } from "react";
-import { Header } from "../layouts/Header"
-import Sidebar from '../layouts/SideBar'
+import { Header } from "../layouts/Header";
+import Sidebar from '../layouts/SideBar';
 import { API_BASE_URL } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 
-
-
-
-
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  dateJoined: string;
+  orders: number;
+  spending: number;
+}
 
 export const Customers = () => {
   const itemsPerPage = 15;
-  const [data, setData] = useState<string[]>([]);
+  const [data, setData] = useState<Customer[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const access = localStorage.getItem('access')
-  const accessToken = JSON.stringify({ access });
-  const Nav = useNavigate()
-
+  const access = localStorage.getItem('access');
+  const accessToken = access ? `Bearer ${access}` : '';
+  const Nav = useNavigate();
 
   const fetchData = async () => {
+    const offset = currentPage * itemsPerPage;
     try {
       const response = await axios.get(`${API_BASE_URL}/customers/search/?offset=${offset}&limit=${itemsPerPage}`, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: accessToken,
         }
-      })
-      const datum: string[] = response.data;
-
-      setData(datum)
+      });
+      console.log("Fetched data:", response.data); // Debugging line
+      setData(response.data);
+    } catch (error) {
+      console.error("Error fetching data", error);
     }
-    catch (error) {
-      console.error("error fetching data", error)
-    }
-  }
-
-  useEffect(() => {
-    fetchData()
-
-  }, [])
-
-
-  const offset = currentPage * itemsPerPage;
-
-  interface PageClickEvent {
-    selected: number;
-  }
-
-  const handlePageClick = (event: PageClickEvent) => {
-    const selectedPage = event.selected;
-    setCurrentPage(selectedPage);
   };
 
+  useEffect(() => {
+    fetchData();
+  }, [currentPage]);
+
+  const handlePageClick = (event: { selected: number }) => {
+    setCurrentPage(event.selected);
+  };
 
   return (
     <>
@@ -79,7 +72,7 @@ export const Customers = () => {
 
           <article className="Customer_List_Header">
             <div>
-              <input type="checkbox" name="" id="" />
+              <input type="checkbox" />
               <p>ID</p>
               <p>Customer Name</p>
             </div>
@@ -93,21 +86,21 @@ export const Customers = () => {
           </article>
           <section className="Customer_List">
             {
-              data.map((_item, index) => (
-                <article key={index}>
+              data.map((item) => (
+                <article key={item.id}>
                   <span>
-                    <input type="checkbox" name="" id="" />
-                    <p className="Id_customer">ID12344</p>
+                    <input type="checkbox" />
+                    <p className="Id_customer">{item.id}</p>
                     <div>
                       <img src="" alt="" />
                     </div>
-                    <p>Iyanda Wahab</p>
+                    <p>{item.name}</p>
                   </span>
-                  <p>ronin@gmai.com</p>
+                  <p>{item.email}</p>
                   <span>
-                    <p className="Date_Joined">July 20 2024</p>
-                    <p>50 Orders</p>
-                    <p>$23,000</p>
+                    <p className="Date_Joined">{item.dateJoined}</p>
+                    <p>{item.orders} Orders</p>
+                    <p>${item.spending}</p>
                   </span>
                   <p className="Customer_Action_Icon">
                     <MdOutlineEdit />
@@ -118,20 +111,19 @@ export const Customers = () => {
             }
 
             <ReactPaginate
-              previousLabel={'previous'}
-              nextLabel={'next'}
+              previousLabel={<FaAngleLeft className="customer_arrow"/>}
+              nextLabel={<FaAngleRight className="customer_arrow"/>}
               breakLabel={'...'}
               pageCount={Math.ceil(data.length / itemsPerPage)}
               marginPagesDisplayed={2}
               pageRangeDisplayed={5}
               onPageChange={handlePageClick}
-              containerClassName={'Order_pagination'}
+              containerClassName={'Customer_pagination'}
               activeClassName={'Order_page_active'}
             />
           </section>
         </section>
       </div>
-
     </>
-  )
-} 
+  );
+};

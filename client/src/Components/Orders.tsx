@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MdOutlineDownload, MdOutlineDelete } from "react-icons/md";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
 import { Header } from "../layouts/Header";
+import { FaAngleRight, FaAngleLeft } from "react-icons/fa";
 import Sidebar from "../layouts/SideBar";
 import axios from "axios";
 import ReactPaginate from 'react-paginate';
@@ -105,9 +106,9 @@ export const Orders = () => {
               </article>
             ))}
 
-            <ReactPaginate
-              previousLabel={'<'}
-              nextLabel={'>'}
+            <ReactPaginate 
+              previousLabel={<FaAngleLeft className="order_arrow"/>}
+              nextLabel={<FaAngleRight className="order_arrow"/>}
               breakLabel={'...'}
               pageCount={Math.ceil(data.length / itemsPerPage)}
               marginPagesDisplayed={2}

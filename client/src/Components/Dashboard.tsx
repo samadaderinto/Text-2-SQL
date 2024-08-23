@@ -7,11 +7,15 @@ import LaptopImg from '../assets/editing-laptop-2048px-231551-2x1-1.webp'
 
 import { DashboardCardProps } from "../types/dashboard";
 import SideBar from "../layouts/SideBar";
-import { Header } from "../layouts/Header"
+import { Header } from "../layouts/Header";
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement);
 
 export const Dashboard = () => {
 
-  const  [Active, setActive] = useState< number | null>(null)
+  const  [Active, setActive] = useState< number | null>(0)
 
 
 

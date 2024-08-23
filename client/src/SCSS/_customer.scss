@@ -119,6 +119,22 @@
             flex-direction: column;
             padding: 0%;
 
+            .Customer_pagination {
+                width: 10%;
+                display: flex;
+                list-style: none;
+                font-size: 25px;
+                // border: 1px solid grey;
+                justify-content: space-between;
+            }
+
+            .customer_arrow {
+                border: 1px solid rgb(196, 195, 195);
+                padding: 5px;
+                color: rgb(191, 189, 189);
+                cursor: pointer;
+            }
+
             article {
                 width: 100%;
                 height: 12%;

@@ -2,7 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import './SCSS/Main.scss'
 
 
-import Home from './pages/home'
+// import Home from './pages/home'
 import { PageNotFound } from './pages/PageNotFound'
 
 import { SignIn } from './Components/SignIn'
@@ -47,7 +47,7 @@ function App() {
 
       <ToastContainer />
       <Routes>
-        <Route path='/' element={<Home />} />
+        <Route path='/' element={<Dashboard />} />
         <Route index path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path='/product' element={<ProtectedRoute><Product /></ProtectedRoute>} />
         <Route path='/product/add' element={<ProtectedRoute><Newproduct /></ProtectedRoute>} />

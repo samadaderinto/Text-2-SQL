@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { SideBarProps } from '../types/sidebar';
 
 const SideBar: FC = () => {
-  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [activeIndex, setActiveIndex] = useState<number | null>(0)
   const [active, setActive] = useState('Dashboard')
   const Nav = useNavigate()
 

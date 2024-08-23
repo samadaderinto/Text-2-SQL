@@ -135,19 +135,28 @@
                 margin: 0;
               }
               
-              .Order_pagination a {
-                margin: 0 5px;
-                padding: 10px;
-                text-decoration: none;
-                border: 1px solid #ddd;
-                border-radius: 4px;
+              .Order_pagination {
+                width: 10%;
+                display: flex;
+                list-style: none;
+                font-size: 25px;
+                // border: 1px solid grey;
+                justify-content: space-between;
               }
               
-              .Order_pagination .Order_page_active a {
-                background-color: #007bff;
-                color: white;
-              }
-              
+              .order_arrow {
+                border: 1px solid rgb(196, 195, 195);
+                padding: 5px;
+                color: rgb(191, 189, 189);
+                cursor: pointer;
+            }
+
+            .Order_page_active a {
+                font-size: 17px;
+                background-color: green;
+            }
+
+
 
             article {
                 width: 35%;

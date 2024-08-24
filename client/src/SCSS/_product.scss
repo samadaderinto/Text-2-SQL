@@ -188,5 +188,18 @@
             }
         }
     }
+
+    .Product_pagination {
+        width: 15%;
+        display: flex;
+        color: #928f8f;
+        justify-content: space-between;
+        list-style: none;
+        font-size: 14px;
+
+        a {
+            list-style: none;
+        }
+    }
     
 }

@@ -137,8 +137,8 @@ export const Product = () => {
             marginPagesDisplayed={2}
             pageRangeDisplayed={5}
             onPageChange={handlePageClick}
-            containerClassName={'Order_pagination'}
-            activeClassName={'Order_page_active'}
+            containerClassName={'Product_pagination'}
+            activeClassName={'Product_page_active'}
           />
         </div>
       </section>

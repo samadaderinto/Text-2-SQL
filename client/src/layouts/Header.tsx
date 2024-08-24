@@ -12,6 +12,7 @@ import { MdOutlineShoppingCart } from "react-icons/md";
 import { API_BASE_URL } from "../utils/api";
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ProfileImg from "../assets/profileimg.jfif";
 
 export const Header = () => {
   const [menu, setMenu] = useState(false);
@@ -116,7 +117,9 @@ export const Header = () => {
       <section className="RightHand_Container">
         <p className="Exclusive_Store">Exclusive Store</p>
         <p><IoIosNotificationsOutline /></p>
-        <div className="Image_Container"></div>
+        <div className="Image_Container">
+          <img src={ProfileImg} alt="profile" />
+        </div>
       </section>
       <p onClick={() => setMenu(!menu)} className="Mobile_Menu"><RxDropdownMenu /></p>
       {menu && (

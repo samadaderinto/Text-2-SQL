@@ -75,6 +75,12 @@
             height: 80%;
             background-color: black;
             cursor: pointer;
+            object-fit: contain;
+
+            img {
+                width: 100%;
+                height: 100%;
+            }
         }
     }
     .Mobile_Menu {

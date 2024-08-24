@@ -3,11 +3,11 @@ import { LuImagePlus } from "react-icons/lu";
 import axios from 'axios';  // Make sure to install axios
 import { API_BASE_URL } from "../utils/api";
 import SideBar from "../layouts/SideBar";
-
+import { Header } from "../layouts/Header";
 
 export const Newproduct = () => {
   const [formState, setFormState] = useState({
-    img: null as string | null,
+    img: null as File | null,
     productName: '',
     productDescription: '',
     productPrice: '',
@@ -52,7 +52,6 @@ export const Newproduct = () => {
     return valid;
   };
 
-
   const Upload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
@@ -80,11 +79,11 @@ export const Newproduct = () => {
       formData.append('currency', formState.currency);
       formData.append('category', formState.category);
       formData.append('quantity', formState.quantity);
-  
+
       if (formState.img) {
         formData.append('image', formState.img);  // Directly append the file
       }
-  
+
       try {
         await axios.post(`${API_BASE_URL}/product/create/`, formData, {
           headers: {
@@ -102,6 +101,7 @@ export const Newproduct = () => {
 
   return (
     <div className="Newproduct_Container">
+      <Header/>
       <SideBar/>
       <h1>Create New Product</h1>
       <section className="Product_Form_Container">
@@ -179,7 +179,7 @@ export const Newproduct = () => {
                 </label>
               </>
             ) : (
-              <img src={formState.img} alt="Product" />
+              <img src={URL.createObjectURL(formState.img)} alt="Product" />
             )}
           </section>
           <span>

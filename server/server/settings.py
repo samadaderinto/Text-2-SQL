@@ -77,13 +77,14 @@ INSTALLED_APPS = [
     
     "drf_spectacular",
     # 'drf_spectacular_sidecar',
-    'django_filters',
+    
     "corsheaders",
     "phonenumber_field",
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "taggit",
+    'django_filters',
   
 ]
 

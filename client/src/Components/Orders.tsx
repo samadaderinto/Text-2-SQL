@@ -1,19 +1,20 @@
-import { useEffect, useState } from "react";
-import { MdOutlineDownload, MdOutlineDelete } from "react-icons/md";
-import { HiMiniMagnifyingGlass } from "react-icons/hi2";
-import { Header } from "../layouts/Header";
-import { FaAngleRight, FaAngleLeft } from "react-icons/fa";
-import Sidebar from "../layouts/SideBar";
 import axios from "axios";
+import { useEffect, useState } from "react";
+import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
+import { HiMiniMagnifyingGlass } from "react-icons/hi2";
+import { MdOutlineDelete, MdOutlineDownload } from "react-icons/md";
 import ReactPaginate from 'react-paginate';
-import { API_BASE_URL } from "../utils/api";
+import { Header } from "../layouts/Header";
+import Sidebar from "../layouts/SideBar";
+import api from "../utils/api";
+
 
 export const Orders = () => {
   const itemsPerPage = 15;
   const [input, setInput] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [data, setData] = useState<any[]>([]);
-  const access = localStorage.getItem('access');
+
 
   useEffect(() => {
     fetchData();
@@ -23,14 +24,8 @@ export const Orders = () => {
     const offset = currentPage * itemsPerPage;
 
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/orders/search/?offset=${1}&limit=${itemsPerPage}`,
- 
-        {
-          headers: {
-            Authorization: `Bearer ${access}`,
-          },
-        }
+      const response = await api.get(
+        `/orders/search/?offset=${1}&limit=${itemsPerPage}`,
       );
       setData(response.data);
       console.log(response)

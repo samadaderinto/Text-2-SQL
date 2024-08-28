@@ -7,8 +7,8 @@ import { FiSearch } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { Header } from "../layouts/Header";
 import Sidebar from '../layouts/SideBar';
-import { API_BASE_URL } from "../utils/api";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 
 interface Customer {
   id: string;
@@ -23,17 +23,13 @@ export const Customers = () => {
   const itemsPerPage = 15;
   const [data, setData] = useState<Customer[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const access = localStorage.getItem('access');
-  const accessToken = access ? `Bearer ${access}` : '';
-  const Nav = useNavigate();
+  const nav = useNavigate();
 
   const fetchData = async () => {
     const offset = currentPage * itemsPerPage;
     try {
-      const response = await axios.get(`${API_BASE_URL}/customers/search/?offset=${offset}&limit=${itemsPerPage}`, {
-        headers: {
-          Authorization: accessToken,
-        }
+      const response = await api.get(`/customers/search/?offset=${offset}&limit=${itemsPerPage}`, {
+
       });
       console.log("Fetched data:", response.data); // Debugging line
       setData(response.data);
@@ -58,7 +54,7 @@ export const Customers = () => {
       <div className="Customer_Container">
         <article>
           <h1>Customers</h1>
-          <span onClick={() => Nav('/customers/add')}><IoIosAddCircleOutline className="Circle_Icon" /> Add New Customers</span>
+          <span onClick={() => nav('/customers/add')}><IoIosAddCircleOutline className="Circle_Icon" /> Add New Customers</span>
         </article>
 
         <section className="Customer_List_Container">

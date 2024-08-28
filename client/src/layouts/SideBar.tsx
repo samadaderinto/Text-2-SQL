@@ -8,7 +8,7 @@ import { SideBarProps } from '../types/sidebar';
 
 const SideBar: FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const nav  = useNavigate();
 
   // Determine the current path segment
   const currentPath = location.pathname.split('/').filter(Boolean);
@@ -28,7 +28,7 @@ const SideBar: FC = () => {
   const activeIndex = sideBarArrayList.findIndex(item => item.itemName === currentPathSegment);
 
   const handleClick = (index: number, itemName: string) => {
-    navigate(`/${itemName}`);
+    nav(`/${itemName}`);
   };
 
   return (

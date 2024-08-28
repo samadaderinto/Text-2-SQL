@@ -5,10 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { API_BASE_URL } from '../utils/api';
+import api from '../utils/api';
+
 
 export const SignIn = () => {
-  const Nav = useNavigate();
+  const nav = useNavigate();
 
   const [formState, setFormState] = useState({
     show: false,
@@ -38,7 +39,7 @@ export const SignIn = () => {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/login/`, {
+      const response = await api.post(`/auth/login/`, {
         email,
         password,
       });
@@ -56,7 +57,7 @@ export const SignIn = () => {
       });
 
       toast.success('Sign in successful! Redirecting to dashboard...');
-      Nav('/dashboard'); 
+      nav('/dashboard'); 
     } catch (error: any) {
       console.log(error);
       
@@ -76,7 +77,7 @@ export const SignIn = () => {
         <h1>Welcome Back, To EchoCart</h1>
         <article>
           <span>New User?</span>
-          <p onClick={() => Nav('/auth/signup')}>Create an account</p>
+          <p onClick={() => nav('/auth/signup')}>Create an account</p>
         </article>
         <label htmlFor="email">Email</label>
         <div className="Input_Container" tabIndex={0}>
@@ -109,7 +110,7 @@ export const SignIn = () => {
             </p>
           )}
         </div>
-        <p onClick={() => Nav('/auth/forgot-password')}>Forgot password?</p>
+        <p onClick={() => nav('/auth/forgot-password')}>Forgot password?</p>
         <div className="Bottom_Container">
           <div onClick={SignIn} className="Login_Btn">LOGIN</div>
         </div>

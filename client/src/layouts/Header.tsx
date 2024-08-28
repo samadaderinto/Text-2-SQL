@@ -9,17 +9,17 @@ import { RiShoppingBag3Line } from "react-icons/ri";
 import { RxDashboard } from 'react-icons/rx';
 import { RiLogoutBoxLine } from "react-icons/ri";
 import { MdOutlineShoppingCart } from "react-icons/md";
-import { API_BASE_URL } from "../utils/api";
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProfileImg from "../assets/profileimg.jfif";
+import api from '../utils/api';
 
 export const Header = () => {
   const [menu, setMenu] = useState(false);
   const [listen, setListen] = useState(false);
   const [voice, setVoice] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(0);
-  const Nav = useNavigate();
+  const nav = useNavigate();
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -74,7 +74,6 @@ export const Header = () => {
     stopRecording();
   }
 
-  const access = localStorage.getItem('access');
 
   const handleUpload = async () => {
     if (audioBlob) {
@@ -82,13 +81,12 @@ export const Header = () => {
       formData.append('file', new File([audioBlob], 'audio.mp3', { type: 'audio/mp3' }));
 
       try {
-        const response = await axios.post(`${API_BASE_URL}/query/upload/`, formData, {
+        const response = await api.post(`/query/upload/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${access}`,
           },
         });
-        console.log(response.data);
+        console.log(response.data, "frferfrfrf");
       } catch (error) {
         console.error('Error uploading audio:', error);
       }
@@ -130,7 +128,7 @@ export const Header = () => {
               onClick={() => {
                 setActiveIndex(index);
                 setMenu(false);
-                Nav(`/${obj.itemName}`);
+                nav(`/${obj.itemName}`);
               }}
               className={activeIndex === index ? 'Active_List' : ''}
             >

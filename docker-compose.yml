@@ -1,0 +1,21 @@
+services:
+   frontend:
+      build: ./client
+      ports:
+         - "4173:4173"
+      
+
+   server:
+      build:
+         context: ./server 
+         dockerfile: Dockerfile  
+      command: bash server/run.sh  
+      restart: always  
+      volumes:
+         - ./server:/var/www/server  
+      ports:
+         - 8000:8000
+      env_file:
+         - ./server/.env
+  
+

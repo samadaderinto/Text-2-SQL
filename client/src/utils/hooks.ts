@@ -5,14 +5,14 @@ import { ProtectedRouteProps } from "../types/protected-route";
 
 
 const ProtectedRoute: FC<ProtectedRouteProps> = ({children}) => {
-  const navigate = useNavigate();
+  const nav = useNavigate();
 
   useEffect(() => {
     const accessToken = localStorage.getItem("access");
     if (!accessToken) {
-      navigate("/auth/signin");
+      nav("/auth/signin");
     }
-  }, [navigate]);
+  }, [nav]);
 
   return children;
 };

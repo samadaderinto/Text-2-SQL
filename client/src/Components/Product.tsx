@@ -6,8 +6,7 @@ import { Header } from '../layouts/Header';
 import Sidebar from '../layouts/SideBar';
 import { useNavigate } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
-import axios from 'axios';
-import { API_BASE_URL } from '../utils/api';
+import api from '../utils/api';
 
 const initialState = {
   currentPage: 0,
@@ -36,19 +35,14 @@ export const Product = () => {
   const { currentPage, input, data, totalPages } = state;
   const itemsPerPage = 15;
   const offset = currentPage * itemsPerPage;
-  const access = localStorage.getItem('access');
-  const navigate = useNavigate();
+  
+  const nav = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/products/search/?offset=${currentPage * itemsPerPage}&limit=${itemsPerPage}&query=${input}`,
-          {
-            headers: {
-              Authorization: `Bearer ${access}`,
-            },
-          }
+        const response = await api.get(
+          `/products/search/?offset=${currentPage * itemsPerPage}&limit=${itemsPerPage}&query=${input}`,
         );
         const totalItems = response.data.totalCount || 0;
         dispatch({ type: 'SET_DATA', payload: response.data.items || [] });
@@ -73,7 +67,7 @@ export const Product = () => {
       <Sidebar />
       <section className="Add_Product">
         <h1>All Products</h1>
-        <span onClick={() => navigate('/product/add')}>
+        <span onClick={() => nav('/product/add')}>
           <IoIosAddCircleOutline className="Product_Icon" />
           Add new Product
         </span>

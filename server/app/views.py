@@ -67,9 +67,6 @@ logger = logging.getLogger(__name__)
 AudioSegment.converter = which('ffmpeg')
 
 
-from openai import OpenAI
-from django.conf import settings
-
 
 class AuthViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
@@ -176,11 +173,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         if data.get('verify'):
             return Response(status=403, data={'message': data['verify']})
         elif data.get('token') and data.get('data'):
-            return Response(
-                status=status.HTTP_200_OK,
-                data=data,
-                # headers={'refresh': data["token"]["refresh"], 'access': data["token"]["access"]}
-            )
+            return Response(status=status.HTTP_200_OK, data=data)
 
         elif data.get('invalid_info', None):
             return Response(
@@ -315,12 +308,11 @@ class QueryViewSet(viewsets.GenericViewSet):
         return Response(result, status=status.HTTP_200_OK)
 
 
-
 class ProductViewSet(viewsets.GenericViewSet):
     permission_classes = (AllowAny,)
     serializer_class = ProductSerializer
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
-    
+
     search_fields = [
         'title',
         'description',
@@ -331,11 +323,14 @@ class ProductViewSet(viewsets.GenericViewSet):
         'store',
         'price'
     ]
-    
+
     ordering_fields = ['price', 'average_rating', 'discount']
-    filterset_fields = ['category', 'store', 'price']  # Add fields you want to filter on
-    
-    
+    filterset_fields = [
+        'category',
+        'store',
+        'price'
+    ]  # Add fields you want to filter on
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.product_service: ProductService = di[ProductService]
@@ -375,7 +370,7 @@ class ProductViewSet(viewsets.GenericViewSet):
         products = Product.objects.all()
         if query:
             products = products.filter(name__icontains=query)
-        
+
         # Applying search, filter, and ordering
         products = self.filter_queryset(products)
 

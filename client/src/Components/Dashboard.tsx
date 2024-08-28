@@ -1,20 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
+import axios from "axios"; // if using axios
 import { HiOutlineChartSquareBar } from 'react-icons/hi';
 import { RiShoppingBag4Line } from 'react-icons/ri';
 import { GoContainer } from "react-icons/go";
 import { IoPeopleOutline } from 'react-icons/io5';
-import LaptopImg from '../assets/editing-laptop-2048px-231551-2x1-1.webp';
 
 import { DashboardCardProps } from "../types/dashboard";
 import SideBar from "../layouts/SideBar";
 import { Header } from "../layouts/Header";
 import { Line, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend } from 'chart.js';
+import { AuthContext } from "../contexts/auth-context";
+import { OrderProps } from "../types/order";
+import api from "../utils/api";
+
+
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend);
 
 export const Dashboard = () => {
+  const { isSignedIn, user } = useContext(AuthContext);
   const [Active, setActive] = useState<number | null>(0);
+  const [orders, setOrders] = useState<OrderProps[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/orders/search/`);
+        setOrders(response.data);
+        setLoading(false);
+      } catch (err) {
+        setError("Failed to load orders.");
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   const cardArray: DashboardCardProps[] = [
     {
@@ -47,10 +72,9 @@ export const Dashboard = () => {
     },
   ];
 
-  // Data for the line chart
   const salesData = {
     labels: [
-      "January", "February", "March", "April", "May", "June", 
+      "January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"
     ],
     datasets: [
@@ -65,7 +89,6 @@ export const Dashboard = () => {
     ],
   };
 
-  // Data for the pie chart
   const pieData = {
     labels: ['Product A', 'Product B', 'Product C', 'Product D'],
     datasets: [
@@ -94,7 +117,7 @@ export const Dashboard = () => {
       <div className="Dashboard_container">
         <SideBar />
 
-        <h1>Welcome Back, Wahab</h1>
+        <h1>{isSignedIn ? <p>Welcome, {user?.email?.split("@")[0]}</p> : <p>Welcome</p>}</h1>
         <p>Here's what's happening with your store today.</p>
 
         <section className="Dashboard_Card_Container">
@@ -137,30 +160,35 @@ export const Dashboard = () => {
             </span>
 
             <article>
-              <span className="Dashboard_Order_Item">
-                <div className="Dashboard_Order_Item_Description">
-                  <span className="Item_Img_Holder">
-                    <img src={LaptopImg} alt="a laptop" />
+              {loading ? (
+                <p>Loading orders...</p>
+              ) : error ? (
+                <p>{error}</p>
+              ) : (
+                orders.map((order) => (
+                  <span key={order.orderId} className="Dashboard_Order_Item">
+                    <div className="Dashboard_Order_Item_Description">
+                      <span className="Item_Img_Holder">
+                        <img src={order.image || ""} alt={order.productName} />
+                      </span>
+                      <span>
+                        <h2>{order.productName}</h2>
+                        <h4>{order.category}</h4>
+                      </span>
+                    </div>
+                    <div>
+                      <p>{order.orderId}</p>
+                      <p>{order.amount}</p>
+                      <p>{order.status}</p>
+                    </div>
                   </span>
-                  <span>
-                    <h2>HP EliteBook 830 Touchscreen</h2>
-                    <h4>Computing</h4>
-                  </span>
-                </div>
-                <div>
-                  <p>8976TY</p>
-                  <p>$30</p>
-                  <p>5,951</p>
-                  <p>Delivered</p>
-                </div>
-              </span>
+                ))
+              )}
             </article>
 
-            {/* The new line chart for total sales */}
             <Line data={salesData} options={options} />
           </div>
           <div className="Side_Graph_Container">
-            {/* The new pie chart */}
             <Pie data={pieData} />
           </div>
         </section>

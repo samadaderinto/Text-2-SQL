@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import Sidebar from '../layouts/SideBar';
-import { API_BASE_URL } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { Header } from "../layouts/Header";
 
@@ -18,22 +17,20 @@ export const Settings = () => {
     smsNotifications: false,
   });
 
-  const navigate = useNavigate();
-  const access = localStorage.getItem('access');
+  const nav = useNavigate();
+  
 
   const fetchData = useCallback(async (url: string, updateData: (data: any) => void) => {
     try {
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${access}` },
-      });
+      const response = await axios.get(url);
       updateData(response.data);
     } catch (error) {
       console.error(`Error fetching data from ${url}:`, error);
     }
-  }, [access]);
+  }, []);
 
   useEffect(() => {
-    fetchData(`${API_BASE_URL}/settings/admin/get/`, (data) => {
+    fetchData(`/settings/admin/get/`, (data) => {
       setFormData((prev) => ({
         ...prev,
         adminName: data.adminName,
@@ -42,7 +39,7 @@ export const Settings = () => {
       }));
     });
 
-    fetchData(`${API_BASE_URL}/settings/store/get/`, (data) => {
+    fetchData(`/settings/store/get/`, (data) => {
       setFormData((prev) => ({
         ...prev,
         storeName: data.storeName,
@@ -51,7 +48,7 @@ export const Settings = () => {
       }));
     });
 
-    fetchData(`${API_BASE_URL}/settings/notifications/get/`, (data) => {
+    fetchData(`$/settings/notifications/get/`, (data) => {
       setFormData((prev) => ({
         ...prev,
         emailNotifications: data.emailNotifications || false,
@@ -62,7 +59,7 @@ export const Settings = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
-    
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
@@ -71,9 +68,9 @@ export const Settings = () => {
 
   const handleSubmit = async () => {
     const endpoints: any = {
-      'General': `${API_BASE_URL}/settings/store/update/`,
-      'Account': `${API_BASE_URL}/settings/admin/update/`,
-      'Notifications': `${API_BASE_URL}/api/settings/notifications/`,
+      'General': `/settings/store/update/`,
+      'Account': `/settings/admin/update/`,
+      'Notifications': `/api/settings/notifications/`,
     };
 
     const dataMap: any = {
@@ -94,9 +91,7 @@ export const Settings = () => {
     };
 
     try {
-      await axios.put(endpoints[active], dataMap[active], {
-        headers: { Authorization: `Bearer ${access}` },
-      });
+      await axios.put(endpoints[active], dataMap[active]);
 
     } catch (error) {
       console.error('Error updating settings:', error);
@@ -179,7 +174,7 @@ export const Settings = () => {
                 onChange={handleInputChange}
               />
               <label htmlFor="password">Password
-                <p onClick={() => navigate("/auth/forgot-password")}>change password</p>
+                <p onClick={() => nav("/auth/forgot-password")}>change password</p>
               </label>
               <input
                 type="password"

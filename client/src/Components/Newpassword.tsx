@@ -2,11 +2,14 @@ import { PiDiamondsFourFill } from "react-icons/pi";
 import { useState } from "react";
 import { IoEye, IoEyeOff } from 'react-icons/io5';
 import axios from "axios";
-import { API_BASE_URL } from "../utils/api";
+
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import api from "../utils/api";
 
 export const Newpassword = () => {
   const currentUrl = window.location.href;
-  const parts = currentUrl.split('/'); 
+  const parts = currentUrl.split('/');
   const savedEmail = parts[parts.length - 1];
 
   const [formState, setFormState] = useState({
@@ -25,9 +28,9 @@ export const Newpassword = () => {
     check1: false,
     check2: false,
     check3: false
-   
   });
-  const [pop, setPop] = useState(false)
+
+  const [pop, setPop] = useState(false);
 
   const checkStrength = (password: string) => {
     const specialCharsRegex = /[!@#$%&*]/;
@@ -77,7 +80,7 @@ export const Newpassword = () => {
       const capitalizedField = field.charAt(0).toUpperCase() + field.slice(1);
       const showFieldKey = `show${capitalizedField}` as keyof typeof prevState;
       const typeFieldKey = `${field}Type` as keyof typeof prevState;
-      
+
       return {
         ...prevState,
         [showFieldKey]: !prevState[showFieldKey],
@@ -87,18 +90,33 @@ export const Newpassword = () => {
   };
 
   const Reset = async () => {
-    const { email, passwordValue } = formState;
-    const data = JSON.stringify({ email: email, new_password: passwordValue });
+    const { email, passwordValue, confirmPasswordValue } = formState;
+
+    if (passwordValue !== confirmPasswordValue) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+
+    if (!formState.check1 || !formState.check2 || !formState.check3) {
+      toast.error('Password does not meet the required strength criteria.');
+      return;
+    }
+
+    const data = JSON.stringify({ email, new_password: passwordValue });
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/reset-password/reset/`, data, {
+      const response = await api.post(`/auth/reset-password/reset/`, data, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      console.log(response.data);
+
+      if (response.status === 200) {
+        toast.success('Password reset successfully!');
+        setPop(true);
+      }
     } catch (error) {
-      console.log(error);
+      toast.error('Failed to reset password. Please try again later.');
     }
   };
 
@@ -109,14 +127,14 @@ export const Newpassword = () => {
         <h1>Create New Password</h1>
         <label htmlFor="email">Email</label>
         <div className="Input_Container">
-        <input
-          type="email"
-          name="email"
-          value={formState.email}
-          onChange={handleInputChange}
-          id="email"
-          placeholder="input email"
-        />
+          <input
+            type="email"
+            name="email"
+            value={formState.email}
+            onChange={handleInputChange}
+            id="email"
+            placeholder="Input email"
+          />
         </div>
         <label htmlFor="passwordValue">Password</label>
         <div className="Input_Container" tabIndex={0}>
@@ -126,7 +144,7 @@ export const Newpassword = () => {
             value={formState.passwordValue}
             onChange={handleInputChange}
             id="password"
-            placeholder="input your password"
+            placeholder="Input your password"
           />
           <p onClick={() => togglePasswordVisibility('password')}>
             {formState.showPassword ? <IoEyeOff /> : <IoEye />}
@@ -148,7 +166,7 @@ export const Newpassword = () => {
             value={formState.confirmPasswordValue}
             onChange={handleInputChange}
             id="confirm"
-            placeholder="confirm password"
+            placeholder="Confirm password"
           />
           <p onClick={() => togglePasswordVisibility('confirm')}>
             {formState.showConfirm ? <IoEyeOff /> : <IoEye />}
@@ -160,17 +178,15 @@ export const Newpassword = () => {
         <h1>Easiest Way To Manage Your Store</h1>
       </section>
       {
-        pop?(
-        <section className="Forgot_Pop">
-           <div>
+        pop && (
+          <section className="Forgot_Pop">
+            <div>
               <h3>Password Reset</h3>
-              <p>You have successfully changed your password. 
-               
-              </p>
-              <span onClick={()=> setPop(false)} className="Login_Btn">Go To Login</span>
+              <p>You have successfully changed your password.</p>
+              <span onClick={() => setPop(false)} className="Login_Btn">Go To Login</span>
             </div>
-        </section>
-        ): null
+          </section>
+        )
       }
     </div>
   );

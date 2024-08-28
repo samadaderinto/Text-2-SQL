@@ -14,7 +14,7 @@ RUN npm ci
 COPY . .
 
 # Build the React app
-RUN npm run build
+RUN npm run dev
 
 # Expose the port that the React app will run on (usually 3000)
 EXPOSE 4173

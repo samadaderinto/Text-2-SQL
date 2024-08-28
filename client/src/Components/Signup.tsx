@@ -3,8 +3,8 @@ import { PiDiamondsFourFill } from 'react-icons/pi';
 import { IoEye, IoEyeOff } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { API_BASE_URL } from '../utils/api';
 import { toast } from 'react-toastify';
+import api from '../utils/api';
 
 
 
@@ -26,7 +26,7 @@ export const Signup = () => {
     confirmpassword: '',
   });
 
-  const Nav = useNavigate();
+  const nav = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -129,7 +129,7 @@ export const Signup = () => {
         const { email, password } = formState;
         const data = JSON.stringify({ email, password });
 
-        const response = await axios.post(`${API_BASE_URL}/auth/signup/`, data, {
+        const response = await api.post(`/auth/signup/`, data, {
           headers: {
             'Content-Type': 'application/json',
           },
@@ -175,7 +175,7 @@ export const Signup = () => {
         <h1>Welcome To EchoCart</h1>
         <article>
           <span>Registered User?</span>
-          <p onClick={() => Nav('/auth/signin')}>Sign In</p>
+          <p onClick={() => nav('/auth/signin')}>Sign In</p>
         </article>
         <label htmlFor="email">Email</label>
         <div className="Input_Container" tabIndex={0}>

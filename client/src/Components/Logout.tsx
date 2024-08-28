@@ -1,8 +1,9 @@
 // import {useState} from 'react'
 
 import { useNavigate } from "react-router-dom"
-import axios from "axios"
-import { API_BASE_URL } from "../utils/api"
+
+import api from "../utils/api"
+
 
 export const Logout = () => {
 
@@ -10,15 +11,11 @@ export const Logout = () => {
 
   const handleLogout = async () => {
     const refresh = localStorage.getItem('refresh')
-    const access = localStorage.getItem('access')
     const data = JSON.stringify({ refresh });
 
     try {
 
-      const response = await axios.post(`${API_BASE_URL}/auth/logout/`, data, {
-        headers: {
-          Authorization: `Bearer ${access}`,
-        },
+      const response = await api.post(`/auth/logout/`, data, {
       })
       if (response.status == 205) {
         nav('/auth/signin/')

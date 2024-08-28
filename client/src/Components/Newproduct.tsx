@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, ChangeEvent } from "react";
 import { LuImagePlus } from "react-icons/lu";
-import axios from 'axios';  // Make sure to install axios
-import { API_BASE_URL } from "../utils/api";
 import SideBar from "../layouts/SideBar";
 import { Header } from "../layouts/Header";
+import { ProductFormStateProps } from "../types/add-product-state";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import api from "../utils/api";
 
 export const Newproduct = () => {
-  const [formState, setFormState] = useState({
-    img: null as File | null,
+  const [formState, setFormState] = useState<ProductFormStateProps>({
+    img: null,
     productName: '',
     productDescription: '',
     productPrice: '',
@@ -19,11 +21,11 @@ export const Newproduct = () => {
       productDescription: '',
       productPrice: '',
       quantity: '',
-    }
+    },
   });
 
-  const validateForm = () => {
-    const newErrors = {
+  const validateForm = (): boolean => {
+    const newErrors: ProductFormStateProps['errors'] = {
       productName: '',
       productDescription: '',
       productPrice: '',
@@ -52,14 +54,16 @@ export const Newproduct = () => {
     return valid;
   };
 
-  const Upload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const Upload = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setFormState({ ...formState, img: file });
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     setFormState({
       ...formState,
       [e.target.name]: e.target.value,
@@ -81,21 +85,22 @@ export const Newproduct = () => {
       formData.append('quantity', formState.quantity);
 
       if (formState.img) {
-        formData.append('image', formState.img);  // Directly append the file
+        formData.append('image', formState.img); 
       }
 
       try {
-        await axios.post(`${API_BASE_URL}/product/create/`, formData, {
+        await api.post(`/product/create/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-        // Handle successful response
-        console.log('Product created successfully');
+        toast.success('Product created successfully!');
       } catch (error) {
         console.error('Error creating product:', error);
-        // Handle error response
+        toast.error('Failed to create product. Please try again.');
       }
+    } else {
+      toast.error('Please fill in all required fields correctly.');
     }
   };
 

@@ -32,17 +32,16 @@ export const Signup = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update form state
+
     setFormState({ ...formState, [name]: value });
 
-    // Perform real-time validation
     let errorMessages = { ...errors };
 
     if (name === 'email') {
       if (!value) {
         errorMessages.email = 'Email is required';
       } else {
-        errorMessages.email = ''; // Clear error when valid
+        errorMessages.email = '';
       }
     }
 
@@ -52,14 +51,13 @@ export const Signup = () => {
       } else if (!validatePassword(value)) {
         errorMessages.password = 'Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, one digit, and one special character';
       } else {
-        errorMessages.password = ''; // Clear error when valid
+        errorMessages.password = ''; 
       }
 
-      // Also validate confirm password if it's already entered
       if (formState.confirmpassword && value !== formState.confirmpassword) {
         errorMessages.confirmpassword = 'Passwords do not match';
       } else {
-        errorMessages.confirmpassword = ''; // Clear error when valid
+        errorMessages.confirmpassword = '';
       }
     }
 
@@ -69,7 +67,7 @@ export const Signup = () => {
       } else if (value !== formState.password) {
         errorMessages.confirmpassword = 'Passwords do not match';
       } else {
-        errorMessages.confirmpassword = ''; // Clear error when valid
+        errorMessages.confirmpassword = '';
       }
     }
 

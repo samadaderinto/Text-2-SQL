@@ -71,7 +71,7 @@ class AuthService:
             return None
 
         user = self.User.objects.create_user(email=email, password=password)
-        self.Store.objects.create(user=user)
+        self.Store.objects.create(user=user, email=email)
         self.Notification.objects.create(user=user)
         self.send_activation_mail(request, email)
 

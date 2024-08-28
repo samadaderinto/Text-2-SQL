@@ -3,6 +3,7 @@ import axios from "axios";
 import Sidebar from '../layouts/SideBar';
 import { useNavigate } from "react-router-dom";
 import { Header } from "../layouts/Header";
+import api from "../utils/api";
 
 export const Settings = () => {
   const [active, setActive] = useState('General');
@@ -21,37 +22,41 @@ export const Settings = () => {
 
   const fetchData = useCallback(async (url: string, updateData: (data: any) => void) => {
     try {
-      const response = await axios.get(url);
+      const response = await api.get(url);
       updateData(response.data);
+
     } catch (error) {
       console.error(`Error fetching data from ${url}:`, error);
     }
   }, []);
 
   useEffect(() => {
-    fetchData(`/settings/admin/get/`, (data) => {
+    fetchData(`/settings/admin/get/`, ({first_name, email, password}) => {
+
       setFormData((prev) => ({
         ...prev,
-        adminName: data.adminName || '',
-        adminEmail: data.adminEmail || '',
-        password: data.password || '',
+        
+        adminName: first_name,
+        adminEmail: email,
+        password: password,
       }));
     });
 
-    fetchData(`/settings/store/get/`, (data) => {
+    fetchData(`/settings/store/get/`, ({name, email, currency}) => {
+
       setFormData((prev) => ({
         ...prev,
-        storeName: data.storeName || '',
-        storeEmail: data.storeEmail || '',
-        currency: data.currency || '$',
+        storeName: name,
+        storeEmail: email,
+        currency: currency,
       }));
     });
 
-    fetchData(`/settings/notifications/get/`, (data) => {
+    fetchData(`/settings/notifications/get/`, ({email_notification, sms_notification}) => {
       setFormData((prev) => ({
         ...prev,
-        emailNotifications: data.emailNotifications ?? false,
-        smsNotifications: data.smsNotifications ?? false,
+        emailNotifications: email_notification,
+        smsNotifications: sms_notification,
       }));
     });
   }, [fetchData]);

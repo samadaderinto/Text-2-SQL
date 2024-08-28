@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
 import { HiMiniMagnifyingGlass } from "react-icons/hi2";
@@ -8,28 +7,23 @@ import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/SideBar";
 import api from "../utils/api";
 
-
 export const Orders = () => {
   const itemsPerPage = 15;
   const [input, setInput] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [data, setData] = useState<any[]>([]);
-
+  const [totalItems, setTotalItems] = useState(0); 
 
   useEffect(() => {
     fetchData();
-  }, [currentPage]);
+  }, [currentPage, input]);
 
   const fetchData = async () => {
     const offset = currentPage * itemsPerPage;
-
     try {
-      const response = await api.get(
-        `/orders/search/?offset=${1}&limit=${itemsPerPage}`,
-      );
-      setData(response.data);
-      console.log(response)
-    
+      const response = await api.get(`/orders/search/?offset=${offset}&limit=${itemsPerPage}&search=${input}`);
+      setData(response.data.results); 
+      setTotalItems(response.data.count);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -39,14 +33,28 @@ export const Orders = () => {
     setCurrentPage(event.selected);
   };
 
+  const handleDownload = async () => {
+    try {
+      const response = await api.get('/orders/download/', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'orders.csv');
+      document.body.appendChild(link);
+      link.click();
+    } catch (error) {
+      console.error("Error downloading file:", error);
+    }
+  };
+
   return (
     <>
       <Header />
       <div className="Order_Container">
         <Sidebar />
         <section className="Order_Header">
-          <h1>Order</h1>
-          <span>
+          <h1>Orders</h1>
+          <span onClick={handleDownload}>
             <MdOutlineDownload className="Order_Download_Icon" />
             Download List
           </span>
@@ -90,7 +98,7 @@ export const Orders = () => {
                 <span>
                   <img src={orderItem.img} alt="" />
                 </span>
-                <p style={{ color: 'black' }}>Wahab Adetunji</p>
+                <p style={{ color: 'black' }}>{orderItem.customerName}</p>
                 <p className="Order_Status">{orderItem.status}</p>
                 <p>{orderItem.created.substring(0, 10)}</p>
                 <p>{orderItem.subTotal}</p>
@@ -101,11 +109,11 @@ export const Orders = () => {
               </article>
             ))}
 
-            <ReactPaginate 
-              previousLabel={<FaAngleLeft className="order_arrow"/>}
-              nextLabel={<FaAngleRight className="order_arrow"/>}
+            <ReactPaginate
+              previousLabel={<FaAngleLeft className="order_arrow" />}
+              nextLabel={<FaAngleRight className="order_arrow" />}
               breakLabel={'...'}
-              pageCount={Math.ceil(data.length / itemsPerPage)}
+              pageCount={Math.ceil(totalItems / itemsPerPage)}
               marginPagesDisplayed={2}
               pageRangeDisplayed={5}
               onPageChange={handlePageClick}

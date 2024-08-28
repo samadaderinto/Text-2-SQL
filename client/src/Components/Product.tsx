@@ -42,7 +42,7 @@ export const Product = () => {
     const fetchData = async () => {
       try {
         const response = await api.get(
-          `/products/search/?offset=${currentPage * itemsPerPage}&limit=${itemsPerPage}&query=${input}`,
+          `/product/search/?offset=${currentPage * itemsPerPage}&limit=${itemsPerPage}&query=${input}`,
         );
         const totalItems = response.data.totalCount || 0;
         dispatch({ type: 'SET_DATA', payload: response.data.items || [] });

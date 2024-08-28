@@ -107,7 +107,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='customer.first_name', read_only=True)
+    name = serializers.SerializerMethodField()
+    
 
     class Meta:
         model = Order
@@ -122,6 +123,11 @@ class OrderSerializer(serializers.ModelSerializer):
             'created',
             'updated'
         ]
+
+    def get_name(self, obj):
+        return obj.user.first_name
+
+
 
 
 class OrderSearchSerializer(serializers.Serializer):

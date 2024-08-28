@@ -12,17 +12,19 @@ export const Orders = () => {
   const [input, setInput] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [data, setData] = useState<any[]>([]);
-  const [totalItems, setTotalItems] = useState(0); 
+  const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
     fetchData();
   }, [currentPage, input]);
 
   const fetchData = async () => {
+
     const offset = currentPage * itemsPerPage;
     try {
       const response = await api.get(`/orders/search/?offset=${offset}&limit=${itemsPerPage}&search=${input}`);
-      setData(response.data.results); 
+      setData(response.data);
+      console.log(response.data)
       setTotalItems(response.data.count);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -33,9 +35,13 @@ export const Orders = () => {
     setCurrentPage(event.selected);
   };
 
-  const handleDownload = async () => {
+
+
+  const handleDownload = async (order_id = "") => {
+
     try {
-      const response = await api.get('/orders/download/', { responseType: 'blob' });
+      const end_point = order_id ? `/orders/download/${order_id}/` : "/orders/download/"
+      const response = await api.get(end_point, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -47,6 +53,22 @@ export const Orders = () => {
     }
   };
 
+  const handleDelete = async (order_id: any) => {
+    try {
+      const response = await api.delete(`/orders/delete/${order_id}/`)
+
+      if (response.status === 205) {
+        setData(data.filter((item) => item.id !== order_id));
+        setTotalItems(totalItems - 1);
+      }
+
+
+    } catch (error) {
+      console.error("Error delete:", error);
+    }
+
+  }
+
   return (
     <>
       <Header />
@@ -54,7 +76,7 @@ export const Orders = () => {
         <Sidebar />
         <section className="Order_Header">
           <h1>Orders</h1>
-          <span onClick={handleDownload}>
+          <span onClick={() => handleDownload}>
             <MdOutlineDownload className="Order_Download_Icon" />
             Download List
           </span>
@@ -80,14 +102,14 @@ export const Orders = () => {
             <article>
               <input type="checkbox" />
               <p>Order ID</p>
-              <p>Customer Name</p>
+              <p className='Header_customer_Name'>Customer Name</p>
             </article>
-            <article className="Order_Attributes">
+            <div className="Order_Attributes">
               <p>Status</p>
               <p>Date & Time</p>
               <p>Price</p>
               <p>Action</p>
-            </article>
+            </div>
           </div>
 
           <div className="Order_List_Item">
@@ -95,16 +117,13 @@ export const Orders = () => {
               <article key={index}>
                 <input type="checkbox" />
                 <p style={{ color: 'black' }}>{orderItem.id}</p>
-                <span>
-                  <img src={orderItem.img} alt="" />
-                </span>
-                <p style={{ color: 'black' }}>{orderItem.customerName}</p>
+                <p style={{ color: 'black' }}>{orderItem.name}</p>
                 <p className="Order_Status">{orderItem.status}</p>
                 <p>{orderItem.created.substring(0, 10)}</p>
-                <p>{orderItem.subTotal}</p>
+                <p>{orderItem.subtotal}</p>
                 <p className="Order_Icon_action">
-                  <MdOutlineDownload />
-                  <MdOutlineDelete />
+                  <MdOutlineDownload onClick={() => handleDownload(orderItem.id)} />
+                  <MdOutlineDelete onClick={() => handleDelete(orderItem.id)} />
                 </p>
               </article>
             ))}

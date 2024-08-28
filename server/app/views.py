@@ -72,7 +72,6 @@ logger = logging.getLogger(__name__)
 AudioSegment.converter = which('ffmpeg')
 
 
-
 class AuthViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -492,7 +491,7 @@ class OrderViewSet(viewsets.GenericViewSet):
     permission_classes = (ServerAccessPolicy,)
     serializer_class = OrderSerializer
 
-    @extend_schema(request=OrderSerializer, responses={200: OrderSerializer})
+    @extend_schema(request=OrderSerializer, responses={201: OrderSerializer})
     @action(detail=False, methods=['post'], url_path='create')
     def create_order(self, request):
         data = JSONParser().parse(request)
@@ -501,7 +500,14 @@ class OrderViewSet(viewsets.GenericViewSet):
         order = self.order_service.create_order(request, serializer)
         return Response(status=201, data=order)
 
-    @extend_schema(request=OrderSerializer, responses={200: OrderSerializer})
+    @extend_schema(responses={205: None})
+    @action(detail=False, methods=['delete'], url_path='delete/(?P<order_id>[^/.]+)')
+    def delete_order(self, request, order_id):
+        order = get_object_or_404(Order, id=order_id)
+        order.delete()
+        return Response(status=205)
+
+    @extend_schema(request=OrderSerializer, responses={201: OrderSerializer})
     @action(detail=False, methods=['put'], url_path='update')
     def update_order(self, request):
         data = JSONParser().parse(request)
@@ -511,7 +517,7 @@ class OrderViewSet(viewsets.GenericViewSet):
     @extend_schema(responses={200: OrderSerializer(many=True)})
     @action(detail=False, methods=['get'], url_path='search')
     def retrieve_order(self, request):
-        orders = self.order_service.get_orders(user=request.user)
+        orders = Order.objects.all()
 
         page_number = request.GET.get('offset', 1)
         per_page = request.GET.get('limit', 15)
@@ -520,29 +526,54 @@ class OrderViewSet(viewsets.GenericViewSet):
 
         serializer = OrderSerializer(paginated_orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     @extend_schema(responses={200: None})
     @action(detail=False, methods=['get'], url_path='download')
     def download_order(self, request):
         orders = Order.objects.all()
 
-   
         buffer = StringIO()
         writer = csv.writer(buffer)
         writer.writerow(['Order ID', 'Customer Name', 'Status', 'Date & Time', 'Price'])
 
         for order in orders:
-            writer.writerow([
+            writer.writerow(
+                [
+                    order.id,
+                    order.user.first_name,
+                    order.status,
+                    order.created,
+                    order.subtotal
+                ]
+            )
+
+        buffer.seek(0)
+        response = HttpResponse(buffer.getvalue(), content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="orders.csv"'
+        return response
+
+    @extend_schema(responses={200: None})
+    @action(detail=False, methods=['get'], url_path='download/(?P<order_id>[^/.]+)')
+    def download_order(self, request, order_id):
+        order = get_object_or_404(Order, id=order_id)
+
+        buffer = StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(['Order ID', 'Customer Name', 'Status', 'Date & Time', 'Price'])
+
+        writer.writerow(
+            [
                 order.id,
                 order.user.first_name,
                 order.status,
                 order.created,
                 order.subtotal
-            ])
+            ]
+        )
 
-        buffer.seek(0)  
+        buffer.seek(0)
         response = HttpResponse(buffer.getvalue(), content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="orders.csv"'
+        response['Content-Disposition'] = f'attachment; filename="order_{order.id}.csv"'
         return response
 
 
@@ -574,7 +605,7 @@ class SettingsViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['get'], url_path='store/get')
     def get_store(self, request):
         store = get_object_or_404(Store, email=request.user.email)
-       
+
         return Response(status=200, data=StoreSerializer(store).data)
 
     @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})

@@ -6,9 +6,9 @@ import { UserProps } from "../types/user";
 
 export const AuthContext = createContext<AuthContextType>({
     isSignedIn: false,
-    setIsSignedIn: () => {}, // Default implementation that does nothing
-    user: undefined, // Start with undefined if no user is signed in initially
-    setUser: () => {}, // Default implementation that does nothing
+    setIsSignedIn: () => {},
+    user: undefined,
+    setUser: () => {},
   });
 
 

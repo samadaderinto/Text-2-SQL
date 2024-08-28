@@ -73,16 +73,12 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
         return data
 
 
-class StoreSerializer(serializers.Serializer):
+class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
-        fields = '__all__'
+        fields = "__all__"
 
-        def update(self, instance, validated_data):
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
-            instance.save()
-            return instance
+        
 
 
 class StoreSearchSerializer(serializers.Serializer):

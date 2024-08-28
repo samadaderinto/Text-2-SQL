@@ -1,13 +1,18 @@
+import csv
+from http.client import HTTPResponse
+from io import StringIO
 import os
 import logging
 import subprocess
 
 from django.core.paginator import Paginator
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, get_list_or_404
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
 from django.core.files.storage import default_storage
+from django.http import HttpResponse
+
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -22,7 +27,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework import serializers
 
 
-from .models import Customer, Order, Product, Store, User
+from .models import Order, Product, Store, User
 from .permissions import ServerAccessPolicy
 from .serializers import (
     AdminSerializer,
@@ -515,6 +520,30 @@ class OrderViewSet(viewsets.GenericViewSet):
 
         serializer = OrderSerializer(paginated_orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    @extend_schema(responses={200: None})
+    @action(detail=False, methods=['get'], url_path='download')
+    def download_order(self, request):
+        orders = Order.objects.all()
+
+   
+        buffer = StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(['Order ID', 'Customer Name', 'Status', 'Date & Time', 'Price'])
+
+        for order in orders:
+            writer.writerow([
+                order.id,
+                order.user.first_name,
+                order.status,
+                order.created,
+                order.subtotal
+            ])
+
+        buffer.seek(0)  
+        response = HttpResponse(buffer.getvalue(), content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="orders.csv"'
+        return response
 
 
 class SettingsViewSet(viewsets.GenericViewSet):
@@ -544,7 +573,8 @@ class SettingsViewSet(viewsets.GenericViewSet):
     @extend_schema(responses={200: StoreSerializer})
     @action(detail=False, methods=['get'], url_path='store/get')
     def get_store(self, request):
-        store = Store.objects.get(user=request.user)
+        store = get_object_or_404(Store, email=request.user.email)
+       
         return Response(status=200, data=StoreSerializer(store).data)
 
     @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { PiDiamondsFourFill } from 'react-icons/pi';
 import { IoEye, IoEyeOff } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '../utils/api';
@@ -43,7 +42,7 @@ export const SignIn = () => {
         email,
         password,
       });
-      
+
       const { data, token } = response.data;
 
       localStorage.setItem('refresh', token.refresh);
@@ -57,10 +56,10 @@ export const SignIn = () => {
       });
 
       toast.success('Sign in successful! Redirecting to dashboard...');
-      nav('/dashboard'); 
+      nav('/dashboard');
     } catch (error: any) {
       console.log(error);
-      
+
       // Check if the error is due to unverified account
       if (error.response.status === 403) {
         toast.error('Please verify your account before logging in.');

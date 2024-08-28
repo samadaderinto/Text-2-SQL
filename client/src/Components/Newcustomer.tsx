@@ -3,7 +3,6 @@ import { LuImagePlus } from "react-icons/lu";
 import { Header } from "../layouts/Header";
 import SideBar from "../layouts/SideBar";
 import axios from "axios";
-import { API_BASE_URL } from '../utils/api';
 
 export const Newcustomer = () => {
   const [formState, setFormState] = useState({
@@ -97,7 +96,7 @@ export const Newcustomer = () => {
       }
 
       try {
-        await axios.post(`${API_BASE_URL}/customers/create/`, formData, {
+        await axios.post(`/customers/create/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },

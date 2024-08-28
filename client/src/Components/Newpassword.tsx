@@ -1,7 +1,6 @@
 import { PiDiamondsFourFill } from "react-icons/pi";
 import { useState } from "react";
 import { IoEye, IoEyeOff } from 'react-icons/io5';
-import axios from "axios";
 
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';

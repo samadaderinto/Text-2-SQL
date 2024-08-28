@@ -5,6 +5,7 @@ import { MdOutlineShoppingCart } from "react-icons/md";
 import { RxDashboard } from 'react-icons/rx';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SideBarProps } from '../types/sidebar';
+import { sideBarArrayList } from '../utils/sidebar';
 
 const SideBar: FC = () => {
   const location = useLocation();
@@ -14,20 +15,12 @@ const SideBar: FC = () => {
   const currentPath = location.pathname.split('/').filter(Boolean);
   const currentPathSegment = currentPath.length ? currentPath[currentPath.length - 1] : 'dashboard';
 
-  // Define the sidebar items
-  const sideBarArrayList: SideBarProps[] = [
-    { icon: <RxDashboard />, itemName: 'dashboard' },
-    { icon: <RiShoppingBag3Line />, itemName: 'product' },
-    { icon: <MdOutlineShoppingCart />, itemName: 'orders' },
-    { icon: <IoPeopleOutline />, itemName: 'customers' },
-    { icon: <IoSettingsOutline />, itemName: 'settings' },
-    { icon: <RiLogoutBoxLine />, itemName: 'logout' }
-  ];
+  // Define the sidebar item
 
   // Determine the index of the active item
   const activeIndex = sideBarArrayList.findIndex(item => item.itemName === currentPathSegment);
 
-  const handleClick = (index: number, itemName: string) => {
+  const handleClick = (_index: number, itemName: string) => {
     nav(`/${itemName}`);
   };
 

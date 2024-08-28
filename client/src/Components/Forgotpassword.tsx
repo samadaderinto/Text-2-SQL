@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { PiDiamondsFourFill } from "react-icons/pi";
 import { FaArrowLeft } from 'react-icons/fa6';
 import { useState } from "react";
-import axios from "axios";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../utils/api";

@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { PiDiamondsFourFill } from 'react-icons/pi';
 import { IoEye, IoEyeOff } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
+import { AuthContext } from '../contexts/auth-context';
 
 
 
 export const Signup = () => {
-  const [pop, setPop] = useState(false)
+  const { setIsSignedIn } = useContext(AuthContext);
+
   const [formState, setFormState] = useState({
     show: false,
     show1: false,
@@ -129,15 +130,8 @@ export const Signup = () => {
         const { email, password } = formState;
         const data = JSON.stringify({ email, password });
 
-        const response = await api.post(`/auth/signup/`, data, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        console.log(response.data);
-
-        // Clear form and show success message
+        const response = await api.post(`/auth/signup/`, data);
+       
         setFormState({
           ...formState,
           email: '',
@@ -145,7 +139,7 @@ export const Signup = () => {
           confirmpassword: '',
         });
         toast.success('Sign up successful! A verification link has been sent to your email address.');
-        // setPop(true);
+        setIsSignedIn(true)
 
       } catch (error: any) {
         if (error.response && error.response.status === 400) {
@@ -221,19 +215,7 @@ export const Signup = () => {
       <section className="Blue_Section">
         <span><PiDiamondsFourFill /> EchoCart</span>
       </section>
-      {
-
-        pop ? (
-          <article className='Signup_Pop_Container'>
-            <span className='Popup_span'>
-              <h4 onClick={() => setPop(false)} className='Signup_Popup_Cancel'>X</h4>
-              <h5>A verification mail has been sent to your email address.</h5>
-
-            </span>
-          </article>
-
-        ) : null
-      }
+      
     </div>
   );
 };

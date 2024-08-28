@@ -18,7 +18,6 @@ export const Settings = () => {
   });
 
   const nav = useNavigate();
-  
 
   const fetchData = useCallback(async (url: string, updateData: (data: any) => void) => {
     try {
@@ -33,26 +32,26 @@ export const Settings = () => {
     fetchData(`/settings/admin/get/`, (data) => {
       setFormData((prev) => ({
         ...prev,
-        adminName: data.adminName,
-        adminEmail: data.adminEmail,
-        password: data.password,
+        adminName: data.adminName || '',
+        adminEmail: data.adminEmail || '',
+        password: data.password || '',
       }));
     });
 
     fetchData(`/settings/store/get/`, (data) => {
       setFormData((prev) => ({
         ...prev,
-        storeName: data.storeName,
-        storeEmail: data.storeEmail,
-        currency: data.currency,
+        storeName: data.storeName || '',
+        storeEmail: data.storeEmail || '',
+        currency: data.currency || '$',
       }));
     });
 
-    fetchData(`$/settings/notifications/get/`, (data) => {
+    fetchData(`/settings/notifications/get/`, (data) => {
       setFormData((prev) => ({
         ...prev,
-        emailNotifications: data.emailNotifications || false,
-        smsNotifications: data.smsNotifications || false,
+        emailNotifications: data.emailNotifications ?? false,
+        smsNotifications: data.smsNotifications ?? false,
       }));
     });
   }, [fetchData]);
@@ -75,8 +74,8 @@ export const Settings = () => {
 
     const dataMap: any = {
       'General': {
-        name: formData.storeName,
-        email: formData.storeEmail,
+        storeName: formData.storeName,
+        storeEmail: formData.storeEmail,
         currency: formData.currency,
       },
       'Account': {
@@ -92,10 +91,8 @@ export const Settings = () => {
 
     try {
       await axios.put(endpoints[active], dataMap[active]);
-
     } catch (error) {
       console.error('Error updating settings:', error);
-
     }
   };
 

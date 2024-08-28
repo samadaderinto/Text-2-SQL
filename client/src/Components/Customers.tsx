@@ -9,19 +9,13 @@ import { Header } from "../layouts/Header";
 import Sidebar from '../layouts/SideBar';
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import { CustomerProps } from "../types/customers";
 
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  dateJoined: string;
-  orders: number;
-  spending: number;
-}
+
 
 export const Customers = () => {
   const itemsPerPage = 15;
-  const [data, setData] = useState<Customer[]>([]);
+  const [data, setData] = useState<CustomerProps[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const nav = useNavigate();
 

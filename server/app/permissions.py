@@ -43,6 +43,7 @@ class ServerAccessPolicy(AccessPolicy):
                 'update_order',
                 'create_order',
                 "download_order",
+                "delete_order",
                 'logout'
             ],
             'principal': ['authenticated'],

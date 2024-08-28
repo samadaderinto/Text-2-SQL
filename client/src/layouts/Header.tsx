@@ -1,4 +1,4 @@
-import { useState, ReactElement, useRef } from 'react';
+import { useState, ReactElement, useRef, useEffect } from 'react';
 import { RxDropdownMenu } from "react-icons/rx";
 import { FaEarListen } from "react-icons/fa6";
 import { RiSpeakLine } from "react-icons/ri";
@@ -10,9 +10,10 @@ import { RxDashboard } from 'react-icons/rx';
 import { RiLogoutBoxLine } from "react-icons/ri";
 import { MdOutlineShoppingCart } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import ProfileImg from "../assets/profileimg.jfif";
 import api from '../utils/api';
+import { SideBarProps } from '../types/sidebar';
+import { sideBarArrayList } from '../utils/sidebar';
 
 export const Header = () => {
   const [menu, setMenu] = useState(false);
@@ -22,21 +23,25 @@ export const Header = () => {
   const nav = useNavigate();
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [store, setStore] = useState<{ name: string, email: string }>({ name: "", email: "" })
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
-  interface Item {
-    icon: ReactElement;
-    itemName: string;
-  }
 
-  const sideBarArrayList: Item[] = [
-    { icon: <RxDashboard />, itemName: 'dashboard' },
-    { icon: <RiShoppingBag3Line />, itemName: 'product' },
-    { icon: <MdOutlineShoppingCart />, itemName: 'orders' },
-    { icon: <IoPeopleOutline />, itemName: 'customers' },
-    { icon: <IoSettingsOutline />, itemName: 'settings' },
-    { icon: <RiLogoutBoxLine />, itemName: 'logout' }
-  ];
+
+
+  useEffect(() => {
+    const fetchStoreName = async () => {
+      try {
+        const response = await api.get(`/settings/store/get/`);
+        setStore(response.data);
+      } catch (error) {
+        console.error('Error fetching store name:', error);
+      }
+    };
+
+    fetchStoreName();
+
+  }, []);
 
   const startRecording = async () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -75,6 +80,7 @@ export const Header = () => {
   }
 
 
+
   const handleUpload = async () => {
     if (audioBlob) {
       const formData = new FormData();
@@ -86,7 +92,7 @@ export const Header = () => {
             'Content-Type': 'multipart/form-data',
           },
         });
-        console.log(response.data, "frferfrfrf");
+        console.log(response.data);
       } catch (error) {
         console.error('Error uploading audio:', error);
       }
@@ -113,7 +119,7 @@ export const Header = () => {
         )}
       </section>
       <section className="RightHand_Container">
-        <p className="Exclusive_Store">Exclusive Store</p>
+        <p className="Exclusive_Store">{store.name ? store.name : ["Store Name"]}</p>
         <p><IoIosNotificationsOutline /></p>
         <div className="Image_Container">
           <img src={ProfileImg} alt="profile" />

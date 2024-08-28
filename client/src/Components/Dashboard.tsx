@@ -1,5 +1,4 @@
 import { useState, useEffect, useContext } from "react";
-import axios from "axios"; // if using axios
 import { HiOutlineChartSquareBar } from 'react-icons/hi';
 import { RiShoppingBag4Line } from 'react-icons/ri';
 import { GoContainer } from "react-icons/go";
@@ -13,6 +12,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import { AuthContext } from "../contexts/auth-context";
 import { OrderProps } from "../types/order";
 import api from "../utils/api";
+import { useNavigate } from "react-router-dom";
 
 
 
@@ -24,6 +24,8 @@ export const Dashboard = () => {
   const [orders, setOrders] = useState<OrderProps[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const nav = useNavigate()
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -146,7 +148,7 @@ export const Dashboard = () => {
           <div className="Main_Graph_Container">
             <span>
               <h3>Total Sales Over the Year</h3>
-              <p>View All</p>
+              <p onClick={()=> nav("/orders")}>View All</p>
             </span>
 
             <span className="Graph_Subheader">

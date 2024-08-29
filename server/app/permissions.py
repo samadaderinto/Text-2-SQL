@@ -31,7 +31,7 @@ class ServerAccessPolicy(AccessPolicy):
                 'create_product',
                 'update_product',
                 'retrieve_product',
-                'delete_product',
+                "delete_product",
                 'get_admin',
                 'edit_admin_info',
                 'update_store',

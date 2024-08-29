@@ -118,33 +118,52 @@
             width: 100%;
             height: max-content;
             display: flex;
+            flex-direction: column;
+
+            nav {
+                width: 90%;
+                height: 7vh;
+                display: flex;
+                padding-top: 1%;
+                padding-left: 3%;
+                justify-content: space-between;
+                // background-color: yellow;
+            }
             // justify-content: space-between;
 
-            span {
-                width: 35%;
-                display: flex;
-                justify-content: space-between;
-                border: none;
-                color: black;
+          
 
                 input {
                     transform: scale(1.6);
                     cursor: pointer;
                 }
 
-                .Product_Img_Container {
-                    width: 18%;
-                    cursor: pointer;
-                    height: 45px;
-                    background-color: black;
+                .Product_Name {
+                    width: 100%;
+
+                    text-align: center;
+                    padding: 1%;
+                    margin-right: 16%;
+
+                    
                 }
+
+                .Product_Category {
+                    width: 60%;
+                    margin-right: 3%;
+                    background-color: yellow;
+
+                }
+
+
 
                 p {
                     width: 68%;
                     font-weight: 500;
                     text-align: center  ;
                     cursor: pointer;
-                    font-size: 14px;
+                    font-size: 19px;
+                    color: rgb(67, 66, 66);
                 }
             }
 
@@ -179,26 +198,35 @@
 
            .Product_Icons {
             width: 10%; 
-            align-items: center;
+            // align-items: center;
             display: flex;  
+            justify-content: center;
             color: grey; 
             cursor: pointer;
+            font-size: 22px
 
                 
             }
-        }
+        
     }
 
     .Product_pagination {
-        width: 15%;
+        width: 25%;
         display: flex;
         color: #928f8f;
+        margin-top: 5%;
         justify-content: space-between;
+        padding-left: 40%;
         list-style: none;
         font-size: 14px;
 
+        .Product_page_active {
+            padding: 5%;
+        }
+
         a {
             list-style: none;
+            padding: 3%
         }
     }
     

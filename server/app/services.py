@@ -190,10 +190,9 @@ class ProductService:
         serializer = ProductSerializer(product)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def delete_product(self, data):
-        store = data['store']
-        product_id = data['id']
-        product = get_object_or_404(self.Product, store=store, pk=product_id)
+    def delete_product(self, product_id):
+       
+        product = get_object_or_404(self.Product, pk=product_id)
         product.delete()
         return Response(status=status.HTTP_202_ACCEPTED)
 

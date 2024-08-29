@@ -5,13 +5,14 @@ import os
 import logging
 import subprocess
 
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import get_object_or_404, redirect, get_list_or_404
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
 from django.core.files.storage import default_storage
 from django.http import HttpResponse
+from django.db.models import Q
 
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -23,7 +24,6 @@ from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework.decorators import action, parser_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.generics import ListAPIView
 from rest_framework import serializers
 
 
@@ -313,7 +313,7 @@ class QueryViewSet(viewsets.GenericViewSet):
 
 
 class ProductViewSet(viewsets.GenericViewSet):
-    permission_classes = (AllowAny,)
+    permission_classes = (ServerAccessPolicy,)
     serializer_class = ProductSerializer
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
 
@@ -365,7 +365,7 @@ class ProductViewSet(viewsets.GenericViewSet):
             request.user, pk, **serializer.validated_data
         )
         return Response(status=201, data=ProductSerializer(product).data)
-
+    
     @extend_schema(responses={200: ProductSerializer(many=True)})
     @action(detail=False, methods=['get'], url_path='search')
     def retrieve_product(self, request):
@@ -380,15 +380,30 @@ class ProductViewSet(viewsets.GenericViewSet):
 
         page_number = request.GET.get('offset', 1)
         per_page = request.GET.get('limit', 15)
+
         paginator = Paginator(products, per_page=per_page)
-        paginator_products = paginator.get_page(page_number)
+        try:
+            paginator_products = paginator.get_page(page_number)
+        except (EmptyPage, PageNotAnInteger):
+            paginator_products = paginator.page(1)  # Fallback to the first page if out of range or invalid
+
         serializer = ProductSerializer(paginator_products, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        response_data = {
+            'products': serializer.data,
+            'count': paginator.count,
+            'total_pages': paginator.num_pages,
+            'current_page': paginator_products.number
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+
 
     @extend_schema(responses={204: None})
-    @action(detail=False, methods=['delete'], url_path='delete')
-    def delete_product(self, request):
-        self.product_service.delete_product(request.user)
+    @action(detail=False, methods=['delete'], url_path='delete/(?P<product_id>[^/.]+)')
+    def delete_product(self, request, product_id):
+        self.product_service.delete_product(product_id)
         return Response(status=204)
 
 
@@ -517,15 +532,37 @@ class OrderViewSet(viewsets.GenericViewSet):
     @extend_schema(responses={200: OrderSerializer(many=True)})
     @action(detail=False, methods=['get'], url_path='search')
     def retrieve_order(self, request):
+        query = request.GET.get('query', '')
+        status_filter = request.GET.get('status', '')
+        offset = int(request.GET.get('offset', 0))
+        limit = int(request.GET.get('limit', 15))
+
+        # Search across multiple fields using Q objects
         orders = Order.objects.all()
+        
+        if query:
+            orders = orders.filter(
+                Q(id__icontains=query) |
+                Q(status__icontains=query)
+            )
+        
+        if status_filter:
+            orders = orders.filter(status=status_filter)
 
-        page_number = request.GET.get('offset', 1)
-        per_page = request.GET.get('limit', 15)
-        paginator = Paginator(orders, per_page=per_page)
-        paginated_orders = paginator.get_page(page_number)
+        try:
+            paginator = Paginator(orders, limit)
+            paginated_orders = paginator.get_page((offset // limit) + 1)
+        except ValueError:
+            return Response({"detail": "Invalid page or limit parameter."}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = OrderSerializer(paginated_orders, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = OrderSerializer(paginated_orders.object_list, many=True)
+        return Response({
+            "count": paginator.count,
+            "total_pages": paginator.num_pages,
+            "current_page": paginated_orders.number,
+            "orders": serializer.data
+        }, status=status.HTTP_200_OK)
+
 
     @extend_schema(responses={200: None})
     @action(detail=False, methods=['get'], url_path='download')

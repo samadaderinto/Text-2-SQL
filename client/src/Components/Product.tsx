@@ -15,7 +15,7 @@ const initialState = {
   totalPages: 0,
 };
 
-function reducer(state: any, action: { type: any; payload: any; }) {
+function reducer(state: any, action: { type: string; payload: any; }) {
   switch (action.type) {
     case 'SET_CURRENT_PAGE':
       return { ...state, currentPage: action.payload };
@@ -34,31 +34,43 @@ export const Product = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { currentPage, input, data, totalPages } = state;
   const itemsPerPage = 15;
-  const offset = currentPage * itemsPerPage;
-  
-  const nav = useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await api.get(
-          `/product/search/?offset=${currentPage * itemsPerPage}&limit=${itemsPerPage}&query=${input}`,
-        );
-        const totalItems = response.data.totalCount || 0;
-        dispatch({ type: 'SET_DATA', payload: response.data.items || [] });
-        dispatch({ type: 'SET_TOTAL_PAGES', payload: Math.ceil(totalItems / itemsPerPage) });
-      } catch (error) {
-        console.error("Error fetching data", error);
-        dispatch({ type: 'SET_TOTAL_PAGES', payload: 1 });  // Fallback to 1 page in case of an error
-      }
-    };
-
-    fetchData();
+    fetchData(currentPage, input);
   }, [currentPage, input]);
 
+  const fetchData = (page: number, query: string) => {
+    const offset = page * itemsPerPage;
+    api.get(`/product/search/?offset=${offset}&limit=${itemsPerPage}&query=${query}`)
+      .then(response => {
+        const totalItems = response.data.count || 0;
+        dispatch({ type: 'SET_DATA', payload: response.data.products || [] });
+        dispatch({ type: 'SET_TOTAL_PAGES', payload: Math.ceil(totalItems / itemsPerPage) });
+      })
+      .catch(error => {
+        console.error("Error fetching data", error);
+        dispatch({ type: 'SET_TOTAL_PAGES', payload: 1 });  // Fallback to 1 page in case of an error
+      });
+  };
 
-  const handlePageClick = (event: { selected: any; }) => {
+  const handlePageClick = (event: { selected: number }) => {
     dispatch({ type: 'SET_CURRENT_PAGE', payload: event.selected });
+  };
+
+  const handleEdit = (id: number) => {
+    navigate(`/product/edit/${id}`);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        await api.delete(`/product/${id}/`);
+        dispatch({ type: 'SET_DATA', payload: data.filter((item: any) => item.id !== id) });
+      } catch (error) {
+        console.error("Error deleting product", error);
+      }
+    }
   };
 
   return (
@@ -67,7 +79,7 @@ export const Product = () => {
       <Sidebar />
       <section className="Add_Product">
         <h1>All Products</h1>
-        <span onClick={() => nav('/product/add')}>
+        <span onClick={() => navigate('/product/add')}>
           <IoIosAddCircleOutline className="Product_Icon" />
           Add new Product
         </span>
@@ -100,40 +112,44 @@ export const Product = () => {
           <p>Action</p>
         </div>
         <div className="Product_Table_List_content">
-          {data.map((item: { imageUrl: any; name: any; category: any; status: any; price: any; sold: any; sales: any; }, index: Key | null | undefined) => (
-            <nav key={index}>
-              <span>
+          {data.length === 0 ? (
+            <div className="No-Product">No Items Found!</div>
+          ) : (
+            data.map((item: {
+              id: number, image: string; available: number, title: string; category: string; status: string; price: string; sold: string; sales: number
+            }, index: Key) => (
+              <nav key={index}>
                 <input type="checkbox" />
-                <article className="Product_Img_Container">
-                  <img src={item.imageUrl || ''} alt={item.name || 'Product Image'} />
-                </article>
-                <p>{item.name || 'Product Name'}</p>
-              </span>
-              <span className="Product_Details">
-                <p className="Product_Category">{item.category || 'Category'}</p>
-                <p className="Product_Available">{item.status || 'Status'}</p>
-                <p>${item.price || '0.00'}</p>
-                <p>{item.sold || '0'}</p>
-                <p>${item.sales || '0.00'}</p>
-              </span>
-              <p className="Product_Icons">
-                <MdOutlineEdit />
-                <MdOutlineDelete />
-              </p>
-            </nav>
-          ))}
+                <p className="Product_Name">{item.title}</p>
+                <p className='Product_Category'>{item.category}</p>
+                <p>{item.available > 0 ? "Available" : "Sold Out"}</p>
+                <p>${item.price}</p>
+                <p>{item.sales}</p>
+                <p>${item.sales * parseInt(item.price)}</p>
+                <p className="Product_Icons">
+                  <MdOutlineEdit onClick={() => handleEdit(item.id)} />
+                  <MdOutlineDelete onClick={() => handleDelete(item.id)} />
+                </p>
+              </nav>
+            ))
+          )}
 
-          <ReactPaginate
-            previousLabel={'<'}
-            nextLabel={'>'}
-            breakLabel={'...'}
-            pageCount={totalPages}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={5}
-            onPageChange={handlePageClick}
-            containerClassName={'Product_pagination'}
-            activeClassName={'Product_page_active'}
-          />
+          {totalPages > 1 && (
+            <ReactPaginate
+              previousLabel={'<'}
+              nextLabel={'>'}
+              breakLabel={'...'}
+              pageCount={totalPages}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={5}
+              onPageChange={handlePageClick}
+              containerClassName={'Product_pagination'}
+              activeClassName={'Product_page_active'}
+              previousClassName={totalPages === 1 ? 'disabled' : ''}
+              nextClassName={totalPages === 1 ? 'disabled' : ''}
+              disabledClassName={'pagination_disabled'}
+            />
+          )}
         </div>
       </section>
     </div>

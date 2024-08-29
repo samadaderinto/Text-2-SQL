@@ -63,13 +63,11 @@ export const Product = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        await api.delete(`/product/${id}/`);
-        dispatch({ type: 'SET_DATA', payload: data.filter((item: any) => item.id !== id) });
-      } catch (error) {
-        console.error("Error deleting product", error);
-      }
+    try {
+      await api.delete(`/product/${id}/`);
+      dispatch({ type: 'SET_DATA', payload: data.filter((item: any) => item.id !== id) });
+    } catch (error) {
+      console.error("Error deleting product", error);
     }
   };
 
@@ -116,7 +114,7 @@ export const Product = () => {
             <div className="No-Product">No Items Found!</div>
           ) : (
             data.map((item: {
-              id: number, image: string; available: number, title: string; category: string; status: string; price: string; sold: string; sales: number
+              id: number; image: string; available: number; title: string; category: string; status: string; price: string; sold: string; sales: number;
             }, index: Key) => (
               <nav key={index}>
                 <input type="checkbox" />

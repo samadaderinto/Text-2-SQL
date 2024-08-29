@@ -8,7 +8,7 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Add a request interceptor
+
 api.interceptors.request.use(
   (config) => {
 

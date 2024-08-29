@@ -169,9 +169,23 @@
                 align-items: center;
 
                 .Order_Status {
+
+                    padding: 7px;
+                }
+
+                .pending {
                     background-color: rgb(247, 223, 178);
                     color: rgb(231, 92, 41);
-                    padding: 7px;
+                }
+
+                .paid {
+                    background-color: rgb(162, 236, 161);
+                    color: rgb(6, 149, 6);
+                }
+
+                .cancelled {
+                    background-color: lightgrey;
+                    color: rgb(81, 80, 80);
                 }
 
                 input {

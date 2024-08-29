@@ -9,38 +9,45 @@ import api from "../utils/api";
 
 export const Orders = () => {
   const itemsPerPage = 15;
-  const [input, setInput] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
-  const [data, setData] = useState<any[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
+
+  const [state, setState] = useState({
+    input: '',
+    currentPage: 0,
+    data: [],
+    totalItems: 0,
+    filter: ''
+  });
 
   useEffect(() => {
     fetchData();
-  }, [currentPage, input]);
+  }, [state.currentPage, state.input, state.filter]);
 
   const fetchData = async () => {
-
-    const offset = currentPage * itemsPerPage;
+    const offset = state.currentPage * itemsPerPage;
     try {
-      const response = await api.get(`/orders/search/?offset=${offset}&limit=${itemsPerPage}&search=${input}`);
-      setData(response.data);
+      const response = await api.get(`/orders/search/?offset=${offset}&limit=${itemsPerPage}&query=${state.input}&status=${state.filter}`);
+      setState((prevState) => ({
+        ...prevState,
+        data: response.data.orders,
+        totalItems: response.data.count
+      }));
+
       console.log(response.data)
-      setTotalItems(response.data.count);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
 
   const handlePageClick = (event: { selected: number }) => {
-    setCurrentPage(event.selected);
+    setState((prevState) => ({
+      ...prevState,
+      currentPage: event.selected
+    }));
   };
 
-
-
   const handleDownload = async (order_id = "") => {
-
     try {
-      const end_point = order_id ? `/orders/download/${order_id}/` : "/orders/download/"
+      const end_point = order_id ? `/orders/download/${order_id}/` : "/orders/download/";
       const response = await api.get(end_point, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -55,19 +62,28 @@ export const Orders = () => {
 
   const handleDelete = async (order_id: any) => {
     try {
-      const response = await api.delete(`/orders/delete/${order_id}/`)
-
+      const response = await api.delete(`/orders/delete/${order_id}/`);
       if (response.status === 205) {
-        setData(data.filter((item) => item.id !== order_id));
-        setTotalItems(totalItems - 1);
+        setState((prevState) => ({
+          ...prevState,
+          data: prevState.data.filter((item: any) => item.id !== order_id),
+          totalItems: prevState.totalItems - 1
+        }));
       }
-
-
     } catch (error) {
-      console.error("Error delete:", error);
+      console.error("Error deleting order:", error);
     }
+  };
 
-  }
+  const handleFilterChange = (status: string) => {
+    setState((prevState) => ({
+      ...prevState,
+      filter: status,
+      currentPage: 0
+    }));
+  };
+
+  const pageCount = Math.ceil(state.totalItems / itemsPerPage);
 
   return (
     <>
@@ -76,24 +92,24 @@ export const Orders = () => {
         <Sidebar />
         <section className="Order_Header">
           <h1>Orders</h1>
-          <span onClick={() => handleDownload}>
+          <span onClick={() => handleDownload()}>
             <MdOutlineDownload className="Order_Download_Icon" />
             Download List
           </span>
         </section>
         <section className="Order_List_Container">
           <ul>
-            <li>All Orders</li>
-            <li>Pending</li>
-            <li>Paid</li>
-            <li>Cancelled</li>
+            <li onClick={() => handleFilterChange('')}>All Orders</li>
+            <li onClick={() => handleFilterChange('pending')}>Pending</li>
+            <li onClick={() => handleFilterChange('paid')}>Paid</li>
+            <li onClick={() => handleFilterChange('cancelled')}>Cancelled</li>
           </ul>
           <div className="Order_Search_Box">
             <HiMiniMagnifyingGlass />
             <input
               type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
+              value={state.input}
+              onChange={(e) => setState((prevState) => ({ ...prevState, input: e.target.value }))}
               placeholder="Search Orders"
             />
           </div>
@@ -113,32 +129,43 @@ export const Orders = () => {
           </div>
 
           <div className="Order_List_Item">
-            {data.map((orderItem: any, index: number) => (
-              <article key={index}>
-                <input type="checkbox" />
-                <p style={{ color: 'black' }}>{orderItem.id}</p>
-                <p style={{ color: 'black' }}>{orderItem.name}</p>
-                <p className="Order_Status">{orderItem.status}</p>
-                <p>{orderItem.created.substring(0, 10)}</p>
-                <p>{orderItem.subtotal}</p>
-                <p className="Order_Icon_action">
-                  <MdOutlineDownload onClick={() => handleDownload(orderItem.id)} />
-                  <MdOutlineDelete onClick={() => handleDelete(orderItem.id)} />
-                </p>
-              </article>
-            ))}
+            {state.data.length === 0 ? (
+              <div>No Items Found!</div>
+            ) : (
+              <>
+                {state.data.map((orderItem: any, index: number) => (
+                  <article key={index}>
+                    <input type="checkbox" />
+                    <p style={{ color: 'black' }}>{orderItem.id}</p>
+                    <p style={{ color: 'black' }}>{orderItem.name}</p>
+                    <p className={`Order_Status ${orderItem.status}`}>{orderItem.status}</p>
+                    <p>{orderItem.created.substring(0, 10)}</p>
+                    <p>{orderItem.subtotal}</p>
+                    <p className="Order_Icon_action">
+                      <MdOutlineDownload onClick={() => handleDownload(orderItem.id)} />
+                      <MdOutlineDelete onClick={() => handleDelete(orderItem.id)} />
+                    </p>
+                  </article>
+                ))}
 
-            <ReactPaginate
-              previousLabel={<FaAngleLeft className="order_arrow" />}
-              nextLabel={<FaAngleRight className="order_arrow" />}
-              breakLabel={'...'}
-              pageCount={Math.ceil(totalItems / itemsPerPage)}
-              marginPagesDisplayed={2}
-              pageRangeDisplayed={5}
-              onPageChange={handlePageClick}
-              containerClassName={'Order_pagination'}
-              activeClassName={'Order_page_active'}
-            />
+                {pageCount > 1 && (
+                  <ReactPaginate
+                    previousLabel={<FaAngleLeft className="order_arrow" />}
+                    nextLabel={<FaAngleRight className="order_arrow" />}
+                    breakLabel={'...'}
+                    pageCount={pageCount}
+                    marginPagesDisplayed={1}
+                    pageRangeDisplayed={3}
+                    onPageChange={handlePageClick}
+                    containerClassName={'Order_pagination'}
+                    activeClassName={'Order_page_active'}
+                    previousClassName={pageCount === 1 ? 'disabled' : ''}
+                    nextClassName={pageCount === 1 ? 'disabled' : ''}
+                    disabledClassName={'pagination_disabled'}
+                  />
+                )}
+              </>
+            )}
           </div>
         </section>
       </div>

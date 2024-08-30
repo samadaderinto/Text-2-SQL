@@ -1,9 +1,8 @@
 export interface OrderProps {
+    id: string;
+    subtotal: string;
+    name: string;
     image: string,
-    productName: string;
-    orderId: string;
-    price: number;
-    amount: number;
     status: string;
     category: string;
   }

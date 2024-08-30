@@ -1,8 +1,8 @@
 export interface CustomerProps {
     id: string;
-    name: string;
+    first_name: string;
     email: string;
-    dateJoined: string;
+    created: string;
     orders: number;
     spending: number;
   }

@@ -27,7 +27,7 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework import serializers
 
 
-from .models import Order, Product, Store, User
+from .models import Customer, Order, Product, Store, User
 from .permissions import ServerAccessPolicy
 from .serializers import (
     AdminSerializer,
@@ -315,25 +315,6 @@ class QueryViewSet(viewsets.GenericViewSet):
 class ProductViewSet(viewsets.GenericViewSet):
     permission_classes = (ServerAccessPolicy,)
     serializer_class = ProductSerializer
-    filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
-
-    search_fields = [
-        'title',
-        'description',
-        'category',
-        'discount',
-        'average_rating',
-        'tags',
-        'store',
-        'price'
-    ]
-
-    ordering_fields = ['price', 'average_rating', 'discount']
-    filterset_fields = [
-        'category',
-        'store',
-        'price'
-    ]  # Add fields you want to filter on
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -362,30 +343,31 @@ class ProductViewSet(viewsets.GenericViewSet):
         serializer = ProductSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         product = self.product_service.update_product(
-            request.user, pk, **serializer.validated_data
+            request.user, **serializer.validated_data
         )
         return Response(status=201, data=ProductSerializer(product).data)
-    
+
     @extend_schema(responses={200: ProductSerializer(many=True)})
     @action(detail=False, methods=['get'], url_path='search')
     def retrieve_product(self, request):
         query = request.GET.get('query', '')
-
         products = Product.objects.all()
-        if query:
-            products = products.filter(name__icontains=query)
 
-        # Applying search, filter, and ordering
-        products = self.filter_queryset(products)
+        if query:
+            products = products.filter(
+                Q(title__icontains=query)
+                | Q(description__icontains=query)
+                | Q(category__icontains=query)
+            )
 
         page_number = request.GET.get('offset', 1)
         per_page = request.GET.get('limit', 15)
 
-        paginator = Paginator(products, per_page=per_page)
+        paginator = Paginator(products, per_page)
         try:
             paginator_products = paginator.get_page(page_number)
         except (EmptyPage, PageNotAnInteger):
-            paginator_products = paginator.page(1)  # Fallback to the first page if out of range or invalid
+            paginator_products = paginator.page(1)
 
         serializer = ProductSerializer(paginator_products, many=True)
 
@@ -397,8 +379,6 @@ class ProductViewSet(viewsets.GenericViewSet):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
-        
-
 
     @extend_schema(responses={204: None})
     @action(detail=False, methods=['delete'], url_path='delete/(?P<product_id>[^/.]+)')
@@ -431,25 +411,38 @@ class CustomerViewSet(viewsets.GenericViewSet):
         return Response(status=201, data=customer)
 
     @extend_schema(responses={200: CustomerSerializer(many=True)})
-    @action(detail=False, methods=['get'], url_path='get')
+    @action(detail=False, methods=['get'], url_path='search')
     def retrieve_customer(self, request, pk=None):
-        data = JSONParser().parse(request)
-        serializer = CustomerSearchSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
+        query = request.GET.get('query', '')
+        page_number = int(request.GET.get('offset', 1))
+        per_page = int(request.GET.get('limit', 15))
 
-        email = serializer.validated_data['email']
-        phone_number = serializer.validated_data['phone_number']
+        # Filter customers based on the query string
+        customers = Customer.objects.all()
+        if query:
+            customers = customers.filter(
+                Q(first_name__icontains=query)
+                | Q(email__icontains=query)
+                | Q(phone_number__icontains=query)
+                | Q(last_name__icontains=query)
+                | Q(created__icontains=query)
+            )
 
-        customers = self.customer_service.get_customer(
-            request, email=email, phone_number=phone_number
+        # Paginate the results
+        paginator = Paginator(customers, per_page)
+        paginated_customers = paginator.get_page(page_number)
+
+        # Serialize the paginated data
+        serializer = CustomerSerializer(paginated_customers, many=True)
+        return Response(
+            {
+                'count': paginator.count,
+                'total_pages': paginator.num_pages,
+                'current_page': paginated_customers.number,
+                'customers': serializer.data
+            },
+            status=status.HTTP_200_OK
         )
-
-        page_number = request.GET.get('offset', 1)
-        per_page = request.GET.get('limit', 15)
-        paginator = Paginator(customers, per_page=per_page)
-        paginator_customers = paginator.get_page(page_number)
-        serializer = CustomerSerializer(paginator_customers, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(responses={204: None})
     @action(detail=False, methods=['post'], url_path='ban')
@@ -539,13 +532,10 @@ class OrderViewSet(viewsets.GenericViewSet):
 
         # Search across multiple fields using Q objects
         orders = Order.objects.all()
-        
+
         if query:
-            orders = orders.filter(
-                Q(id__icontains=query) |
-                Q(status__icontains=query)
-            )
-        
+            orders = orders.filter(Q(id__icontains=query) | Q(status__icontains=query))
+
         if status_filter:
             orders = orders.filter(status=status_filter)
 
@@ -553,16 +543,21 @@ class OrderViewSet(viewsets.GenericViewSet):
             paginator = Paginator(orders, limit)
             paginated_orders = paginator.get_page((offset // limit) + 1)
         except ValueError:
-            return Response({"detail": "Invalid page or limit parameter."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'detail': 'Invalid page or limit parameter.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         serializer = OrderSerializer(paginated_orders.object_list, many=True)
-        return Response({
-            "count": paginator.count,
-            "total_pages": paginator.num_pages,
-            "current_page": paginated_orders.number,
-            "orders": serializer.data
-        }, status=status.HTTP_200_OK)
-
+        return Response(
+            {
+                'count': paginator.count,
+                'total_pages': paginator.num_pages,
+                'current_page': paginated_orders.number,
+                'orders': serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
 
     @extend_schema(responses={200: None})
     @action(detail=False, methods=['get'], url_path='download')

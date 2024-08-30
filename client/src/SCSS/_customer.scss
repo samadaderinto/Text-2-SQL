@@ -119,6 +119,8 @@
             flex-direction: column;
             padding: 0%;
 
+
+
             .Customer_pagination {
                 width: 10%;
                 display: flex;
@@ -160,13 +162,15 @@
                     // background-color: #c40d0d;
 
                     div {
-                        width: 17.5%;
+                        width: 27.5%;
                         height: 95%;
-                        background-color: black;
+                        border: none;
+                        // background-color: black;
                     }
 
                     p {
                         color: rgb(101, 99, 99);
+                        border: none;
 
                     }
     

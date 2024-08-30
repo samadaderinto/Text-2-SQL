@@ -1,18 +1,18 @@
-import { useState, useEffect, useContext } from "react";
-import { HiOutlineChartSquareBar } from 'react-icons/hi';
-import { RiShoppingBag4Line } from 'react-icons/ri';
+import { useContext, useEffect, useState } from "react";
 import { GoContainer } from "react-icons/go";
+import { HiOutlineChartSquareBar } from 'react-icons/hi';
 import { IoPeopleOutline } from 'react-icons/io5';
+import { RiShoppingBag4Line } from 'react-icons/ri';
 
-import { DashboardCardProps } from "../types/dashboard";
-import SideBar from "../layouts/SideBar";
-import { Header } from "../layouts/Header";
+import { ArcElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js';
 import { Line, Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend } from 'chart.js';
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/auth-context";
+import { Header } from "../layouts/Header";
+import SideBar from "../layouts/SideBar";
+import { DashboardCardProps } from "../types/dashboard";
 import { OrderProps } from "../types/order";
 import api from "../utils/api";
-import { useNavigate } from "react-router-dom";
 
 
 
@@ -31,8 +31,8 @@ export const Dashboard = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/orders/search/`);
-        setOrders(response.data);
+        const response = await api.get(`/orders/search/?limit=5`);
+        setOrders(response.data.orders);
         setLoading(false);
       } catch (err) {
         setError("Failed to load orders.");
@@ -148,14 +148,14 @@ export const Dashboard = () => {
           <div className="Main_Graph_Container">
             <span>
               <h3>Total Sales Over the Year</h3>
-              <p onClick={()=> nav("/orders")}>View All</p>
+              <p onClick={() => nav("/orders")}>View All</p>
             </span>
 
             <span className="Graph_Subheader">
               <h4>Name</h4>
               <ul>
                 <li>ID</li>
-                <li>Price</li>
+                {/* <li>Price</li> */}
                 <li>Amount</li>
                 <li>Status</li>
               </ul>
@@ -168,19 +168,17 @@ export const Dashboard = () => {
                 <p>{error}</p>
               ) : (
                 orders.map((order) => (
-                  <span key={order.orderId} className="Dashboard_Order_Item">
+                  <span  key={order.id} className="Order_Item Dashboard_Order_Item">
                     <div className="Dashboard_Order_Item_Description">
-                      <span className="Item_Img_Holder">
-                        <img src={order.image || ""} alt={order.productName} />
-                      </span>
+                    
                       <span>
-                        <h2>{order.productName}</h2>
+                        <h2>{order.name}</h2>
                         <h4>{order.category}</h4>
                       </span>
                     </div>
                     <div>
-                      <p>{order.orderId}</p>
-                      <p>{order.amount}</p>
+                      <p>{order.id}</p>
+                      <p>{order.subtotal}</p>
                       <p>{order.status}</p>
                     </div>
                   </span>
@@ -188,14 +186,16 @@ export const Dashboard = () => {
               )}
             </article>
 
-            <Line data={salesData} options={options} />
           </div>
           <div className="Side_Graph_Container">
             <Pie data={pieData} />
           </div>
         </section>
 
-        <section className="Bottom_Graph_Container"></section>
+        <section className="Bottom_Graph_Container">
+          <Line data={salesData} options={options} />
+
+        </section>
       </div>
     </>
   );

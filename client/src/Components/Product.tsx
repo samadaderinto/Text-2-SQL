@@ -1,5 +1,6 @@
 import { useReducer, useEffect, Key } from 'react';
 import { IoIosAddCircleOutline } from 'react-icons/io';
+import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
 import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from 'react-icons/md';
 import { FiSearch } from 'react-icons/fi';
 import { Header } from '../layouts/Header';
@@ -9,10 +10,12 @@ import ReactPaginate from 'react-paginate';
 import api from '../utils/api';
 
 const initialState = {
-  currentPage: 0,
+  currentPage: 1,
   input: '',
   data: [],
   totalPages: 0,
+  editingId: null, // State for tracking which product is being edited
+  editValues: { title: '', description: '', price: '', category: '', currency: '' }, // State for edit form values
 };
 
 function reducer(state: any, action: { type: string; payload: any; }) {
@@ -25,6 +28,10 @@ function reducer(state: any, action: { type: string; payload: any; }) {
       return { ...state, data: action.payload };
     case 'SET_TOTAL_PAGES':
       return { ...state, totalPages: action.payload };
+    case 'SET_EDITING_ID':
+      return { ...state, editingId: action.payload };
+    case 'SET_EDIT_VALUES':
+      return { ...state, editValues: { ...state.editValues, ...action.payload } };
     default:
       return state;
   }
@@ -32,7 +39,7 @@ function reducer(state: any, action: { type: string; payload: any; }) {
 
 export const Product = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { currentPage, input, data, totalPages } = state;
+  const { currentPage, input, data, totalPages, editingId, editValues } = state;
   const itemsPerPage = 15;
   const navigate = useNavigate();
 
@@ -41,30 +48,65 @@ export const Product = () => {
   }, [currentPage, input]);
 
   const fetchData = (page: number, query: string) => {
-    const offset = page * itemsPerPage;
+    const offset = page; // Ensure pagination starts from the correct offset
+    console.log(`Fetching data with offset: ${offset}, limit: ${itemsPerPage}, query: ${query}`);
     api.get(`/product/search/?offset=${offset}&limit=${itemsPerPage}&query=${query}`)
       .then(response => {
-        const totalItems = response.data.count || 0;
-        dispatch({ type: 'SET_DATA', payload: response.data.products || [] });
+        console.log(response.data);
+        const totalItems = response.data.count;
+        dispatch({ type: 'SET_DATA', payload: response.data.products });
         dispatch({ type: 'SET_TOTAL_PAGES', payload: Math.ceil(totalItems / itemsPerPage) });
       })
       .catch(error => {
         console.error("Error fetching data", error);
-        dispatch({ type: 'SET_TOTAL_PAGES', payload: 1 });  // Fallback to 1 page in case of an error
+        dispatch({ type: 'SET_TOTAL_PAGES', payload: 1 });
       });
   };
 
   const handlePageClick = (event: { selected: number }) => {
-    dispatch({ type: 'SET_CURRENT_PAGE', payload: event.selected });
+    dispatch({ type: 'SET_CURRENT_PAGE', payload: event.selected + 1 }); // Convert 0-based index to 1-based
   };
 
-  const handleEdit = (id: number) => {
-    navigate(`/product/edit/${id}`);
+  const handleEditClick = (item: any) => {
+    // Set the product to be edited and populate the edit form values
+    dispatch({ type: 'SET_EDITING_ID', payload: item.id });
+    dispatch({
+      type: 'SET_EDIT_VALUES',
+      payload: {
+        title: item.title,
+        description: item.description,
+        price: item.price,
+        category: item.category,
+        currency: item.currency
+      }
+    });
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch({ type: 'SET_EDIT_VALUES', payload: { [e.target.name]: e.target.value } });
+  };
+
+  const handleEditSubmit = () => {
+    api.put(`/product/update/`, {
+      id: editingId, // Pass the product ID to identify which product to update
+      ...editValues
+    })
+      .then(response => {
+        // Update the product in the data list with the new values
+        const updatedData = data.map((item: any) =>
+          item.id === editingId ? { ...item, ...editValues } : item
+        );
+        dispatch({ type: 'SET_DATA', payload: updatedData });
+        dispatch({ type: 'SET_EDITING_ID', payload: null }); // Exit edit mode
+      })
+      .catch(error => {
+        console.error("Error updating product", error);
+      });
   };
 
   const handleDelete = async (id: number) => {
     try {
-      await api.delete(`/product/${id}/`);
+      await api.delete(`/product/delete/${id}/`);
       dispatch({ type: 'SET_DATA', payload: data.filter((item: any) => item.id !== id) });
     } catch (error) {
       console.error("Error deleting product", error);
@@ -113,29 +155,56 @@ export const Product = () => {
           {data.length === 0 ? (
             <div className="No-Product">No Items Found!</div>
           ) : (
-            data.map((item: {
-              id: number; image: string; available: number; title: string; category: string; status: string; price: string; sold: string; sales: number;
-            }, index: Key) => (
+            data.map((item: any, index: Key) => (
               <nav key={index}>
                 <input type="checkbox" />
-                <p className="Product_Name">{item.title}</p>
-                <p className='Product_Category'>{item.category}</p>
-                <p>{item.available > 0 ? "Available" : "Sold Out"}</p>
-                <p>${item.price}</p>
-                <p>{item.sales}</p>
-                <p>${item.sales * parseInt(item.price)}</p>
-                <p className="Product_Icons">
-                  <MdOutlineEdit onClick={() => handleEdit(item.id)} />
-                  <MdOutlineDelete onClick={() => handleDelete(item.id)} />
-                </p>
+                {editingId === item.id ? (
+                  <>
+                    <input
+                      type="text"
+                      name="title"
+                      value={editValues.title}
+                      onChange={handleEditChange}
+                      placeholder="Product Name"
+                    />
+                    <input
+                      type="text"
+                      name="category"
+                      value={editValues.category}
+                      onChange={handleEditChange}
+                      placeholder="Category"
+                    />
+                    <input
+                      type="text"
+                      name="price"
+                      value={editValues.price}
+                      onChange={handleEditChange}
+                      placeholder="Price"
+                    />
+                    <button onClick={handleEditSubmit}>Save</button>
+                  </>
+                ) : (
+                  <>
+                    <p className="Product_Name">{item.title}</p>
+                    <p className="Product_Category">{item.category}</p>
+                    <p>{item.available > 0 ? "Available" : "Sold Out"}</p>
+                    <p>${item.price}</p>
+                    <p>{item.sales}</p>
+                    <p>${item.sales * parseInt(item.price)}</p>
+                    <p className="Product_Icons">
+                      <MdOutlineEdit onClick={() => handleEditClick(item)} />
+                      <MdOutlineDelete onClick={() => handleDelete(item.id)} />
+                    </p>
+                  </>
+                )}
               </nav>
             ))
           )}
 
           {totalPages > 1 && (
             <ReactPaginate
-              previousLabel={'<'}
-              nextLabel={'>'}
+              previousLabel={<FaAngleLeft className="order_arrow" />}
+              nextLabel={<FaAngleRight className="order_arrow" />}
               breakLabel={'...'}
               pageCount={totalPages}
               marginPagesDisplayed={2}

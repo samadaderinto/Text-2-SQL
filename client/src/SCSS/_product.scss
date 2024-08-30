@@ -121,12 +121,14 @@
             flex-direction: column;
 
             nav {
-                width: 90%;
+                width: 97%;
                 height: 7vh;
                 display: flex;
                 padding-top: 1%;
                 padding-left: 3%;
                 justify-content: space-between;
+                font-size: 14px;
+                color: grey;
                 // background-color: yellow;
             }
             // justify-content: space-between;
@@ -140,18 +142,19 @@
 
                 .Product_Name {
                     width: 100%;
-
+                    // background-color: green;
                     text-align: center;
                     padding: 1%;
-                    margin-right: 16%;
+                    margin-right: 10%;
 
                     
                 }
 
                 .Product_Category {
                     width: 60%;
-                    margin-right: 3%;
-                    background-color: yellow;
+                    // margin-right: 2%;
+                    
+                    // background-color: yellow;
 
                 }
 
@@ -211,18 +214,26 @@
     }
 
     .Product_pagination {
-        width: 25%;
+        width: 18%;
         display: flex;
-        color: #928f8f;
-        background-color: black;
+        // background-color: black;
         margin-top: 5%;
+        margin-bottom: 4%;
+        margin-left: 35%;
+        cursor: pointer;
         justify-content: space-between;
-        padding-left: 40%;
+        // padding-left: 40%;
+        color: #928f8f;
+
         list-style: none;
         font-size: 14px;
 
         .Product_page_active {
-            padding: 5%;
+            width: 20%;
+            color: #928f8f;
+            padding:  0 5%;
+            font-size: 15px;
+            // background-color: blue;
         }
 
         a {

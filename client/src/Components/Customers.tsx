@@ -1,32 +1,28 @@
-import axios from "axios";
-import ReactPaginate from "react-paginate";
+import { useEffect, useState } from "react";
+import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
+import { FiSearch } from "react-icons/fi";
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-icons/md";
-import { FaAngleRight, FaAngleLeft } from "react-icons/fa";
-import { FiSearch } from "react-icons/fi";
-import { useState, useEffect } from "react";
+import ReactPaginate from "react-paginate";
+import { useNavigate } from "react-router-dom";
 import { Header } from "../layouts/Header";
 import Sidebar from '../layouts/SideBar';
-import { useNavigate } from "react-router-dom";
-import api from "../utils/api";
 import { CustomerProps } from "../types/customers";
-
-
+import api from "../utils/api";
 
 export const Customers = () => {
   const itemsPerPage = 15;
   const [data, setData] = useState<CustomerProps[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const nav = useNavigate();
 
   const fetchData = async () => {
     const offset = currentPage * itemsPerPage;
     try {
-      const response = await api.get(`/customers/search/?offset=${offset}&limit=${itemsPerPage}`, {
-
-      });
-      console.log("Fetched data:", response.data); // Debugging line
-      setData(response.data);
+      const response = await api.get(`/customers/search/?offset=${offset}&limit=${itemsPerPage}&query=${searchQuery}`);
+      console.log("Fetched data:", response.data);
+      setData(response.data.customers);
     } catch (error) {
       console.error("Error fetching data", error);
     }
@@ -34,11 +30,19 @@ export const Customers = () => {
 
   useEffect(() => {
     fetchData();
-  }, [currentPage]);
+  }, [currentPage, searchQuery]);
 
   const handlePageClick = (event: { selected: number }) => {
     setCurrentPage(event.selected);
   };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(0);
+  };
+
+  // Calculate the total number of pages
+  const totalPages = Math.ceil(data.length / itemsPerPage);
 
   return (
     <>
@@ -48,14 +52,22 @@ export const Customers = () => {
       <div className="Customer_Container">
         <article>
           <h1>Customers</h1>
-          <span onClick={() => nav('/customers/add')}><IoIosAddCircleOutline className="Circle_Icon" /> Add New Customers</span>
+          <span onClick={() => nav('/customers/add')}>
+            <IoIosAddCircleOutline className="Circle_Icon" /> Add New Customers
+          </span>
         </article>
 
         <section className="Customer_List_Container">
           <article>
             <div>
               <FiSearch />
-              <input className="Search_Icon_Input" type="text" placeholder="Search Name" />
+              <input 
+                className="Search_Icon_Input" 
+                type="text" 
+                placeholder="Search Name" 
+                value={searchQuery} 
+                onChange={handleSearchChange} 
+              />
             </div>
             <MdOutlineCalendarToday className="Customer_Calendar" />
           </article>
@@ -69,48 +81,49 @@ export const Customers = () => {
             <p>Email</p>
             <div>
               <p className="Date_Joined">Date Joined</p>
-              <p>Orders</p>
-              <p>Spending</p>
+              {/* <p>Orders</p> */}
+              {/* <p>Spending</p> */}
             </div>
             <p>Action</p>
           </article>
-          <section className="Customer_List">
-            {
-              data.map((item) => (
-                <article key={item.id}>
-                  <span>
-                    <input type="checkbox" />
-                    <p className="Id_customer">{item.id}</p>
-                    <div>
-                      <img src="" alt="" />
-                    </div>
-                    <p>{item.name}</p>
-                  </span>
-                  <p>{item.email}</p>
-                  <span>
-                    <p className="Date_Joined">{item.dateJoined}</p>
-                    <p>{item.orders} Orders</p>
-                    <p>${item.spending}</p>
-                  </span>
-                  <p className="Customer_Action_Icon">
-                    <MdOutlineEdit />
-                    <MdOutlineDelete />
-                  </p>
-                </article>
-              ))
-            }
 
-            <ReactPaginate
-              previousLabel={<FaAngleLeft className="customer_arrow"/>}
-              nextLabel={<FaAngleRight className="customer_arrow"/>}
-              breakLabel={'...'}
-              pageCount={Math.ceil(data.length / itemsPerPage)}
-              marginPagesDisplayed={2}
-              pageRangeDisplayed={5}
-              onPageChange={handlePageClick}
-              containerClassName={'Customer_pagination'}
-              activeClassName={'Order_page_active'}
-            />
+          <section className="Customer_List">
+            {data.map((item) => (
+              <article key={item.id}>
+                <span>
+                  <input type="checkbox" />
+                  <p className="Id_customer">{item.id}</p>
+                  <div>
+                    <img src="" alt="" />
+                  </div>
+                  <p className="Customer_Name">{item.first_name}</p>
+                </span>
+                <p>{item.email}</p>
+                <span>
+                  <p className="Date_Joined">{item.created.substring(0,10)}</p>
+                  {/* <p>{item.orders} Orders</p> */}
+                  {/* <p>${item.spending}</p> */}
+                </span>
+                <p className="Customer_Action_Icon">
+                  <MdOutlineEdit />
+                  <MdOutlineDelete />
+                </p>
+              </article>
+            ))}
+
+            {totalPages > 1 && (
+              <ReactPaginate
+                previousLabel={<FaAngleLeft className="customer_arrow" />}
+                nextLabel={<FaAngleRight className="customer_arrow" />}
+                breakLabel={'...'}
+                pageCount={totalPages}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={5}
+                onPageChange={handlePageClick}
+                containerClassName={'Customer_pagination'}
+                activeClassName={'Order_page_active'}
+              />
+            )}
           </section>
         </section>
       </div>

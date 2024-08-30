@@ -6,6 +6,7 @@ import ReactPaginate from 'react-paginate';
 import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/SideBar";
 import api from "../utils/api";
+import { Oval } from 'react-loader-spinner'; // Example from react-loader-spinner
 
 export const Orders = () => {
   const itemsPerPage = 15;
@@ -15,7 +16,8 @@ export const Orders = () => {
     currentPage: 0,
     data: [],
     totalItems: 0,
-    filter: ''
+    filter: '',
+    isLoading: false, // Added loading state
   });
 
   useEffect(() => {
@@ -24,17 +26,18 @@ export const Orders = () => {
 
   const fetchData = async () => {
     const offset = state.currentPage * itemsPerPage;
+    setState((prevState) => ({ ...prevState, isLoading: true })); // Start loading
     try {
       const response = await api.get(`/orders/search/?offset=${offset}&limit=${itemsPerPage}&query=${state.input}&status=${state.filter}`);
       setState((prevState) => ({
         ...prevState,
         data: response.data.orders,
-        totalItems: response.data.count
+        totalItems: response.data.count,
+        isLoading: false, // Stop loading
       }));
-
-      console.log(response.data)
     } catch (error) {
       console.error("Error fetching data:", error);
+      setState((prevState) => ({ ...prevState, isLoading: false })); // Stop loading on error
     }
   };
 
@@ -129,7 +132,22 @@ export const Orders = () => {
           </div>
 
           <div className="Order_List_Item">
-            {state.data.length === 0 ? (
+            {state.isLoading ? (
+              <div className="spinner-container">
+                <Oval
+                  height={50}
+                  width={50}
+                  color="#4fa94d"
+                  wrapperStyle={{}}
+                  wrapperClass=""
+                  visible={true}
+                  ariaLabel='oval-loading'
+                  secondaryColor="#4fa94d"
+                  strokeWidth={2}
+                  strokeWidthSecondary={2}
+                />
+              </div>
+            ) : state.data.length === 0 ? (
               <div>No Items Found!</div>
             ) : (
               <>

@@ -8,6 +8,7 @@ import Sidebar from '../layouts/SideBar';
 import { useNavigate } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
 import api from '../utils/api';
+import { ClipLoader } from 'react-spinners';
 
 const initialState = {
   currentPage: 1,
@@ -16,6 +17,7 @@ const initialState = {
   totalPages: 0,
   editingId: null, // State for tracking which product is being edited
   editValues: { title: '', description: '', price: '', category: '', currency: '' }, // State for edit form values
+  loading: false, // Add loading state
 };
 
 function reducer(state: any, action: { type: string; payload: any; }) {
@@ -32,6 +34,8 @@ function reducer(state: any, action: { type: string; payload: any; }) {
       return { ...state, editingId: action.payload };
     case 'SET_EDIT_VALUES':
       return { ...state, editValues: { ...state.editValues, ...action.payload } };
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
     default:
       return state;
   }
@@ -39,7 +43,7 @@ function reducer(state: any, action: { type: string; payload: any; }) {
 
 export const Product = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { currentPage, input, data, totalPages, editingId, editValues } = state;
+  const { currentPage, input, data, totalPages, editingId, editValues, loading } = state;
   const itemsPerPage = 15;
   const navigate = useNavigate();
 
@@ -48,17 +52,18 @@ export const Product = () => {
   }, [currentPage, input]);
 
   const fetchData = (page: number, query: string) => {
-    const offset = page; // Ensure pagination starts from the correct offset
-    console.log(`Fetching data with offset: ${offset}, limit: ${itemsPerPage}, query: ${query}`);
+    dispatch({ type: 'SET_LOADING', payload: true }); // Show loading spinner
+    const offset = page;
     api.get(`/product/search/?offset=${offset}&limit=${itemsPerPage}&query=${query}`)
       .then(response => {
-        console.log(response.data);
         const totalItems = response.data.count;
         dispatch({ type: 'SET_DATA', payload: response.data.products });
         dispatch({ type: 'SET_TOTAL_PAGES', payload: Math.ceil(totalItems / itemsPerPage) });
+        dispatch({ type: 'SET_LOADING', payload: false }); // Hide loading spinner
       })
       .catch(error => {
         console.error("Error fetching data", error);
+        dispatch({ type: 'SET_LOADING', payload: false }); // Hide loading spinner
         dispatch({ type: 'SET_TOTAL_PAGES', payload: 1 });
       });
   };
@@ -152,73 +157,82 @@ export const Product = () => {
           <p>Action</p>
         </div>
         <div className="Product_Table_List_content">
-          {data.length === 0 ? (
-            <div className="No-Product">No Items Found!</div>
+          {loading ? (
+            <div className="spinner-container">
+              <ClipLoader color="#36d7b7" loading={loading} size={50} />
+            </div>
           ) : (
-            data.map((item: any, index: Key) => (
-              <nav key={index}>
-                <input type="checkbox" />
-                {editingId === item.id ? (
-                  <>
-                    <input
-                      type="text"
-                      name="title"
-                      value={editValues.title}
-                      onChange={handleEditChange}
-                      placeholder="Product Name"
-                    />
-                    <input
-                      type="text"
-                      name="category"
-                      value={editValues.category}
-                      onChange={handleEditChange}
-                      placeholder="Category"
-                    />
-                    <input
-                      type="text"
-                      name="price"
-                      value={editValues.price}
-                      onChange={handleEditChange}
-                      placeholder="Price"
-                    />
-                    <button onClick={handleEditSubmit}>Save</button>
-                  </>
-                ) : (
-                  <>
-                    <p className="Product_Name">{item.title}</p>
-                    <p className="Product_Category">{item.category}</p>
-                    <p>{item.available > 0 ? "Available" : "Sold Out"}</p>
-                    <p>${item.price}</p>
-                    <p>{item.sales}</p>
-                    <p>${item.sales * parseInt(item.price)}</p>
-                    <p className="Product_Icons">
-                      <MdOutlineEdit onClick={() => handleEditClick(item)} />
-                      <MdOutlineDelete onClick={() => handleDelete(item.id)} />
-                    </p>
-                  </>
-                )}
-              </nav>
-            ))
-          )}
-
-          {totalPages > 1 && (
-            <ReactPaginate
-              previousLabel={<FaAngleLeft className="order_arrow" />}
-              nextLabel={<FaAngleRight className="order_arrow" />}
-              breakLabel={'...'}
-              pageCount={totalPages}
-              marginPagesDisplayed={2}
-              pageRangeDisplayed={5}
-              onPageChange={handlePageClick}
-              containerClassName={'Product_pagination'}
-              activeClassName={'Product_page_active'}
-              previousClassName={totalPages === 1 ? 'disabled' : ''}
-              nextClassName={totalPages === 1 ? 'disabled' : ''}
-              disabledClassName={'pagination_disabled'}
-            />
+            <>
+              {data.length === 0 ? (
+                <div className="No-Product">No Items Found!</div>
+              ) : (
+                data.map((item: any, index: Key) => (
+                  <nav key={index}>
+                    <input type="checkbox" />
+                    {editingId === item.id ? (
+                      <>
+                        <input
+                          type="text"
+                          name="title"
+                          value={editValues.title}
+                          onChange={handleEditChange}
+                          placeholder="Product Name"
+                        />
+                        <input
+                          type="text"
+                          name="category"
+                          value={editValues.category}
+                          onChange={handleEditChange}
+                          placeholder="Category"
+                        />
+                        <input
+                          type="text"
+                          name="price"
+                          value={editValues.price}
+                          onChange={handleEditChange}
+                          placeholder="Price"
+                        />
+                        <button onClick={handleEditSubmit}>Save</button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="Product_Name">{item.title}</p>
+                        <p className="Product_Category">{item.category}</p>
+                        <p>{item.available > 0 ? "Available" : "Sold Out"}</p>
+                        <p>${item.price}</p>
+                        <p>{item.sales}</p>
+                        <p>${item.sales * parseInt(item.price)}</p>
+                        <p className="Product_Icons">
+                          <MdOutlineEdit onClick={() => handleEditClick(item)} />
+                          <MdOutlineDelete onClick={() => handleDelete(item.id)} />
+                        </p>
+                      </>
+                    )}
+                  </nav>
+                ))
+              )}
+              {totalPages > 1 && (
+                <ReactPaginate
+                  previousLabel={<FaAngleLeft className="order_arrow" />}
+                  nextLabel={<FaAngleRight className="order_arrow" />}
+                  breakLabel={'...'}
+                  pageCount={totalPages}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={5}
+                  onPageChange={handlePageClick}
+                  containerClassName={'Product_pagination'}
+                  activeClassName={'Product_page_active'}
+                  previousClassName={totalPages === 1 ? 'disabled' : ''}
+                  nextClassName={totalPages === 1 ? 'disabled' : ''}
+                  disabledClassName={'pagination_disabled'}
+                />
+              )}
+            </>
           )}
         </div>
       </section>
     </div>
   );
 };
+
+

@@ -119,7 +119,7 @@ export const Dashboard = () => {
       <div className="Dashboard_container">
         <SideBar />
 
-        <h1>{isSignedIn ? <p>Welcome, {user?.email?.split("@")[0]}</p> : <p>Welcome</p>}</h1>
+        <h1>{isSignedIn ? `Welcome, ${user?.email?.split("@")[0]}` : "Welcome"}</h1>
         <p>Here's what's happening with your store today.</p>
 
         <section className="Dashboard_Card_Container">
@@ -155,7 +155,6 @@ export const Dashboard = () => {
               <h4>Name</h4>
               <ul>
                 <li>ID</li>
-                {/* <li>Price</li> */}
                 <li>Amount</li>
                 <li>Status</li>
               </ul>
@@ -168,9 +167,9 @@ export const Dashboard = () => {
                 <p>{error}</p>
               ) : (
                 orders.map((order) => (
-                  <span  key={order.id} className="Order_Item Dashboard_Order_Item">
+                  <span key={order.id} className="Order_Item Dashboard_Order_Item">
                     <div className="Dashboard_Order_Item_Description">
-                    
+
                       <span>
                         <h2>{order.name}</h2>
                         <h4>{order.category}</h4>

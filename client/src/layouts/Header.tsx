@@ -1,18 +1,13 @@
-import { useState, ReactElement, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { RxDropdownMenu } from "react-icons/rx";
 import { FaEarListen } from "react-icons/fa6";
 import { RiSpeakLine } from "react-icons/ri";
 import { PiDiamondsFourFill } from "react-icons/pi";
 import { IoIosNotificationsOutline } from "react-icons/io";
-import { IoPeopleOutline, IoSearch, IoSettingsOutline } from "react-icons/io5";
-import { RiShoppingBag3Line } from "react-icons/ri";
-import { RxDashboard } from 'react-icons/rx';
-import { RiLogoutBoxLine } from "react-icons/ri";
-import { MdOutlineShoppingCart } from "react-icons/md";
+import { IoSearch } from "react-icons/io5";
 import { useNavigate } from 'react-router-dom';
 import ProfileImg from "../assets/profileimg.jfif";
 import api from '../utils/api';
-import { SideBarProps } from '../types/sidebar';
 import { sideBarArrayList } from '../utils/sidebar';
 
 export const Header = () => {

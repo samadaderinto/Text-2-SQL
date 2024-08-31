@@ -15,6 +15,7 @@ import { OrderProps } from "../types/order";
 import api from "../utils/api";
 
 
+import { Oval } from 'react-loader-spinner'; // Import spinner
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend);
 
@@ -25,7 +26,7 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const nav = useNavigate()
+  const nav = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -162,14 +163,26 @@ export const Dashboard = () => {
 
             <article>
               {loading ? (
-                <p>Loading orders...</p>
+                <div className="spinner-container">
+                  <Oval
+                    height={50}
+                    width={50}
+                    color="#4fa94d"
+                    wrapperStyle={{}}
+                    wrapperClass=""
+                    visible={true}
+                    ariaLabel='oval-loading'
+                    secondaryColor="#4fa94d"
+                    strokeWidth={2}
+                    strokeWidthSecondary={2}
+                  />
+                </div>
               ) : error ? (
                 <p>{error}</p>
               ) : (
                 orders.map((order) => (
                   <span key={order.id} className="Order_Item Dashboard_Order_Item">
                     <div className="Dashboard_Order_Item_Description">
-
                       <span>
                         <h2>{order.name}</h2>
                         <h4>{order.category}</h4>

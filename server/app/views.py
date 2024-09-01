@@ -251,46 +251,6 @@ class QueryViewSet(viewsets.GenericViewSet):
     permission_classes = (AllowAny,)
     parser_classes = [MultiPartParser, FormParser]
 
-    def get_audio_duration(self, file_path):
-        probe_command = [
-            'ffprobe',
-            '-v',
-            'error',
-            '-show_entries',
-            'format=duration',
-            '-of',
-            'default=noprint_wrappers=1:nokey=1',
-            file_path
-        ]
-        try:
-            probe_result = subprocess.run(
-                probe_command, capture_output=True, text=True, check=True, timeout=10
-            )
-            duration = probe_result.stdout.strip()
-            return float(duration) if duration != 'N/A' else None
-        except (subprocess.CalledProcessError, ValueError, subprocess.TimeoutExpired):
-            return None
-
-    def get_audio_duration(self, file_path):
-        probe_command = [
-            'ffprobe',
-            '-v',
-            'error',
-            '-show_entries',
-            'format=duration',
-            '-of',
-            'default=noprint_wrappers=1:nokey=1',
-            file_path
-        ]
-        try:
-            probe_result = subprocess.run(
-                probe_command, capture_output=True, text=True, check=True, timeout=10
-            )
-            duration = probe_result.stdout.strip()
-            return float(duration) if duration != 'N/A' else None
-        except (subprocess.CalledProcessError, ValueError, subprocess.TimeoutExpired):
-            return None
-
     @extend_schema(request=FileSerializer, responses={status.HTTP_200_OK: None})
     @action(detail=False, methods=['post'], url_path='upload')
     def audio_to_query(self, request):
@@ -299,65 +259,17 @@ class QueryViewSet(viewsets.GenericViewSet):
 
         audio_file = serializer.validated_data['file']
 
-        # Check file type
-        mime_type, _ = mimetypes.guess_type(audio_file.name)
-        allowed_types = ['audio/webm', 'audio/wav', 'audio/mp3', 'audio/mpeg']
-        if mime_type not in allowed_types:
-            return Response(
-                {'detail': 'Unsupported file type'}, status=status.HTTP_400_BAD_REQUEST
-            )
-
         file_extension = os.path.splitext(audio_file.name)[1].lower()
         file_path = default_storage.save(f'uploaded_audio{file_extension}', audio_file)
-        wav_file_path = os.path.splitext(file_path)[0] + '.wav'
 
+        # Process the audio file (assuming WAV format for simplicity)
         try:
-            # Try to get the audio duration
-            duration = self.get_audio_duration(file_path)
-
-            # Prepare FFmpeg command
-            ffmpeg_command = [
-                'ffmpeg',
-                '-y',
-                '-i',
-                file_path,
-                '-acodec',
-                'pcm_s16le',
-                '-ar',
-                '44100',
-                '-ac',
-                '2',
-                '-err_detect',
-                'ignore_err',
-                '-fflags',
-                '+genpts'
-            ]
-
-            # Add output file
-            ffmpeg_command.append(wav_file_path)
-
-            # Set timeout based on duration, with fallback and maximum values
-            timeout = 60  # Default timeout
-            if duration:
-                timeout = max(
-                    30, min(int(duration * 2), 300)
-                )  # Between 30 seconds and 5 minutes
-
-            result = subprocess.run(
-                ffmpeg_command,
-                capture_output=True,
-                text=True,
-                check=True,
-                timeout=timeout
-            )
-
-            # Check if the output file was created and has a non-zero size
-            if not os.path.exists(wav_file_path) or os.path.getsize(wav_file_path) == 0:
-                raise ValueError('FFmpeg did not produce a valid output file')
+            wav_file_path = file_path
 
             with open(wav_file_path, 'rb') as wav_file:
                 result = self.query_service.runSQLQuery(request, wav_file.read())
 
+        
         except subprocess.CalledProcessError as e:
             logger.error(f"FFmpeg Error: {e.stderr}")
             return Response(
@@ -369,12 +281,6 @@ class QueryViewSet(viewsets.GenericViewSet):
             return Response(
                 {'detail': 'Audio processing timed out'},
                 status=status.HTTP_408_REQUEST_TIMEOUT
-            )
-        except ValueError as e:
-            logger.error(f"Invalid audio file: {str(e)}")
-            return Response(
-                {'detail': f'Invalid audio file: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
             logger.error(f"Error processing audio file: {str(e)}")

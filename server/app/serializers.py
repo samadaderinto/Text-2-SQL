@@ -1,4 +1,5 @@
 import base64
+import mimetypes
 from django.core.files.base import ContentFile
 
 
@@ -158,10 +159,18 @@ class FileSerializer(serializers.Serializer):
 
     def validate_file(self, value):
         """
-        Validate the uploaded file to ensure it is an MP3 file.
+        Validate the uploaded file to ensure it is an audio file with an acceptable MIME type.
         """
-        if not value.name.endswith('.mp3'):
-            raise serializers.ValidationError('The uploaded file must be an MP3 file.')
+        # Get the MIME type of the file
+        mime_type, _ = mimetypes.guess_type(value.name)
+        
+        # Define allowed MIME types
+        allowed_types = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/webm']
+        
+        # Check if the MIME type is in the allowed list
+        if mime_type not in allowed_types:
+            raise serializers.ValidationError(f'The uploaded file must be one of the following types: {", ".join(allowed_types)}.')
+
         return value
 
 

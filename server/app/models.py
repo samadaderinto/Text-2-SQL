@@ -196,3 +196,9 @@ class Notification(DatesMixin):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     email_notification = models.BooleanField(default=True)
     sms_notification = models.BooleanField(default=False)
+    
+class Audio(DatesMixin):
+    audio = models.FileField(upload_to='audios/')
+   
+
+   

@@ -13,8 +13,6 @@ import SideBar from "../layouts/SideBar";
 import { DashboardCardProps } from "../types/dashboard";
 import { OrderProps } from "../types/order";
 import api from "../utils/api";
-
-
 import { Oval } from 'react-loader-spinner'; // Import spinner
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend);

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import RecordRTC, { StereoAudioRecorder } from 'recordrtc';
 import { RxDropdownMenu } from 'react-icons/rx';
 import { FaEarListen } from 'react-icons/fa6';
 import { RiSpeakLine } from 'react-icons/ri';
@@ -23,7 +24,7 @@ export const Header = () => {
   });
 
   const nav = useNavigate();
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaRecorderRef = useRef<RecordRTC | null>(null);
 
   useEffect(() => {
     const fetchStoreName = async () => {
@@ -42,16 +43,15 @@ export const Header = () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        mediaRecorderRef.current = mediaRecorder;
+        const recorder = new RecordRTC(stream, {
+          type: 'audio',
+          mimeType: 'audio/wav', 
+          recorderType: StereoAudioRecorder,
+        });
 
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            setState((prevState) => ({ ...prevState, audioBlob: event.data }));
-          }
-        };
+        recorder.startRecording();
+        mediaRecorderRef.current = recorder;
 
-        mediaRecorder.start(900);
         setState((prevState) => ({ ...prevState, isRecording: true }));
       } catch (error) {
         console.error('Error accessing microphone:', error);
@@ -63,8 +63,10 @@ export const Header = () => {
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && state.isRecording) {
-      mediaRecorderRef.current.stop();
-      setState((prevState) => ({ ...prevState, isRecording: false }));
+      mediaRecorderRef.current.stopRecording(() => {
+        const mp3Blob = mediaRecorderRef.current?.getBlob();
+        setState((prevState) => ({ ...prevState, audioBlob: mp3Blob || null, isRecording: false }));
+      });
     }
   };
 
@@ -79,7 +81,8 @@ export const Header = () => {
   const handleUpload = async () => {
     if (state.audioBlob) {
       const formData = new FormData();
-      formData.append('file', new File([state.audioBlob], 'audio.webm', { type: 'audio/webm' }));
+      console.log(state.audioBlob?.type);
+      formData.append('file', new File([state.audioBlob], 'uploaded_audio.wav', { type: 'audio/wav' }));
 
       try {
         await api.post(`/query/upload/`, formData, {

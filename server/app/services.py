@@ -1,14 +1,11 @@
-import io
-import os
 import secrets
-
+import logging
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404, get_list_or_404
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.db import connection
-from django.core.files.storage import default_storage
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
@@ -16,8 +13,7 @@ from django.core.mail import send_mail
 
 from typing import Type
 from kink import inject
-from openai import OpenAI, Audio
-from pydub import AudioSegment
+from openai import OpenAI
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -26,16 +22,15 @@ from rest_framework.response import Response
 from utils.algorithms import TokenGenerator, auth_token, send_mail
 
 from .serializers import (
-    AdminSerializer,
     CustomerSerializer,
     NotificationSerializer,
-    OrderSerializer,
     ProductSerializer,
     StoreSerializer,
     UserSerializer
 )
 from .models import Customer, Notification, Order, Product, Store, User
 
+logger = logging.getLogger(__name__)
 
 @inject
 class AuthService:
@@ -166,7 +161,25 @@ class QueryService:
 
     def text_to_SQL(self, request, audio_data):
         text = self.audio_to_text(request, audio_data)
-        return text
+    
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4",  # Or "gpt-3.5-turbo"
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that generates SQL queries based on natural language input."},
+                    {"role": "user", "content": f"Convert the following text into an SQL query: {text}"}
+                ],
+                max_tokens=150
+            )
+
+            # Extract the generated SQL query from the response
+            # sql_query = response.choices[0].message['content'].strip()
+            return response['choices'][0]['message']['content']
+        
+        except Exception as e:
+            logger.error(f"Error calling OpenAI API: {str(e)}")
+            return "Error generating SQL query"
 
     def runSQLQuery(self, request, audio_data):
         query = self.text_to_SQL(request, audio_data)

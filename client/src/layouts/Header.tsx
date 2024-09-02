@@ -83,7 +83,7 @@ export const Header = () => {
             'Content-Type': 'multipart/form-data',
           },
         });
-        console.log(response);
+        console.log(response.data);
       } catch (error) {
         console.error('Error uploading audio:', error);
       }

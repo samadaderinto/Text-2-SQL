@@ -51,7 +51,7 @@ export const Signup = () => {
       } else if (!validatePassword(value)) {
         errorMessages.password = 'Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, one digit, and one special character';
       } else {
-        errorMessages.password = ''; 
+        errorMessages.password = '';
       }
 
       if (formState.confirmpassword && value !== formState.confirmpassword) {
@@ -129,7 +129,7 @@ export const Signup = () => {
         const data = JSON.stringify({ email, password });
 
         const response = await api.post(`/auth/signup/`, data);
-       
+
         setFormState({
           ...formState,
           email: '',
@@ -142,9 +142,6 @@ export const Signup = () => {
       } catch (error: any) {
         if (error.response && error.response.status === 400) {
           const errorData = error.response.data;
-          console.log(errorData)
-
-          // Check if the error is related to email already existing
           if (errorData.email && errorData.email.includes('exists')) {
             setErrors({ ...errors, email: 'Email already exists. Please use a different email.' });
             toast.error('Email already exists. Please use a different email.');
@@ -213,7 +210,7 @@ export const Signup = () => {
       <section className="Blue_Section">
         <span><PiDiamondsFourFill /> EchoCart</span>
       </section>
-      
+
     </div>
   );
 };

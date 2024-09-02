@@ -17,7 +17,7 @@ export const Orders = () => {
     data: [],
     totalItems: 0,
     filter: '',
-    isLoading: false, // Added loading state
+    isLoading: false,
   });
 
   useEffect(() => {
@@ -26,18 +26,18 @@ export const Orders = () => {
 
   const fetchData = async () => {
     const offset = state.currentPage * itemsPerPage;
-    setState((prevState) => ({ ...prevState, isLoading: true })); // Start loading
+    setState((prevState) => ({ ...prevState, isLoading: true }));
     try {
       const response = await api.get(`/orders/search/?offset=${offset}&limit=${itemsPerPage}&query=${state.input}&status=${state.filter}`);
       setState((prevState) => ({
         ...prevState,
         data: response.data.orders,
         totalItems: response.data.count,
-        isLoading: false, // Stop loading
+        isLoading: false,
       }));
     } catch (error) {
       console.error("Error fetching data:", error);
-      setState((prevState) => ({ ...prevState, isLoading: false })); // Stop loading on error
+      setState((prevState) => ({ ...prevState, isLoading: false }));
     }
   };
 

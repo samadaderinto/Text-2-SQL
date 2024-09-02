@@ -73,15 +73,16 @@ class User(AbstractUser):
 
 
 class Store(DatesMixin):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True
+    )
     username = models.CharField(max_length=17, unique=True)
     email = models.EmailField(blank=True, null=True)
     name = models.CharField(max_length=100)
     bio = models.TextField()
     phone = PhoneNumberField(null=True, blank=True)
     currency = models.CharField(max_length=89, default='USD')
-    
-    
+
     def save(self, *args, **kwargs):
         if not self.username:
             self.username = self._generate_unique_username()
@@ -131,15 +132,14 @@ class Product(DatesMixin):
     )
     sales = models.IntegerField(validators=[MinValueValidator(0)], default=0)
 
-
     def set_availability(self, quantity_bought: int):
         self.available -= quantity_bought
-        
+
     def save(self, *args, **kwargs):
         self.currency = self.store.currency
-        
+
         super().save(*args, **kwargs)
-            
+
 
 class Cart(DatesMixin):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -192,8 +192,3 @@ class Notification(DatesMixin):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     email_notification = models.BooleanField(default=True)
     sms_notification = models.BooleanField(default=False)
-    
-
-   
-
-   

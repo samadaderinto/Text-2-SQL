@@ -30,19 +30,20 @@
     justify-content: space-between;
     height: 11%;
     margin-bottom: 4%;
-    border:  1px solid rgb(220, 220, 220);
+    border: 1px solid rgb(220, 220, 220);
     outline: none;
     padding: 4%;
+
     &:focus-within {
         border-color: rgb(20, 106, 235);
-}
+    }
 
-input {
-    width: 90%;
-    padding: 3%;
-    border: none;
-    outline: none;
-}
+    input {
+        width: 90%;
+        padding: 3%;
+        border: none;
+        outline: none;
+    }
 
 
 }

@@ -1,7 +1,7 @@
 .Not_Found_Container {
     width: 100%;
     height: 100vh;
-    
+
 
     .Content_container {
         width: 100%;
@@ -29,6 +29,7 @@
 @media(max-width: 884px) {
     .Not_Found_Container {
         padding: 4%;
+
         .Content_container {
             h1 {
                 font-size: 35px;

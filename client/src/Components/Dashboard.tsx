@@ -13,7 +13,7 @@ import SideBar from "../layouts/SideBar";
 import { DashboardCardProps } from "../types/dashboard";
 import { OrderProps } from "../types/order";
 import api from "../utils/api";
-import { Oval } from 'react-loader-spinner'; // Import spinner
+import { Oval } from 'react-loader-spinner';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend);
 
@@ -81,7 +81,7 @@ export const Dashboard = () => {
     datasets: [
       {
         label: "Total Sales",
-        data: [1200, 1900, 3000, 5000, 2400, 3400, 2900, 4700, 5200, 6000, 7000, 8000], // example data
+        data: [1200, 1900, 3000, 5000, 2400, 3400, 2900, 4700, 5200, 6000, 7000, 8000],
         fill: false,
         backgroundColor: "blue",
         borderColor: "blue",
@@ -95,7 +95,7 @@ export const Dashboard = () => {
     datasets: [
       {
         label: 'Product Distribution',
-        data: [300, 200, 100, 150], // example data
+        data: [300, 200, 100, 150],
         backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#E7E9ED'],
         borderColor: '#fff',
         borderWidth: 1,
@@ -166,10 +166,8 @@ export const Dashboard = () => {
                     height={50}
                     width={50}
                     color="#4fa94d"
-                    wrapperStyle={{}}
-                    wrapperClass=""
                     visible={true}
-                    ariaLabel='oval-loading'
+                    ariaLabel="oval-loading"
                     secondaryColor="#4fa94d"
                     strokeWidth={2}
                     strokeWidthSecondary={2}
@@ -177,6 +175,8 @@ export const Dashboard = () => {
                 </div>
               ) : error ? (
                 <p>{error}</p>
+              ) : orders.length === 0 ? (
+                <p>No items found</p>
               ) : (
                 orders.map((order) => (
                   <span key={order.id} className="Order_Item Dashboard_Order_Item">
@@ -204,7 +204,6 @@ export const Dashboard = () => {
 
         <section className="Bottom_Graph_Container">
           <Line data={salesData} options={options} />
-
         </section>
       </div>
     </>

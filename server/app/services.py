@@ -165,7 +165,7 @@ class QueryService:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4",  # Or "gpt-3.5-turbo"
+                model="gpt-4",
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that generates SQL queries based on natural language input."},
                     {"role": "user", "content": f"Convert the following text into an SQL query: {text}"}
@@ -173,9 +173,7 @@ class QueryService:
                 max_tokens=150
             )
 
-            # Extract the generated SQL query from the response
-            # sql_query = response.choices[0].message['content'].strip()
-            return response['choices'][0]['message']['content']
+            return response.choices[0]["3"]
         
         except Exception as e:
             logger.error(f"Error calling OpenAI API: {str(e)}")

@@ -23,7 +23,7 @@ class ServerAccessPolicy(AccessPolicy):
         },
         {
             'action': [
-                'create_customers',
+                'create_customer',
                 'update_customer',
                 'retrieve_customer',
                 'ban',

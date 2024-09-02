@@ -157,9 +157,9 @@ class QueryService:
             raise ValueError('Disallowed SQL command')
 
     def audio_to_text(self, request, audio_data):
-        with io.BytesIO(audio_data) as audio_file:
-            response = self.client.audio.transcriptions.create(
-                model='whisper-1', file=audio_file, response_format="text"
+        
+        response = self.client.audio.transcriptions.create(
+                model='whisper-1', file=audio_data, response_format="text"
             )
         return response
 
@@ -228,8 +228,10 @@ class CustomerService:
         return serializer.data
 
     def create_customer(self, serializer):
-        serializer.save()
-        return serializer.data
+        customer, created = self.Customer.objects.get_or_create(**serializer.data)
+        if not created:
+            return None
+        return CustomerSerializer(customer)
 
     def update_customer(self, data):
         email = data['email']

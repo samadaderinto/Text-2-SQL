@@ -85,7 +85,7 @@ export const Newproduct = () => {
       formData.append('quantity', formState.quantity);
 
       if (formState.img) {
-        formData.append('image', formState.img); 
+        formData.append('image', formState.img);
       }
 
       try {
@@ -106,8 +106,8 @@ export const Newproduct = () => {
 
   return (
     <div className="Newproduct_Container">
-      <Header/>
-      <SideBar/>
+      <Header />
+      <SideBar />
       <h1>Create New Product</h1>
       <section className="Product_Form_Container">
         <div className="GenProduct_Container">

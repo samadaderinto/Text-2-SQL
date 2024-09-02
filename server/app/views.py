@@ -3,6 +3,8 @@ from io import StringIO
 import os
 import logging
 import subprocess
+import mimetypes
+
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import get_object_or_404, redirect, get_list_or_404
@@ -10,10 +12,9 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
 from django.core.files.storage import default_storage
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.db.models import Q
-import mimetypes
-
+import requests
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -62,11 +63,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_access_policy import AccessViewSetMixin
 from drf_spectacular.utils import extend_schema
 from kink import di
-
+from django.conf import settings
 
 from utils.algorithms import TokenGenerator, auth_token, send_email, send_mail
 
-
+AudioSegment.converter = which('ffmpeg')
 logger = logging.getLogger(__name__)
 
 # AudioSegment.converter = which('ffmpeg')
@@ -138,7 +139,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             user.save()
 
             # Redirect to the frontend sign-in page
-            return redirect('http://localhost:4173/auth/signin', permanent=True)
+            return redirect('http://localhost:4174/auth/signin', permanent=True)
 
         except Exception as e:
             # Handle exceptions and return an appropriate response
@@ -227,7 +228,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             )
 
         return redirect(
-            f'http://localhost:4173/auth/reset-password/{user.email}', permanent=True
+            f'http://localhost:4174/auth/reset-password/{user.email}', permanent=True
         )
 
     @extend_schema(
@@ -248,7 +249,7 @@ class QueryViewSet(viewsets.GenericViewSet):
         super().__init__(**kwargs)
         self.query_service: QueryService = di[QueryService]
 
-    permission_classes = (AllowAny,)
+    permission_classes = (ServerAccessPolicy,)
     parser_classes = [MultiPartParser, FormParser]
 
     @extend_schema(request=FileSerializer, responses={status.HTTP_200_OK: None})
@@ -258,46 +259,30 @@ class QueryViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
 
         audio_file = serializer.validated_data['file']
+        file_path = default_storage.save('uploaded_audio.webm', audio_file)
 
-        file_extension = os.path.splitext(audio_file.name)[1].lower()
-        file_path = default_storage.save(f'uploaded_audio{file_extension}', audio_file)
-
-        # Process the audio file (assuming WAV format for simplicity)
         try:
-            wav_file_path = file_path
+            # Send the WebM file to OpenAI directly
+            with open(file_path, 'rb') as webm_file:
+                response = self.query_service.audio_to_text(request, webm_file)
 
-            with open(wav_file_path, 'rb') as wav_file:
-                result = self.query_service.runSQLQuery(request, wav_file.read())
+            return Response(response, status=status.HTTP_200_OK)
 
-        
-        except subprocess.CalledProcessError as e:
-            logger.error(f"FFmpeg Error: {e.stderr}")
-            return Response(
-                {'detail': f'Error processing audio file: {e.stderr}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except subprocess.TimeoutExpired:
-            logger.error('FFmpeg process timed out')
-            return Response(
-                {'detail': 'Audio processing timed out'},
-                status=status.HTTP_408_REQUEST_TIMEOUT
-            )
         except Exception as e:
             logger.error(f"Error processing audio file: {str(e)}")
             return Response(
-                {'detail': 'An unexpected error occurred while processing the file.'},
+                {'detail': 'Error processing file.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         finally:
-            # Safely remove files if they exist
-            for path in [file_path, wav_file_path]:
-                if path and os.path.exists(path):
-                    try:
-                        os.remove(path)
-                    except Exception as e:
-                        logger.error(f"Error removing temporary file {path}: {str(e)}")
+            # Safely remove the file if it exists
+            if file_path and os.path.exists(file_path):
+                os.remove(file_path)
 
-        return Response(result, status=status.HTTP_200_OK)
+
+   
+
+        
 
 
 class ProductViewSet(viewsets.GenericViewSet):
@@ -384,12 +369,17 @@ class CustomerViewSet(viewsets.GenericViewSet):
 
     @extend_schema(request=CustomerSerializer, responses={200: CustomerSerializer})
     @action(detail=False, methods=['post'], url_path='create')
+    @parser_classes([MultiPartParser])
     def create_customer(self, request):
-        data = JSONParser().parse(request)
-        serializer = CustomerSerializer(data=data)
+        serializer = CustomerSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        customer = self.customer_service.create_customer(request, serializer)
-        return Response(status=201, data=customer)
+
+        customer = self.customer_service.create_customer(serializer)
+        return (
+            Response(status=201, data=customer.data)
+            if customer
+            else Response(status=400, data={'name': 'Email already created created'})
+        )
 
     @extend_schema(request=CustomerSerializer, responses={200: CustomerSerializer})
     @action(detail=False, methods=['put'], url_path='update')

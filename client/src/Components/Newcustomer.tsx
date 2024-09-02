@@ -2,9 +2,13 @@ import { useState } from "react";
 import { LuImagePlus } from "react-icons/lu";
 import { Header } from "../layouts/Header";
 import SideBar from "../layouts/SideBar";
-import axios from "axios";
+import api from "../utils/api";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from "react-router-dom";
 
 export const Newcustomer = () => {
+  const nav = useNavigate()
   const [formState, setFormState] = useState({
     img: null as string | null,
     firstName: '',
@@ -83,12 +87,10 @@ export const Newcustomer = () => {
   const handleCreateCustomer = async () => {
     if (validateForm()) {
       const formData = new FormData();
-      formData.append('firstName', formState.firstName);
-      formData.append('lastName', formState.lastName);
+      formData.append('first_name', formState.firstName);
+      formData.append('last_name', formState.lastName);
       formData.append('email', formState.email);
-      formData.append('phone', formState.phone);
-      formData.append('date', formState.date);
-      formData.append('quantity', formState.quantity);
+      formData.append('phone_number', formState.phone);
 
       if (formState.img) {
         const imageFile = await fetch(formState.img).then(r => r.blob());
@@ -96,14 +98,27 @@ export const Newcustomer = () => {
       }
 
       try {
-        await axios.post(`/customers/create/`, formData, {
+        await api.post(`/customers/create/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-        console.log('Customer created successfully');
-      } catch (error) {
-        console.error('Error creating customer:', error);
+        nav('/customers')
+        toast.success('Customer created successfully!', {
+          position: "top-right",
+          autoClose: 3000,
+        })
+
+
+      } catch (error: any) {
+        if (error.response && error.response.status === 400 && error.response.data.email) {
+          toast.error('Email already exists. Please use a different email.', {
+            position: "top-right",
+
+          });
+        } else {
+          toast.error('Error creating customer. Please try again.');
+        }
       }
     }
   };
@@ -119,16 +134,48 @@ export const Newcustomer = () => {
             <h3>Customer Information</h3>
             <form>
               <label htmlFor="First_Name">First Name</label>
-              <input type="text" name="firstName" placeholder="Input customer first name" id="First_Name" value={formState.firstName} onChange={handleChange} />
+              <input
+                type="text"
+                name="firstName"
+                placeholder="Input customer first name"
+                id="First_Name"
+                value={formState.firstName}
+                onChange={handleChange}
+              />
+              {formState.errors.firstName && <p>{formState.errors.firstName}</p>}
 
               <label htmlFor="Last_Name">Last Name</label>
-              <input type="text" name="lastName" id="Last_Name" placeholder="Input customer last name" value={formState.lastName} onChange={handleChange} />
+              <input
+                type="text"
+                name="lastName"
+                id="Last_Name"
+                placeholder="Input customer last name"
+                value={formState.lastName}
+                onChange={handleChange}
+              />
+              {formState.errors.lastName && <p>{formState.errors.lastName}</p>}
 
               <label htmlFor="customer_Email">Email</label>
-              <input type="email" name="email" id="customer_Email" placeholder="Input customer email" value={formState.email} onChange={handleChange} />
+              <input
+                type="email"
+                name="email"
+                id="customer_Email"
+                placeholder="Input customer email"
+                value={formState.email}
+                onChange={handleChange}
+              />
+              {formState.errors.email && <p>{formState.errors.email}</p>}
 
               <label htmlFor="customer_phone">Phone</label>
-              <input type="tel" name="phone" id="customer_phone" placeholder="Input customer phone number" value={formState.phone} onChange={handleChange} />
+              <input
+                type="tel"
+                name="phone"
+                id="customer_phone"
+                placeholder="Input customer phone number"
+                value={formState.phone}
+                onChange={handleChange}
+              />
+              {formState.errors.phone && <p>{formState.errors.phone}</p>}
 
               <div>
                 <span className="Cancel_Btn">Cancel</span>
@@ -151,17 +198,10 @@ export const Newcustomer = () => {
                 )}
               </section>
             </label>
-
-            <span>
-              <label htmlFor="date">Date Added</label>
-              <input type="date" name="date" value={formState.date} onChange={handleChange} />
-
-              <label htmlFor="quantity">Quantity</label>
-              <input name="quantity" value={formState.quantity} onChange={handleChange} type="number" placeholder="Enter quantity" />
-            </span>
           </div>
         </section>
       </div>
+      <ToastContainer />
     </>
   )
 }

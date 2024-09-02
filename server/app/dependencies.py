@@ -22,6 +22,7 @@ def di_setup():
     di[Store] = Store
     di[Notification] = Notification
 
+
     di[AuthService] = AuthService(di[User], di[Store], di[Notification])
     di[ProductService] = ProductService(di[User], di[Product])
     di[OrderService] = OrderService(di[User], di[Order])

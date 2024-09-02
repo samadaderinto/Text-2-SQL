@@ -1,36 +1,31 @@
 import { useState, useRef, useEffect } from 'react';
-import RecordRTC, { StereoAudioRecorder } from 'recordrtc';
-import { RxDropdownMenu } from 'react-icons/rx';
-import { FaEarListen } from 'react-icons/fa6';
-import { RiSpeakLine } from 'react-icons/ri';
-import { PiDiamondsFourFill } from 'react-icons/pi';
-import { IoIosNotificationsOutline } from 'react-icons/io';
-import { IoSearch } from 'react-icons/io5';
+import { RxDropdownMenu } from "react-icons/rx";
+import { FaEarListen } from "react-icons/fa6";
+import { RiSpeakLine } from "react-icons/ri";
+import { PiDiamondsFourFill } from "react-icons/pi";
+import { IoIosNotificationsOutline } from "react-icons/io";
+import { IoSearch } from "react-icons/io5";
 import { useNavigate } from 'react-router-dom';
-import ProfileImg from '../assets/profileimg.jfif';
+import ProfileImg from "../assets/profileimg.jfif";
 import api from '../utils/api';
 import { sideBarArrayList } from '../utils/sidebar';
 
 export const Header = () => {
-  const [state, setState] = useState({
-    menu: false,
-    listen: false,
-    voice: false,
-    activeIndex: 0,
-    audioBlob: null as Blob | null,
-    isRecording: false,
-    store: { name: '', email: '' },
-    error: null as string | null,
-  });
-
+  const [menu, setMenu] = useState(false);
+  const [listen, setListen] =useState(false);
+  const [voice, setVoice] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number>(0);
   const nav = useNavigate();
-  const mediaRecorderRef = useRef<RecordRTC | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [store, setStore] = useState<{ name: string, email: string }>({ name: "", email: "" });
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   useEffect(() => {
     const fetchStoreName = async () => {
       try {
         const response = await api.get(`/settings/store/get/`);
-        setState((prevState) => ({ ...prevState, store: response.data }));
+        setStore(response.data);
       } catch (error) {
         console.error('Error fetching store name:', error);
       }
@@ -43,16 +38,17 @@ export const Header = () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new RecordRTC(stream, {
-          type: 'audio',
-          mimeType: 'audio/wav', 
-          recorderType: StereoAudioRecorder,
-        });
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorderRef.current = mediaRecorder;
 
-        recorder.startRecording();
-        mediaRecorderRef.current = recorder;
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            setAudioBlob(event.data);
+          }
+        };
 
-        setState((prevState) => ({ ...prevState, isRecording: true }));
+        mediaRecorder.start();
+        setIsRecording(true);
       } catch (error) {
         console.error('Error accessing microphone:', error);
       }
@@ -62,48 +58,45 @@ export const Header = () => {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && state.isRecording) {
-      mediaRecorderRef.current.stopRecording(() => {
-        const mp3Blob = mediaRecorderRef.current?.getBlob();
-        setState((prevState) => ({ ...prevState, audioBlob: mp3Blob || null, isRecording: false }));
-      });
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
     }
   };
 
   useEffect(() => {
-    if (state.listen) {
+    if (listen) {
       startRecording();
     } else {
       stopRecording();
     }
-  }, [state.listen]);
+  }, [listen]);
 
   const handleUpload = async () => {
-    if (state.audioBlob) {
+    if (audioBlob) {
       const formData = new FormData();
-      console.log(state.audioBlob?.type);
-      formData.append('file', new File([state.audioBlob], 'uploaded_audio.wav', { type: 'audio/wav' }));
+      formData.append('file', new File([audioBlob], 'audio.webm', { type: 'audio/webm' }));
 
       try {
-        await api.post(`/query/upload/`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+        const response = await api.post(`/query/upload/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         });
-        setState((prevState) => ({ ...prevState, error: null }));
+        console.log(response);
       } catch (error) {
         console.error('Error uploading audio:', error);
-        setState((prevState) => ({ ...prevState, error: 'Failed to upload audio. Please try again.' }));
       }
     } else {
-      setState((prevState) => ({ ...prevState, error: 'No audio data available for upload.' }));
+      console.error('No audio data available for upload.');
     }
   };
 
   return (
     <div className='Header_Container'>
-      {state.error && <div className="error-message">{state.error}</div>}
       <span><PiDiamondsFourFill /> EchoCart</span>
       <section className="Search_Container">
-        {state.listen ? (
+        {listen ? (
           <>
             <span>Listening...</span>
             <p><FaEarListen /></p>
@@ -112,30 +105,29 @@ export const Header = () => {
           <>
             <p className="Header_Search_Icon"><IoSearch /></p>
             <input type="text" placeholder="Search anything..." />
-            <p onClick={() => setState((prevState) => ({ ...prevState, voice: !state.voice }))}>
-              <RiSpeakLine />
-            </p>
+            <p onClick={() => setVoice(!voice)}><RiSpeakLine /></p>
           </>
         )}
       </section>
       <section className="RightHand_Container">
-        <p className="Exclusive_Store">{state.store.name || "Store Name"}</p>
+        <p className="Exclusive_Store">{store.name ? store.name : "Store Name"}</p>
         <p><IoIosNotificationsOutline /></p>
         <div className="Image_Container">
           <img src={ProfileImg} alt="profile" />
         </div>
       </section>
-      <p onClick={() => setState((prevState) => ({ ...prevState, menu: !state.menu }))} className="Mobile_Menu"><RxDropdownMenu /></p>
-      {state.menu && (
+      <p onClick={() => setMenu(!menu)} className="Mobile_Menu"><RxDropdownMenu /></p>
+      {menu && (
         <article className="Mobile_Menu_Nav">
           {sideBarArrayList.map((obj, index) => (
             <span
               key={index}
               onClick={() => {
-                setState((prevState) => ({ ...prevState, activeIndex: index, menu: false }));
+                setActiveIndex(index);
+                setMenu(false);
                 nav(`/${obj.itemName}`);
               }}
-              className={state.activeIndex === index ? 'Active_List' : ''}
+              className={activeIndex === index ? 'Active_List' : ''}
             >
               <p className="List_icon">{obj.icon}</p>
               <p>{obj.itemName}</p>
@@ -143,20 +135,21 @@ export const Header = () => {
           ))}
         </article>
       )}
-      {state.voice && (
+      {voice && (
         <span
           onClick={() => {
-            setState((prevState) => ({ ...prevState, voice: false, listen: true }));
+            setVoice(false);
+            setListen(true);
           }}
           className="Search_By_Voice"
         >
           Search By Voice
         </span>
       )}
-      {state.listen && (
+      {listen && (
         <span
           onClick={() => {
-            setState((prevState) => ({ ...prevState, listen: false }));
+            setListen(false);
             handleUpload();
           }}
           className="Search_By_Voice Stop_Voice"

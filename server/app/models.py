@@ -131,9 +131,6 @@ class Product(DatesMixin):
     )
     sales = models.IntegerField(validators=[MinValueValidator(0)], default=0)
 
-    @property
-    def sale_price(self):
-        return '%.2f' % (float(self.price) * self.discount / 100)
 
     def set_availability(self, quantity_bought: int):
         self.available -= quantity_bought
@@ -185,7 +182,6 @@ class Order(DatesMixin):
 
 class Customer(DatesMixin):
     first_name = models.CharField(max_length=225)
-    avatar = models.ImageField(upload_to='images/profile', null=True, blank=True)
     last_name = models.CharField(max_length=225)
     email = models.EmailField(unique=True)
     phone_number = PhoneNumberField()
@@ -197,8 +193,7 @@ class Notification(DatesMixin):
     email_notification = models.BooleanField(default=True)
     sms_notification = models.BooleanField(default=False)
     
-class Audio(DatesMixin):
-    audio = models.FileField(upload_to='audios/')
+
    
 
    

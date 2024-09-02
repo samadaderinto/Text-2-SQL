@@ -34,7 +34,6 @@ class CustomerSerializer(serializers.ModelSerializer):
             'id',
             'first_name',
             'last_name',
-            'avatar',
             'phone_number',
             'email',
             'created',
@@ -102,7 +101,6 @@ class ProductSerializer(serializers.ModelSerializer):
             # 'image',
             "category",
             'currency',
-            'sale_price',
             'sales',
             'created',
             'updated'
@@ -156,24 +154,8 @@ class CustomerSearchSerializer(serializers.Serializer):
 
 class FileSerializer(serializers.Serializer):
     file = serializers.FileField(required=True)
-
-    def validate_file(self, value):
-        """
-        Validate the uploaded file to ensure it is an audio file with an acceptable MIME type.
-        """
-        # Get the MIME type of the file
-        mime_type, _ = mimetypes.guess_type(value.name)
         
-        # Define allowed MIME types
-        allowed_types = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/webm']
         
-        # Check if the MIME type is in the allowed list
-        if mime_type not in allowed_types:
-            raise serializers.ValidationError(f'The uploaded file must be one of the following types: {", ".join(allowed_types)}.')
-
-        return value
-
-
 class AdminSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=225)
     email = serializers.EmailField()

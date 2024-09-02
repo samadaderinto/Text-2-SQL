@@ -2,21 +2,16 @@ import csv
 from io import StringIO
 import os
 import logging
-import subprocess
-import mimetypes
 
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.shortcuts import get_object_or_404, redirect, get_list_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
 from django.core.files.storage import default_storage
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse
 from django.db.models import Q
-import requests
-
-from django_filters.rest_framework import DjangoFilterBackend
 
 
 from rest_framework import viewsets, status
@@ -24,7 +19,6 @@ from rest_framework.response import Response
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework.decorators import action, parser_classes
 from rest_framework.permissions import AllowAny
-from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework import serializers
 
 
@@ -33,7 +27,6 @@ from .permissions import ServerAccessPolicy
 from .serializers import (
     AdminSerializer,
     CustomerSerializer,
-    CustomerSearchSerializer,
     EmailSerializer,
     FileSerializer,
     LogOutSerializer,
@@ -42,7 +35,6 @@ from .serializers import (
     OrderSerializer,
     ProductSerializer,
     ResetPasswordSerializer,
-    OrderSearchSerializer,
     StoreSearchSerializer,
     StoreSerializer,
     UserSerializer
@@ -60,17 +52,13 @@ from .services import (
 from pydub import AudioSegment
 from pydub.utils import which
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_access_policy import AccessViewSetMixin
 from drf_spectacular.utils import extend_schema
 from kink import di
-from django.conf import settings
 
-from utils.algorithms import TokenGenerator, auth_token, send_email, send_mail
+from utils.algorithms import TokenGenerator, send_mail
 
 AudioSegment.converter = which('ffmpeg')
 logger = logging.getLogger(__name__)
-
-# AudioSegment.converter = which('ffmpeg')
 
 
 class AuthViewSet(viewsets.GenericViewSet):
@@ -78,8 +66,6 @@ class AuthViewSet(viewsets.GenericViewSet):
         super().__init__(**kwargs)
         self.auth_service: AuthService = di[AuthService]
         self.User = User
-
-    # permission_classes = (AllowAny,)
 
     permission_classes = (ServerAccessPolicy,)
     serializer_class = UserSerializer
@@ -115,30 +101,24 @@ class AuthViewSet(viewsets.GenericViewSet):
     )
     def verify_activation(self, request, uidb64, token):
         try:
-            # Decode the user ID from the base64 string
             user_id = smart_str(urlsafe_base64_decode(uidb64))
-            # Fetch the user from the database
             user = get_object_or_404(self.User, pk=user_id)
 
-            # Check if the user is already active
             if user.is_active:
                 return Response(
                     {'message': 'Account is already activated'},
                     status=status.HTTP_200_OK
                 )
 
-            # Validate the token
             if not TokenGenerator().check_token(user, token):
                 return Response(
                     {'error': 'Token is not valid, please request a new one'},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
 
-            # Activate the user account
             user.is_active = True
             user.save()
 
-            # Redirect to the frontend sign-in page
             return redirect('http://localhost:4174/auth/signin', permanent=True)
 
         except Exception as e:
@@ -262,11 +242,10 @@ class QueryViewSet(viewsets.GenericViewSet):
         file_path = default_storage.save('uploaded_audio.webm', audio_file)
 
         try:
-            # Send the WebM file to OpenAI directly
             with open(file_path, 'rb') as webm_file:
-                response = self.query_service.audio_to_text(request, webm_file)
+                open_ai_response = self.query_service.text_to_SQL(request, webm_file)
 
-            return Response(response, status=status.HTTP_200_OK)
+            return Response(data=open_ai_response, status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error(f"Error processing audio file: {str(e)}")
@@ -275,14 +254,8 @@ class QueryViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         finally:
-            # Safely remove the file if it exists
             if file_path and os.path.exists(file_path):
                 os.remove(file_path)
-
-
-   
-
-        
 
 
 class ProductViewSet(viewsets.GenericViewSet):

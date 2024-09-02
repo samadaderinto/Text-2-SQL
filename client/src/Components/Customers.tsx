@@ -49,7 +49,7 @@ export const Customers = () => {
   const totalPages = Math.ceil(data.length / itemsPerPage);
 
   return (
-    <>
+    <div>
       <Header />
       <Sidebar />
 
@@ -133,6 +133,6 @@ export const Customers = () => {
           </section>
         </section>
       </div>
-    </>
+    </div>
   );
 };

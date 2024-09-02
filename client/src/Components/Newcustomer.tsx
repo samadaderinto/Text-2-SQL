@@ -7,7 +7,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from "react-router-dom";
 
-export const Newcustomer = () => {
+export const NewCustomer = () => {
   const nav = useNavigate()
   const [formState, setFormState] = useState({
     img: null as string | null,

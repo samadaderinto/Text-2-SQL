@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../utils/api";
 
-export const Newproduct = () => {
+export const NewProduct = () => {
   const [formState, setFormState] = useState<ProductFormStateProps>({
     img: null,
     productName: '',

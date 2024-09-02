@@ -1,4 +1,3 @@
-
 .Signup_Pop_Container {
     width: 100%;
     height: 100%;
@@ -11,23 +10,25 @@
     display: flex;
     justify-content: center;
     align-items: center;
-   
-    }
-    .Popup_span {
-        width: 40%;
+
+}
+
+.Popup_span {
+    width: 40%;
+    display: flex;
+    border-radius: 3px;
+    padding: 3%;
+    flex-direction: column;
+    align-items: center;
+    // justify-content: space-between;
+    height: 60%;
+    background-color: white;
+    font-size: 27px;
+
+    .Signup_Popup_Cancel {
+        width: 100%;
         display: flex;
-        border-radius: 3px;
-        padding: 3%;
-        flex-direction: column;
-        align-items: center;
-        // justify-content: space-between;
-        height: 60%;
-        background-color: white;
-        font-size: 27px;
-        .Signup_Popup_Cancel {
-            width: 100%;
-            display: flex;
-            justify-content: flex-end;
-            padding-bottom: 8%;
+        justify-content: flex-end;
+        padding-bottom: 8%;
     }
 }

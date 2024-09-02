@@ -77,9 +77,7 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
 class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
-        fields = "__all__"
-
-        
+        fields = '__all__'
 
 
 class StoreSearchSerializer(serializers.Serializer):
@@ -99,7 +97,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'description',
             'price',
             # 'image',
-            "category",
+            'category',
             'currency',
             'sales',
             'created',
@@ -116,7 +114,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
-    
 
     class Meta:
         model = Order
@@ -136,8 +133,6 @@ class OrderSerializer(serializers.ModelSerializer):
         return obj.user.first_name
 
 
-
-
 class OrderSearchSerializer(serializers.Serializer):
     id = serializers.CharField()
     user_id = serializers.CharField()
@@ -154,8 +149,8 @@ class CustomerSearchSerializer(serializers.Serializer):
 
 class FileSerializer(serializers.Serializer):
     file = serializers.FileField(required=True)
-        
-        
+
+
 class AdminSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=225)
     email = serializers.EmailField()

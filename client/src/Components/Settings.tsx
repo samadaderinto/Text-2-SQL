@@ -31,18 +31,18 @@ export const Settings = () => {
   }, []);
 
   useEffect(() => {
-    fetchData(`/settings/admin/get/`, ({first_name, email, password}) => {
+    fetchData(`/settings/admin/get/`, ({ first_name, email, password }) => {
 
       setFormData((prev) => ({
         ...prev,
-        
+
         adminName: first_name,
         adminEmail: email,
         password: password,
       }));
     });
 
-    fetchData(`/settings/store/get/`, ({name, email, currency}) => {
+    fetchData(`/settings/store/get/`, ({ name, email, currency }) => {
 
       setFormData((prev) => ({
         ...prev,
@@ -52,7 +52,7 @@ export const Settings = () => {
       }));
     });
 
-    fetchData(`/settings/notifications/get/`, ({email_notification, sms_notification}) => {
+    fetchData(`/settings/notifications/get/`, ({ email_notification, sms_notification }) => {
       setFormData((prev) => ({
         ...prev,
         emailNotifications: email_notification,

@@ -1,7 +1,7 @@
 .Newcustomer_Container {
     width: 100%;
     height: 159vh;
-    color: rgb(78, 77, 77) ;
+    color: rgb(78, 77, 77);
     padding-left: 25%;
     padding-top: 10%;
     // background-color: rgb(193, 15, 15);
@@ -38,7 +38,7 @@
             h3 {
                 font-weight: 500;
                 font-size: 19px;
-                color: rgb(78, 77, 77) ;
+                color: rgb(78, 77, 77);
                 margin-bottom: 4%;
             }
 
@@ -82,11 +82,11 @@
                         width: 20%;
                         display: flex;
                         margin-top: -1.2%;
-                        height:50px;
+                        height: 50px;
                         // justify-content: center;
                         flex-direction: column;
 
-                       
+
                         select {
                             width: 100%;
                             padding: 18%;
@@ -98,14 +98,15 @@
                         }
 
 
-                        }
+                    }
 
-                        .Price_Article {
-                            width: 78%;
-                            input {
-                                width: 100%;
-                            }
+                    .Price_Article {
+                        width: 78%;
+
+                        input {
+                            width: 100%;
                         }
+                    }
 
 
                 }
@@ -128,7 +129,7 @@
                         align-items: center;
                         padding: 8%;
                         cursor: pointer;
-                        
+
                     }
 
                     .Cancel_Btn {
@@ -158,10 +159,10 @@
 
 
             h3 {
-             font-weight: 500;
-             font-size: 19px;
-             color: rgb(78, 77, 77) ;
-             margin-bottom: 4%;
+                font-weight: 500;
+                font-size: 19px;
+                color: rgb(78, 77, 77);
+                margin-bottom: 4%;
             }
 
             section {
@@ -200,12 +201,13 @@
                 label {
                     margin-bottom: 2%;
                     margin-top: 2%;
-                    font-size: 14px ;
+                    font-size: 14px;
                 }
 
 
 
-                input, select {
+                input,
+                select {
                     padding: 4.3%;
                     border: 1px solid rgb(236, 234, 234);
                     outline: none;
@@ -216,18 +218,22 @@
 }
 
 @media(max-width: 1024px) {
-    .Newcustomer_Container{
+    .Newcustomer_Container {
         padding-left: 3%;
         padding-top: 6%;
+
         .Product_Form_Container {
-    
+
             .GenProduct_Container {
                 height: 80%;
 
                 form {
                     height: 90%;
+
                     div {
-                        .Add_Btn, .Cancel_Btn  {
+
+                        .Add_Btn,
+                        .Cancel_Btn {
                             height: 13%;
                             padding: 7%;
                             width: 47%;
@@ -246,31 +252,35 @@
 }
 
 @media(max-width:884px) {
-    
-.Newcustomer_Container {
-    height: max-content;
-    padding-left: 3%;
-    padding-top: 29%;
-    .Product_Form_Container {
-        flex-direction: column;
 
-        .GenProduct_Container {
-            width: 100%;
-            // background: #000;
-            form {
-                div {
-                    .Add_Btn, .Cancel_Btn    {
-                        padding: 7%;
-                        width: 47%;
+    .Newcustomer_Container {
+        height: max-content;
+        padding-left: 3%;
+        padding-top: 29%;
+
+        .Product_Form_Container {
+            flex-direction: column;
+
+            .GenProduct_Container {
+                width: 100%;
+
+                // background: #000;
+                form {
+                    div {
+
+                        .Add_Btn,
+                        .Cancel_Btn {
+                            padding: 7%;
+                            width: 47%;
+                        }
                     }
                 }
             }
-        }
 
-        .Product_Media_Container {
-            width: 90%;
-            height: 70vh;
+            .Product_Media_Container {
+                width: 90%;
+                height: 70vh;
+            }
         }
     }
-}
 }

@@ -7,9 +7,9 @@
     top: 0;
     left: 0;
     justify-content: space-between;
-    box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
-    -webkit-box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
-    -moz-box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
+    box-shadow: 0px 5px 8px 0px rgba(181, 176, 176, 0.75);
+    -webkit-box-shadow: 0px 5px 8px 0px rgba(181, 176, 176, 0.75);
+    -moz-box-shadow: 0px 5px 8px 0px rgba(181, 176, 176, 0.75);
     align-items: center;
     z-index: 5;
     background-color: white;
@@ -33,7 +33,7 @@
             color: rgb(188, 187, 187);
         }
 
-        
+
         p {
             font-size: 18px;
             cursor: pointer;
@@ -83,6 +83,7 @@
             }
         }
     }
+
     .Mobile_Menu {
         display: none;
     }
@@ -97,9 +98,9 @@
     border-radius: 3px;
     z-index: 50;
     padding: 6px;
-    box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
-    -webkit-box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
-    -moz-box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
+    box-shadow: 0px 5px 8px 0px rgba(181, 176, 176, 0.75);
+    -webkit-box-shadow: 0px 5px 8px 0px rgba(181, 176, 176, 0.75);
+    -moz-box-shadow: 0px 5px 8px 0px rgba(181, 176, 176, 0.75);
     text-align: center;
     color: grey;
     position: absolute;
@@ -110,7 +111,7 @@
     // left: 80;
 }
 
-.Stop_Voice{
+.Stop_Voice {
     margin-left: 38%;
     margin-top: -3%;
 }
@@ -133,12 +134,13 @@
             .Header_Search_Icon {
                 display: none;
             }
-          
-                input {
-                    display: none;
-                }
-            
+
+            input {
+                display: none;
+            }
+
         }
+
         .RightHand_Container {
             display: none;
         }
@@ -158,9 +160,9 @@
             padding: 3%;
             height: 60vh;
             position: fixed;
-            box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
-            -webkit-box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
-            -moz-box-shadow: 0px 5px 8px 0px rgba(181,176,176,0.75);
+            box-shadow: 0px 5px 8px 0px rgba(181, 176, 176, 0.75);
+            -webkit-box-shadow: 0px 5px 8px 0px rgba(181, 176, 176, 0.75);
+            -moz-box-shadow: 0px 5px 8px 0px rgba(181, 176, 176, 0.75);
             font-size: 19px;
             top: 16%;
             z-index: 200;

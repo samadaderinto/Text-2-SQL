@@ -32,9 +32,9 @@
             padding: 4.5%;
         }
 
-        .Active{
+        .Active {
             color: rgb(21, 122, 237);
-            border-bottom: 2px solid rgb(21, 122, 237)  ;
+            border-bottom: 2px solid rgb(21, 122, 237);
         }
     }
 
@@ -208,7 +208,8 @@
             width: 80%;
             height: 50%;
 
-            .White_Btn, .Blue_Btn {
+            .White_Btn,
+            .Blue_Btn {
                 width: 35%;
                 height: 40%;
             }
@@ -230,12 +231,14 @@
             h3 {
                 margin-bottom: 6%;
             }
+
             input {
                 margin-bottom: 5%;
                 padding: 5%;
             }
 
-            .White_Btn, .Blue_Btn {
+            .White_Btn,
+            .Blue_Btn {
                 width: 55%;
                 height: 50%;
             }

@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../utils/api";
 
-export const Newpassword = () => {
+export const NewPassword = () => {
   const currentUrl = window.location.href;
   const parts = currentUrl.split('/');
   const savedEmail = parts[parts.length - 1];

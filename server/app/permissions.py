@@ -1,12 +1,5 @@
 from rest_access_policy import AccessPolicy
 
-
-from .models import Store, User
-
-
-# all views with permitted users in json
-
-
 class ServerAccessPolicy(AccessPolicy):
     statements = [
         {

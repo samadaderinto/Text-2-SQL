@@ -9,7 +9,7 @@ from django.db import connection
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
-
+from django.apps import apps
 
 from typing import Type
 from kink import inject
@@ -31,6 +31,7 @@ from .serializers import (
 from .models import Customer, Notification, Order, Product, Store, User
 
 logger = logging.getLogger(__name__)
+
 
 @inject
 class AuthService:
@@ -79,7 +80,7 @@ class AuthService:
             return {'token': token, 'data': serializer.data}
         elif user and user.is_active == False:
             return {'verify': 'Please verify your email account'}
-        else: 
+        else:
             return {'invalid_info': 'Invalid user information'}
 
     def request_reset_password_user(self, request, email):
@@ -141,6 +142,15 @@ class QueryService:
     def __init__(self):
         self.commands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE']
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.model_field_mapping = self.get_all_model_fields()
+
+    def get_all_model_fields(self):
+        model_field_mapping = {}
+
+        for model in apps.get_models():
+            fields = [field.name for field in model._meta.get_fields()]
+            model_field_mapping[model.__name__.lower()] = fields
+        return model_field_mapping
 
     def sanitize_sql_query(self, query):
         query = query.strip()
@@ -152,32 +162,31 @@ class QueryService:
             raise ValueError('Disallowed SQL command')
 
     def audio_to_text(self, request, audio_data):
-        
         response = self.client.audio.transcriptions.create(
-                model='whisper-1', file=audio_data, response_format="text"
-            )
+            model='whisper-1', file=audio_data, response_format='text'
+        )
         return response
-
 
     def text_to_SQL(self, request, audio_data):
         text = self.audio_to_text(request, audio_data)
-    
-        
+        model_mappings = self.get_all_model_fields()
+
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model='gpt-4',
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant that generates SQL queries based on natural language input."},
-                    {"role": "user", "content": f"Convert the following text into an SQL query: {text}"}
-                ],
-                max_tokens=150
+                    {
+                        'role': 'user',
+                        'content': f"Convert the following text into an SQL query, using this model mapping and its respective field has a guide {model_mappings}: {text}"
+                    }
+                ]
             )
 
-            return response.choices[0]["3"]
-        
+            return response.choices[0], text
+
         except Exception as e:
             logger.error(f"Error calling OpenAI API: {str(e)}")
-            return "Error generating SQL query"
+            return 'Error generating SQL query'
 
     def runSQLQuery(self, request, audio_data):
         query = self.text_to_SQL(request, audio_data)
@@ -202,7 +211,6 @@ class ProductService:
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete_product(self, product_id):
-       
         product = get_object_or_404(self.Product, pk=product_id)
         product.delete()
         return Response(status=status.HTTP_202_ACCEPTED)
@@ -219,7 +227,6 @@ class ProductService:
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
-
 
 
 @inject

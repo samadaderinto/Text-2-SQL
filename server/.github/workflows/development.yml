@@ -61,7 +61,7 @@ jobs:
           proxy_key: ${{ secrets.SSH_KEY }}
           proxy_port: ${{ secrets.DEST_PORT }}
           script: cd ${{secrets.TARGET}} &&
-            docker-compose run pearmonie pipenv run python3 manage.py migrate
+            docker-compose run server pipenv run python3 manage.py migrate
 
       - name: Collect Static Files
         uses: appleboy/ssh-action@master
@@ -75,7 +75,7 @@ jobs:
             proxy_key: ${{ secrets.SSH_KEY }}
             proxy_port: ${{ secrets.DEST_PORT }}
             script: cd ${{secrets.TARGET}} &&
-                docker-compose run pearmonie pipenv run python3 manage.py collectstatic --no-input
+                docker-compose run server pipenv run python3 manage.py collectstatic --no-input
 
       - name: Start Service
         uses: appleboy/ssh-action@master

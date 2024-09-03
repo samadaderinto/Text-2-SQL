@@ -1,3 +1,4 @@
+import json
 import secrets
 import logging
 
@@ -19,7 +20,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 
-from utils.algorithms import TokenGenerator, auth_token, send_mail
+from utils.algorithms import TokenGenerator, auth_token
 
 from .serializers import (
     CustomerSerializer,
@@ -80,8 +81,8 @@ class AuthService:
             return {'token': token, 'data': serializer.data}
         elif user and user.is_active == False:
             return {'verify': 'Please verify your email account'}
-        else:
-            return {'invalid_info': 'Invalid user information'}
+
+        return {'invalid_info': 'Invalid user information'}
 
     def request_reset_password_user(self, request, email):
         user = get_object_or_404(self.User, email=email)
@@ -144,6 +145,35 @@ class QueryService:
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model_field_mapping = self.get_all_model_fields()
 
+    def parse_openai_response(self, response_json):
+        try:
+            response = json.loads(response_json)
+            if (
+                'choices' in response
+                and response['choices'][0]['finish_reason'] == 'stop'
+            ):
+                message_content = response['choices'][0]['message']['content']
+                message_content = message_content.strip().strip('```').strip()
+
+                if 'Could you please provide more context or detail' in message_content:
+                    return 'The assistant needs more context or detail to generate the SQL query.'
+                return message_content
+
+            else:
+                return 'The response was incomplete or there was an issue.'
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Error parsing JSON response: {str(e)}")
+            return 'Error parsing the response from OpenAI.'
+
+        except KeyError as e:
+            logger.error(f"Missing key in response: {str(e)}")
+            return 'Error processing the response from OpenAI.'
+
+        except Exception as e:
+            logger.error(f"Unexpected error: {str(e)}")
+            return 'Unexpected error processing the response.'
+
     def get_all_model_fields(self):
         model_field_mapping = {}
 
@@ -170,19 +200,30 @@ class QueryService:
     def text_to_SQL(self, request, audio_data):
         text = self.audio_to_text(request, audio_data)
         model_mappings = self.get_all_model_fields()
+        if not text:
+            return 'Error in audio transcription'
 
         try:
             response = self.client.chat.completions.create(
                 model='gpt-4',
                 messages=[
                     {
+                        'role': 'system',
+                        'content': 'You are a helpful assistant that generates SQL queries based on natural language input.'
+                    },
+                    {
                         'role': 'user',
                         'content': f"Convert the following text into an SQL query, using this model mapping and its respective field has a guide {model_mappings}: {text}"
                     }
-                ]
+                ],
+                max_tokens=150
             )
 
-            return response.choices[0], text
+            response_json = response.to_dict()
+
+            parsed_response = self.parse_openai_response(json.dumps(response_json))
+
+            return parsed_response
 
         except Exception as e:
             logger.error(f"Error calling OpenAI API: {str(e)}")

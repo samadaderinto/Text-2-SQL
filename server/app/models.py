@@ -6,7 +6,6 @@ from django.conf import settings
 from utils.mixins import DatesMixin
 
 from phonenumber_field.modelfields import PhoneNumberField
-from taggit.managers import TaggableManager
 from nanoid import generate
 
 

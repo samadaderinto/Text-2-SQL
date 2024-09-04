@@ -182,15 +182,6 @@ class QueryService:
             model_field_mapping[model.__name__.lower()] = fields
         return model_field_mapping
 
-    def sanitize_sql_query(self, query):
-        query = query.strip()
-        command = query.split(' ', 1)[0].upper()
-
-        if command in self.commands:
-            return query
-        else:
-            raise ValueError('Disallowed SQL command')
-
     def audio_to_text(self, request, audio_data):
         response = self.client.audio.transcriptions.create(
             model='whisper-1', file=audio_data, response_format='text'
@@ -207,7 +198,6 @@ class QueryService:
             response = self.client.chat.completions.create(
                 model='gpt-4',
                 messages=[
-                  
                     {
                         'role': 'user',
                         'content': f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective field has a guide {model_mappings}: {text}"
@@ -228,9 +218,9 @@ class QueryService:
 
     def run_SQL_query(self, request, audio_data):
         query = self.text_to_SQL(request, audio_data)
-        sanitized_query = self.sanitize_sql_query(query)
+       
         with connection.cursor() as cursor:
-            cursor.execute(sanitized_query)
+            cursor.execute(query)
             data = cursor.fetchall()
         return data
 

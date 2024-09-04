@@ -69,6 +69,9 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['password']
 
     objects = UserManager()
+    
+    class Meta:
+        db_table = 'user'
 
 
 class Store(DatesMixin):
@@ -92,6 +95,9 @@ class Store(DatesMixin):
         while Store.objects.filter(username=username).exists():
             username = generate(size)
         return username
+    
+    class Meta:
+        db_table = 'store'
 
 
 class Product(DatesMixin):
@@ -137,18 +143,29 @@ class Product(DatesMixin):
     def save(self, *args, **kwargs):
         self.currency = self.store.currency
         super().save(*args, **kwargs)
+        
+        
+    class Meta:
+        db_table = 'product'
+        
 
 
 class Cart(DatesMixin):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     ordered = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'cart'
 
 
 class CartItem(DatesMixin):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(validators=[MinValueValidator(1)], default=1)
-
+    
+    
+    class Meta:
+        db_table = 'cartitem'
 
 class Order(DatesMixin):
     ORDER_STATUS_CHOICE = (
@@ -176,6 +193,9 @@ class Order(DatesMixin):
         while Order.objects.filter(username=id).exists():
             id = generate(size=size)
         return id
+    
+    class Meta:
+        db_table = 'order'
 
 
 class Customer(DatesMixin):
@@ -184,9 +204,15 @@ class Customer(DatesMixin):
     email = models.EmailField(unique=True)
     phone_number = PhoneNumberField()
     is_active = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'customer'
 
 
 class Notification(DatesMixin):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     email_notification = models.BooleanField(default=True)
     sms_notification = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'notification'

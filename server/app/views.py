@@ -244,7 +244,8 @@ class QueryViewSet(viewsets.GenericViewSet):
         try:
             with open(file_path, 'rb') as webm_file:
                 open_ai_response = self.query_service.run_SQL_query(request, webm_file)
-
+                
+            logger.info(open_ai_response)
             return Response(data=open_ai_response, status=status.HTTP_200_OK)
 
         except Exception as e:

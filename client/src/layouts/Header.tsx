@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
-import { RxDropdownMenu } from "react-icons/rx";
+import { useEffect, useRef, useState } from 'react';
 import { FaEarListen } from "react-icons/fa6";
-import { RiSpeakLine } from "react-icons/ri";
-import { PiDiamondsFourFill } from "react-icons/pi";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { IoSearch } from "react-icons/io5";
+import { PiDiamondsFourFill } from "react-icons/pi";
+import { RiSpeakLine } from "react-icons/ri";
+import { RxDropdownMenu } from "react-icons/rx";
 import { useNavigate } from 'react-router-dom';
 import ProfileImg from "../assets/profileimg.jfif";
 import api from '../utils/api';
@@ -12,7 +12,7 @@ import { sideBarArrayList } from '../utils/sidebar';
 
 export const Header = () => {
   const [menu, setMenu] = useState(false);
-  const [listen, setListen] =useState(false);
+  const [listen, setListen] = useState(false);
   const [voice, setVoice] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const nav = useNavigate();
@@ -20,6 +20,7 @@ export const Header = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [store, setStore] = useState<{ name: string, email: string }>({ name: "", email: "" });
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]); // To hold chunks of audio data
 
   useEffect(() => {
     const fetchStoreName = async () => {
@@ -38,17 +39,29 @@ export const Header = () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (mediaRecorderRef.current) {
+          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop()); // Stop previous tracks if any
+        }
         const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         mediaRecorderRef.current = mediaRecorder;
 
+        audioChunksRef.current = []; // Reset the chunks array
+
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
-            setAudioBlob(event.data);
+            audioChunksRef.current.push(event.data); // Store chunks of audio data
           }
+        };
+
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          setAudioBlob(audioBlob); // Set the final audio blob
+          console.log("Recording complete and data available");
         };
 
         mediaRecorder.start();
         setIsRecording(true);
+        console.log("Recording started");
       } catch (error) {
         console.error('Error accessing microphone:', error);
       }
@@ -60,7 +73,9 @@ export const Header = () => {
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop()); // Stop the tracks
       setIsRecording(false);
+      console.log("Recording stopped");
     }
   };
 

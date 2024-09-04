@@ -4,6 +4,7 @@ export interface ProductFormStateProps {
     productDescription: string;
     productPrice: string;
     currency: string;
+    store: number | null;
     category: string;
     quantity: string;
     errors: {

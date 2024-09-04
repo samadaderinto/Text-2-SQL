@@ -46,6 +46,8 @@ function App() {
           <Route path='/settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         </Route>
 
+        <Route path='audio-query' element={<ProtectedRoute><Query/></ProtectedRoute>} />
+
         <Route path='logout' element={<ProtectedRoute><Logout /></ProtectedRoute>} />
         <Route path='auth/signup' element={<Signup />} />
         <Route path='auth/signin' element={<SignIn />} />

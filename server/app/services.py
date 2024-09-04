@@ -218,11 +218,11 @@ class QueryService:
 
     def run_SQL_query(self, request, audio_data):
         query = self.text_to_SQL(request, audio_data)
-       
+
         with connection.cursor() as cursor:
             cursor.execute(query)
             data = cursor.fetchall()
-        return data
+        return data, query
 
 
 @inject

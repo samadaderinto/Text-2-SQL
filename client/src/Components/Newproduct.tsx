@@ -8,6 +8,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
 
+
+
 export const NewProduct = () => {
   const [formState, setFormState] = useState<ProductFormStateProps>({
     img: null,
@@ -36,8 +38,6 @@ export const NewProduct = () => {
           ...formState,
           store: response.data.user
         })
-
-
 
       } catch (error) {
         console.log(error)
@@ -189,7 +189,7 @@ export const NewProduct = () => {
               </article>
             </span>
             <div>
-              <span className="Cancel_Btn">Cancel</span>
+              <span className="Cancel_Btn" onClick={()=>nav("/product")}>Cancel</span>
               <span className="Add_Btn" onClick={handleCreateProduct}>Add Product</span>
             </div>
           </form>
@@ -251,3 +251,5 @@ export const NewProduct = () => {
     </div>
   );
 };
+
+

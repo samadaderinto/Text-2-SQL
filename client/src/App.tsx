@@ -20,7 +20,8 @@ import ProtectedRoute from './utils/hooks'
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Home from './pages/home'
+// import Home from './pages/home'
+import Query from './Components/Query'
 
 
 
@@ -34,7 +35,8 @@ function App() {
 
       <ToastContainer />
       <Routes>
-        <Route path='/' element={<Home/>}> 
+        
+        <Route path='/' element={<Query/>}> 
           <Route index path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path='/product' element={<ProtectedRoute><Product /></ProtectedRoute>} /> 
           <Route path='/product/add' element={<ProtectedRoute><NewProduct /></ProtectedRoute>} />

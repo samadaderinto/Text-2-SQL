@@ -98,6 +98,7 @@ export const Product = () => {
     })
       .then(response => {
         // Update the product in the data list with the new values
+        console.log(response)
         const updatedData = data.map((item: any) =>
           item.id === editingId ? { ...item, ...editValues } : item
         );

@@ -176,7 +176,7 @@ export const Dashboard = () => {
               ) : error ? (
                 <p>{error}</p>
               ) : orders.length === 0 ? (
-                <p>No items found</p>
+                <p className="No_Items_Found">No items found</p>
               ) : (
                 orders.map((order) => (
                   <span key={order.id} className="Order_Item Dashboard_Order_Item">

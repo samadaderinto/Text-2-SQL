@@ -9,6 +9,7 @@ export const AuthContext = createContext<AuthContextType>({
   setIsSignedIn: () => { },
   user: undefined,
   setUser: () => { },
+  queryResponse: [],
 });
 
 

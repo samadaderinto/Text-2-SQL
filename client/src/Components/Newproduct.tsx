@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useEffect } from "react";
 import { LuImagePlus } from "react-icons/lu";
 import SideBar from "../layouts/SideBar";
 import { Header } from "../layouts/Header";
@@ -6,6 +6,7 @@ import { ProductFormStateProps } from "../types/add-product-state";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../utils/api";
+import { useNavigate } from "react-router-dom";
 
 export const NewProduct = () => {
   const [formState, setFormState] = useState<ProductFormStateProps>({
@@ -16,6 +17,7 @@ export const NewProduct = () => {
     currency: '$',
     category: '',
     quantity: '',
+    store: 0,
     errors: {
       productName: '',
       productDescription: '',
@@ -23,6 +25,28 @@ export const NewProduct = () => {
       quantity: '',
     },
   });
+
+  const nav = useNavigate()
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await api.get("/settings/store/get/")
+        setFormState({
+          ...formState,
+          store: response.data.user
+        })
+
+
+
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+    fetchData();
+
+  }, [])
 
   const validateForm = (): boolean => {
     const newErrors: ProductFormStateProps['errors'] = {
@@ -77,12 +101,13 @@ export const NewProduct = () => {
   const handleCreateProduct = async () => {
     if (validateForm()) {
       const formData = new FormData();
+      formData.append('store', formState.store);
       formData.append('title', formState.productName);
       formData.append('description', formState.productDescription);
       formData.append('price', formState.productPrice);
       formData.append('currency', formState.currency);
       formData.append('category', formState.category);
-      formData.append('quantity', formState.quantity);
+      formData.append('available', formState.quantity);
 
       if (formState.img) {
         formData.append('image', formState.img);
@@ -94,7 +119,9 @@ export const NewProduct = () => {
             'Content-Type': 'multipart/form-data',
           },
         });
+        
         toast.success('Product created successfully!');
+        nav("/product")
       } catch (error) {
         console.error('Error creating product:', error);
         toast.error('Failed to create product. Please try again.');

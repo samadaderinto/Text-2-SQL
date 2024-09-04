@@ -77,7 +77,7 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
 class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
-        fields = '__all__'
+        fields = ["user", 'username', 'email', 'name', 'bio', 'phone', 'currency']
 
 
 class StoreSearchSerializer(serializers.Serializer):
@@ -103,7 +103,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'created',
             'updated'
         ]
-        extra_kwargs = {'sales': {'read_only': True}, 'available': {'read_only': True}}
+        extra_kwargs = {'sales': {'read_only': True}}
 
     # def get_image(self, obj):
     #     request = self.context.get('request')

@@ -75,9 +75,7 @@ class User(AbstractUser):
 
 
 class Store(DatesMixin):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True
-    )
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
     username = models.CharField(max_length=17, unique=True)
     email = models.EmailField(blank=True, null=True)
     name = models.CharField(max_length=100)

@@ -1,10 +1,10 @@
 import { FC } from 'react';
-import { IoPeopleOutline, IoSettingsOutline } from "react-icons/io5";
-import { RiShoppingBag3Line, RiLogoutBoxLine } from "react-icons/ri";
-import { MdOutlineShoppingCart } from "react-icons/md";
-import { RxDashboard } from 'react-icons/rx';
+// import { IoPeopleOutline, IoSettingsOutline } from "react-icons/io5";
+// import { RiShoppingBag3Line, RiLogoutBoxLine } from "react-icons/ri";
+// import { MdOutlineShoppingCart } from "react-icons/md";
+// import { RxDashboard } from 'react-icons/rx';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { SideBarProps } from '../types/sidebar';
+// import { SideBarProps } from '../types/sidebar';
 import { sideBarArrayList } from '../utils/sidebar';
 
 const SideBar: FC = () => {

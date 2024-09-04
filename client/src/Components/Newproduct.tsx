@@ -101,7 +101,7 @@ export const NewProduct = () => {
   const handleCreateProduct = async () => {
     if (validateForm()) {
       const formData = new FormData();
-      formData.append('store', formState.store);
+      formData.append('store', formState.store?.toString() || '');
       formData.append('title', formState.productName);
       formData.append('description', formState.productDescription);
       formData.append('price', formState.productPrice);

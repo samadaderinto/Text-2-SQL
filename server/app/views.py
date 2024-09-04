@@ -243,7 +243,7 @@ class QueryViewSet(viewsets.GenericViewSet):
 
         try:
             with open(file_path, 'rb') as webm_file:
-                open_ai_response = self.query_service.text_to_SQL(request, webm_file)
+                open_ai_response = self.query_service.run_SQL_query(request, webm_file)
 
             return Response(data=open_ai_response, status=status.HTTP_200_OK)
 

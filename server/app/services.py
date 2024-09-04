@@ -207,10 +207,7 @@ class QueryService:
             response = self.client.chat.completions.create(
                 model='gpt-4',
                 messages=[
-                    {
-                        'role': 'system',
-                        'content': 'You are a helpful assistant that generates SQL queries based on natural language input.'
-                    },
+                  
                     {
                         'role': 'user',
                         'content': f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective field has a guide {model_mappings}: {text}"

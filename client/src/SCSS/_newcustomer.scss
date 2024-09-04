@@ -123,11 +123,11 @@
 
                     span {
                         width: 50%;
-                        height: 45%;
+                        height: 25%;
                         display: flex;
                         justify-content: center;
                         align-items: center;
-                        padding: 8%;
+                        padding: 8.7%;
                         cursor: pointer;
 
                     }
@@ -136,14 +136,16 @@
                         background-color: #fff;
                         color: rgb(21, 122, 237);
                         margin-left: -6%;
+                        margin-right: 8px;
                         border: 1px solid rgb(21, 122, 237);
                     }
 
                     .Add_Btn {
                         background-color: rgb(21, 122, 237);
                         color: #fff;
-                        border: 1px solid white;
+                        // border: 1px solid white;
                         margin-right: 8%;
+                        padding: 9%;
                         width: 50%;
                     }
                 }

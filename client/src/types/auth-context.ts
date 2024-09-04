@@ -6,4 +6,5 @@ export interface AuthContextType {
     user: UserProps | undefined | null;
     setUser: (user: UserProps | undefined | null) => void;
     queryResponse: any[];
+    setQueryResponse: (query: any[]) => void;
 }

@@ -112,7 +112,7 @@ export const NewCustomer = () => {
       } catch (error: any) {
         if (error.response && error.response.status === 400 && error.response.data.email) {
           toast.error('Email already exists. Please use a different email.', {
-            position: "top-right",
+            position: "top-right"
 
           });
         } else {

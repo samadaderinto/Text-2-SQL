@@ -12,15 +12,17 @@ import { Customers } from './Components/Customers'
 import { Product } from './Components/Product'
 import { Settings } from './Components/Settings'
 import { Logout } from './Components/Logout'
-import { NewProduct } from './Components/Newproduct'
-import { NewCustomer } from './Components/Newcustomer'
-import { NewPassword } from './Components/Newpassword'
+import { NewProduct } from './Components/NewProduct'
+import { NewCustomer } from './Components/NewCustomer'
+import { NewPassword } from './Components/NewPassword'
 
 import ProtectedRoute from './utils/hooks'
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// import Home from './pages/home'
+
+
+import Home from './pages/home'
 import Query from './Components/Query'
 
 
@@ -36,7 +38,7 @@ function App() {
       <ToastContainer />
       <Routes>
         
-        <Route path='/' element={<Query/>}> 
+        <Route path='/' element={<Home/>}> 
           <Route index path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path='/product' element={<ProtectedRoute><Product /></ProtectedRoute>} /> 
           <Route path='/product/add' element={<ProtectedRoute><NewProduct /></ProtectedRoute>} />
@@ -46,7 +48,7 @@ function App() {
           <Route path='/settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         </Route>
 
-        <Route path='audio-query' element={<ProtectedRoute><Query/></ProtectedRoute>} />
+        <Route path='query' element={<ProtectedRoute><Query/></ProtectedRoute>} />
 
         <Route path='logout' element={<ProtectedRoute><Logout /></ProtectedRoute>} />
         <Route path='auth/signup' element={<Signup />} />

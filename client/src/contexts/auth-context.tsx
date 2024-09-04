@@ -10,12 +10,14 @@ export const AuthContext = createContext<AuthContextType>({
   user: undefined,
   setUser: () => { },
   queryResponse: [],
+  setQueryResponse: () => { }
 });
 
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
   const [user, setUser] = useState<null | undefined | UserProps>(null);
+  const [queryResponse, setQueryResponse] = useState<any[]>([]);
 
   return (
     <AuthContext.Provider
@@ -24,6 +26,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsSignedIn,
         user,
         setUser,
+        queryResponse,
+        setQueryResponse
       }}
     >
       {children}

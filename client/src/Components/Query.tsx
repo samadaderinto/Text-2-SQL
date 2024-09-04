@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Header } from "../layouts/Header";
 import ReactPaginate from "react-paginate";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
+import SideBar from "../layouts/SideBar";
 
 const Query = () => {
-  // Mock data for example purposes; replace with actual data.
   const items: any = [];
   const itemsPerPage = 5;
 
@@ -21,15 +21,20 @@ const Query = () => {
   return (
     <>
       <Header />
+      <SideBar/>
       <div className="Query_Container">
         <section className="Query_Header">
-          <h1>Query Request Items</h1>
+          <h1>Items</h1>
           <button className="Query_Download_Btn">Download</button>
         </section>
         <section className="Query_Item_container">
-          {currentItems.map((item: any, index: number) => (
-            <div key={index}>{item}</div>
-          ))}
+
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+
         </section>
         {totalPages > 1 && (
           <ReactPaginate

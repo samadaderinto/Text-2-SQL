@@ -213,7 +213,7 @@ class QueryService:
                     },
                     {
                         'role': 'user',
-                        'content': f"Convert the following text into an SQL query, using this model mapping and its respective field has a guide {model_mappings}: {text}"
+                        'content': f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective field has a guide {model_mappings}: {text}"
                     }
                 ],
                 max_tokens=150
@@ -229,7 +229,7 @@ class QueryService:
             logger.error(f"Error calling OpenAI API: {str(e)}")
             return 'Error generating SQL query'
 
-    def runSQLQuery(self, request, audio_data):
+    def run_SQL_query(self, request, audio_data):
         query = self.text_to_SQL(request, audio_data)
         sanitized_query = self.sanitize_sql_query(query)
         with connection.cursor() as cursor:

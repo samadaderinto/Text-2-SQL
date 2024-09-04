@@ -104,11 +104,7 @@ export const NewPassword = () => {
     const data = JSON.stringify({ email, new_password: passwordValue });
 
     try {
-      const response = await api.post(`/auth/reset-password/reset/`, data, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await api.post(`/auth/reset-password/reset/`, data);
 
       if (response.status === 200) {
         toast.success('Password reset successfully!');

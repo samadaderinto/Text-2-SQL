@@ -55,7 +55,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema
 from kink import di
 
-from utils.algorithms import TokenGenerator, send_mail
+from utils.algorithms import TokenGenerator
 
 AudioSegment.converter = which('ffmpeg')
 logger = logging.getLogger(__name__)

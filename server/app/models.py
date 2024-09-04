@@ -136,7 +136,6 @@ class Product(DatesMixin):
 
     def save(self, *args, **kwargs):
         self.currency = self.store.currency
-
         super().save(*args, **kwargs)
 
 

@@ -1,15 +1,12 @@
 #!/bin/bash
 
-# Source the .env file if it exists
 if [ -f .env ]; then
-    # Export all environment variables defined in .env
     export $(grep -v '^#' .env | xargs)
 else
     echo ".env file not found"
     exit 1
 fi
 
-# Check and execute based on the value of ENV
 if [ "$ENV" = "local" ]; then
     pipenv run python3 manage.py runserver 0.0.0.0:8000
 elif [ "$ENV" = "dev" ]; then

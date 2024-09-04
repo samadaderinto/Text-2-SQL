@@ -106,7 +106,6 @@ export const NewCustomer = () => {
         nav('/customers')
         toast.success('Customer created successfully!', {
           position: "top-right",
-          autoClose: 3000,
         })
 
 
@@ -178,7 +177,7 @@ export const NewCustomer = () => {
               {formState.errors.phone && <p>{formState.errors.phone}</p>}
 
               <div>
-                <span className="Cancel_Btn">Cancel</span>
+                <span onClick={() => nav(-1)} className="Cancel_Btn">Cancel</span>
                 <span onClick={handleCreateCustomer} className="Add_Btn">Add Customer</span>
               </div>
             </form>

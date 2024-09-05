@@ -166,6 +166,7 @@ export const Header = () => {
           onClick={() => {
             setListen(false);
             handleUpload();
+            nav('/query')
           }}
           className="Search_By_Voice Stop_Voice"
         >

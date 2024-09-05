@@ -1,6 +1,8 @@
 import json
 import secrets
 import logging
+from datetime import datetime
+
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404, get_list_or_404
@@ -15,6 +17,7 @@ from django.apps import apps
 from typing import Type
 from kink import inject
 from openai import OpenAI
+from datetime import datetime
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -144,6 +147,12 @@ class QueryService:
         self.commands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE']
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model_field_mapping = self.get_all_model_fields()
+    
+    def custom_serializer(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()  # Convert datetime to ISO format string
+        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
 
     def parse_openai_response(self, response_json):
         try:
@@ -222,7 +231,12 @@ class QueryService:
         with connection.cursor() as cursor:
             cursor.execute(query)
             data = cursor.fetchall()
-        return data, query
+
+            columns = [col[0] for col in cursor.description]
+            result = [dict(zip(columns, row)) for row in data]
+            
+            
+            return json.dumps(result), query
 
 
 @inject

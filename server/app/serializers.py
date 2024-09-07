@@ -1,8 +1,3 @@
-import base64
-import mimetypes
-from django.core.files.base import ContentFile
-
-
 from .models import Customer, Order, Product, Store, User
 
 from rest_framework import serializers
@@ -11,7 +6,6 @@ from rest_framework_simplejwt.serializers import TokenObtainSerializer
 
 
 from phonenumber_field.serializerfields import PhoneNumberField
-from taggit.serializers import TagListSerializerField, TaggitSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -77,7 +71,7 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
 class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
-        fields = ["user", 'username', 'email', 'name', 'bio', 'phone', 'currency']
+        fields = ['user', 'username', 'email', 'name', 'bio', 'phone', 'currency']
 
 
 class StoreSearchSerializer(serializers.Serializer):

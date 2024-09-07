@@ -12,7 +12,7 @@ import { Customers } from './Components/Customers'
 import { Product } from './Components/Product'
 import { Settings } from './Components/Settings'
 import { Logout } from './Components/Logout'
-import { NewProduct } from './Components/NewProduct'
+import { NewProduct } from './Components/Newproduct'
 import { NewCustomer } from './Components/NewCustomer'
 import { NewPassword } from './Components/NewPassword'
 

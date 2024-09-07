@@ -147,12 +147,11 @@ class QueryService:
         self.commands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE']
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model_field_mapping = self.get_all_model_fields()
-    
+
     def custom_serializer(self, obj):
         if isinstance(obj, datetime):
-            return obj.isoformat()  # Convert datetime to ISO format string
+            return obj.isoformat()
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
-
 
     def parse_openai_response(self, response_json):
         try:
@@ -234,9 +233,8 @@ class QueryService:
 
             columns = [col[0] for col in cursor.description]
             result = [dict(zip(columns, row)) for row in data]
-            
-            
-            return json.dumps(result), query
+
+            return json.dumps(result, default=self.custom_serializer)
 
 
 @inject
@@ -358,3 +356,4 @@ class SettingsService:
     def update_notification_info(self, user, data):
         notification_settings = get_object_or_404(self.Notification, user=user)
         serializer = NotificationSerializer(notification_settings, data)
+        return serializer

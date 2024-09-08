@@ -49,12 +49,15 @@ export const Customers = () => {
   const totalPages = Math.ceil(data.length / itemsPerPage);
 
   return (
-    <div>
+    <>
       <Header />
       <Sidebar />
 
+
       <div className="Customer_Container">
+
         <article>
+          
           <h1>Customers</h1>
           <span onClick={() => nav('/customers/add')}>
             <IoIosAddCircleOutline className="Circle_Icon" /> Add New Customers
@@ -133,6 +136,6 @@ export const Customers = () => {
           </section>
         </section>
       </div>
-    </div>
+    </>
   );
 };

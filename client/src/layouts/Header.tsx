@@ -15,12 +15,13 @@ export const Header = () => {
   const [listen, setListen] = useState(false);
   const [voice, setVoice] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(0);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const nav = useNavigate();
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [store, setStore] = useState<{ name: string, email: string }>({ name: "", email: "" });
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]); // To hold chunks of audio data
+  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     const fetchStoreName = async () => {
@@ -40,16 +41,16 @@ export const Header = () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         if (mediaRecorderRef.current) {
-          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop()); // Stop previous tracks if any
+          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
         }
         const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         mediaRecorderRef.current = mediaRecorder;
 
-        audioChunksRef.current = []; // Reset the chunks array
+        audioChunksRef.current = [];
 
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data); // Store chunks of audio data
+            audioChunksRef.current.push(event.data);
           }
         };
 
@@ -73,7 +74,7 @@ export const Header = () => {
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop()); // Stop the tracks
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       setIsRecording(false);
       console.log("Recording stopped");
     }
@@ -98,12 +99,20 @@ export const Header = () => {
             'Content-Type': 'multipart/form-data',
           },
         });
-        console.log(response.data);
+
+        if (response.data.success) {
+          console.log(response.data)
+          nav('/query', { state: { data: response.data.results } });
+        } else {
+          setErrorMessage('Data integrity check failed. Please try again.');
+        }
       } catch (error) {
         console.error('Error uploading audio:', error);
+        setErrorMessage('Error uploading audio. Please try again.');
       }
     } else {
       console.error('No audio data available for upload.');
+      setErrorMessage('No audio data available for upload.');
     }
   };
 
@@ -166,13 +175,14 @@ export const Header = () => {
           onClick={() => {
             setListen(false);
             handleUpload();
-            nav('/query')
           }}
           className="Search_By_Voice Stop_Voice"
         >
           Stop recording
         </span>
       )}
+
+      {errorMessage && <p className="error-message">{errorMessage}</p>}
     </div>
   );
 };

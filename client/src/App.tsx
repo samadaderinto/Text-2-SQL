@@ -12,18 +12,18 @@ import { Customers } from './Components/Customers'
 import { Product } from './Components/Product'
 import { Settings } from './Components/Settings'
 import { Logout } from './Components/Logout'
-import { NewProduct } from './Components/NewProduct'
 import { NewCustomer } from './Components/NewCustomer'
 import { NewPassword } from './Components/NewPassword'
-
+import { NewProduct } from './Components/Newproduct'
 import ProtectedRoute from './utils/hooks'
+import Home from './pages/home'
+import Query from './Components/Query'
+
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 
-import Home from './pages/home'
-import Query from './Components/Query'
 
 
 

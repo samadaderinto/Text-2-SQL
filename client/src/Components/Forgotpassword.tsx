@@ -29,16 +29,21 @@ export const Forgotpassword = () => {
       }
 
       const data = JSON.stringify({ email });
-      const Response = await api.post(`/auth/reset-password/request/`, data);
+      const response = await api.post(`/auth/reset-password/request/`, data);
 
-      if (Response.status === 200) {
+      if (response.status === 200) {
         toast.success('Password reset email sent successfully!');
         setPop(true);
       }
-    } catch (error) {
-      toast.error('Failed to send reset email. Please try again later.');
+    } catch (error: any) {
+      if (error.response && error.response.status === 404) {
+        toast.error('Email address not found. Please check and try again.');
+      } else {
+        toast.error('Failed to send reset email. Please try again later.');
+      }
     }
   };
+
 
   return (
     <div className="Forgot_Container">

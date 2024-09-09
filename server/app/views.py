@@ -167,9 +167,7 @@ class AuthViewSet(viewsets.GenericViewSet):
                 data={'message': 'Invalid user information'}
             )
 
-    @extend_schema(
-        request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None}
-    )
+    @extend_schema(request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None})
     @action(detail=False, methods=['post'], url_path='refresh-token')
     def refresh_token(self, request):
         data = JSONParser().parse(request)

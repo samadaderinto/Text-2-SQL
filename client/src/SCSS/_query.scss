@@ -21,31 +21,100 @@
         }
 
         button {
-            padding: 1.4%;
+            padding: 1.04%;
             width: 13%;
             background-color: rgb(21, 122, 237);
             color: white;
+            font-weight: 400;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 17px;
             border: none;
             border-radius: 3px;
             cursor: pointer;
         }
     }
 
-    .Query_Item_container {
-        width: 100%;
-        height: max-content;
-        padding: 2%;
-        padding-left: 23.5%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
 
-        div {
-            width: 94.6%;
+    .Query_Body {
+        width: 75%;
+        height: max-content;
+        margin-left: 23.5%;
+        margin-top: 3%;
+        padding: 2%;
+        background-color: #fff;
+
+        .Query_Form_Header {
+            width: 100%;
+            display: flex;
             height: 7vh;
-            margin-top: 1%;
-            margin-bottom: 1%;
-            background-color: black;
+            color: grey;
+
+
+            .Query_Name {
+                width: 40%;
+                height: 100%;
+                display: flex;
+                padding: 1%;
+                
+                input {
+
+                    transform: scale(1.45);
+                    margin-right: 2.2%;
+                }
+            }
+
+            ul {
+                width: 60%;
+                height: 100%;
+                display: flex;
+                justify-content: space-between;
+
+                li {
+                    list-style-type: none;
+                    font-size: 14px;
+                }
+            }
         }
+
+        .Input_Holder {
+            width: 37%;
+            height: 9vh;
+            display: flex;
+            font-size: 19px;
+            border: 1px solid rgb(200, 198, 198);
+            padding: 2%;
+            margin-bottom: 4%;
+            align-items: center;
+            // border-bottom: 1px solid grey;
+            // background: #000;
+
+            input {
+                width: 100%;
+                border: none;
+                padding: 3%;
+                outline: navy;
+            }
+        }
+        .Query_Item_container {
+            width: 100%;
+            height: max-content;
+            padding: 2%;
+            padding-left: 23.5%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+    
+            div {
+                width: 94.6%;
+                height: 7vh;
+                margin-top: 1%;
+                margin-bottom: 1%;
+                background-color: black;
+            }
+        }
+
     }
+
 }

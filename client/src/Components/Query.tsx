@@ -3,6 +3,9 @@ import { Header } from "../layouts/Header";
 import ReactPaginate from "react-paginate";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
 import SideBar from "../layouts/SideBar";
+import { FiSearch } from 'react-icons/fi';
+import {  MdOutlineDownload } from "react-icons/md";
+
 import { ClipLoader } from 'react-spinners'; // Importing ClipLoader from react-spinners
 
 const Query = () => {
@@ -36,10 +39,28 @@ const Query = () => {
       <div className="Query_Container">
         <section className="Query_Header">
           <h1>Items</h1>
-          <button className="Query_Download_Btn">Download</button>
+          <button className="Query_Download_Btn">Download <MdOutlineDownload style={{fontSize:'24px'}}/></button>
         </section>
 
-
+        <section className='Query_Body'>
+          <div className='Input_Holder'>
+            <FiSearch style={{cursor: 'pointer'}}/>
+            <input type="text" placeholder='Search Name' name="" id="" />
+          </div>
+          <div className="Query_Form_Header">
+            <span className='Query_Name'>
+              <input type="checkbox" name="" id="" />
+              <p>Product Name</p>
+            </span>
+            <ul>
+              <li>Category</li>
+              <li>Status</li>
+              <li>Price</li>
+              <li>Sold</li>
+              <li>Sales</li>
+              <li>Action</li>
+            </ul>
+          </div>
         {loading ? (
           <div className="spinner-container">
             <ClipLoader color={"#123abc"} loading={loading} size={50} />
@@ -53,7 +74,7 @@ const Query = () => {
                   <div key={index}>Item {index + 1}</div> 
                 ))
               ) : (
-                <p>No items available</p>
+                <p style={{marginLeft:'-45%'}}>No items available</p>
               )}
             </section>
 
@@ -74,7 +95,9 @@ const Query = () => {
               />
             )}
           </>
+          
         )}
+        </section>
       </div>
     </>
   );

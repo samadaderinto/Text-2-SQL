@@ -11,6 +11,7 @@ from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
 from django.core.files.storage import default_storage
 from django.http import HttpResponse
+from django.core.mail import send_mail
 from django.db.models import Q
 
 
@@ -20,6 +21,7 @@ from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework.decorators import action, parser_classes
 from rest_framework.permissions import AllowAny
 from rest_framework import serializers
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 
 from .models import Customer, Order, Product, Store, User
@@ -122,7 +124,6 @@ class AuthViewSet(viewsets.GenericViewSet):
             return redirect('http://localhost:4174/auth/signin', permanent=True)
 
         except Exception as e:
-            # Handle exceptions and return an appropriate response
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
@@ -166,10 +167,23 @@ class AuthViewSet(viewsets.GenericViewSet):
                 data={'message': 'Invalid user information'}
             )
 
-    # @extend_schema(request=LoginSerializer, responses={status.HTTP_200_OK: UserSerializer})
-    # @action(detail=False, methods=['post'], url_path='login/refresh')
-    # def login_token_refresh(self):
-    #     return TokenRefreshView.as_view()
+    @extend_schema(
+        request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None}
+    )
+    @action(detail=False, methods=['post'], url_path='refresh-token')
+    def refresh_token(self, request):
+        data = JSONParser().parse(request)
+        serializer = LogOutSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        refresh_token = serializer.validated_data.get('refresh')
+        try:
+            refresh = RefreshToken(refresh_token)
+            access_token = refresh.access_token
+
+            return Response({'access': str(access_token), 'refresh': str(refresh)})
+        except (InvalidToken, TokenError) as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(request=EmailSerializer, responses={status.HTTP_200_OK: dict})
     @action(detail=False, methods=['post'], url_path='reset-password/request')
@@ -244,7 +258,7 @@ class QueryViewSet(viewsets.GenericViewSet):
         try:
             with open(file_path, 'rb') as webm_file:
                 open_ai_response = self.query_service.run_SQL_query(request, webm_file)
-                
+
             logger.info(open_ai_response)
             return Response(data=open_ai_response, status=status.HTTP_200_OK)
 

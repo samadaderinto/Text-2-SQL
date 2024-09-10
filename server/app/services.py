@@ -205,7 +205,7 @@ class QueryService:
                 messages=[
                     {
                         'role': 'user',
-                        'content': f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective fields as a guide {model_mappings}: {text}"
+                        'content': f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective fields as a guide {model_mappings} in MySQL query format: {text}"
                     }
                 ],
                 max_tokens=150

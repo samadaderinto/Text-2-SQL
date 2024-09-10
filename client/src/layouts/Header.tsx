@@ -7,6 +7,7 @@ import { RiSpeakLine } from "react-icons/ri";
 import { RxDropdownMenu } from "react-icons/rx";
 import { useNavigate } from 'react-router-dom';
 import ProfileImg from "../assets/profileimg.jfif";
+import ClipLoader from 'react-spinners/ClipLoader';
 import api from '../utils/api';
 import { sideBarArrayList } from '../utils/sidebar';
 
@@ -16,12 +17,13 @@ export const Header = () => {
   const [voice, setVoice] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const nav = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [store, setStore] = useState<{ name: string, email: string }>({ name: "", email: "" });
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const nav = useNavigate();
 
   useEffect(() => {
     const fetchStoreName = async () => {
@@ -55,9 +57,13 @@ export const Header = () => {
         };
 
         mediaRecorder.onstop = () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          setAudioBlob(audioBlob); // Set the final audio blob
-          console.log("Recording complete and data available");
+          if (audioChunksRef.current.length > 0) {
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            setAudioBlob(audioBlob);
+            console.log("Recording complete and audio blob created.");
+          } else {
+            console.error("No audio chunks available.");
+          }
         };
 
         mediaRecorder.start();
@@ -88,11 +94,18 @@ export const Header = () => {
     }
   }, [listen]);
 
+  useEffect(() => {
+    if (audioBlob) {
+      handleUpload();
+    }
+  }, [audioBlob]);
+
   const handleUpload = async () => {
     if (audioBlob) {
       const formData = new FormData();
       formData.append('file', new File([audioBlob], 'audio.webm', { type: 'audio/webm' }));
 
+      setLoading(true);
       try {
         const response = await api.post(`/query/upload/`, formData, {
           headers: {
@@ -101,7 +114,7 @@ export const Header = () => {
         });
 
         if (response.data.success) {
-          console.log(response.data)
+          console.log(response.data);
           nav('/query', { state: { data: response.data.results } });
         } else {
           setErrorMessage('Data integrity check failed. Please try again.');
@@ -109,10 +122,12 @@ export const Header = () => {
       } catch (error) {
         console.error('Error uploading audio:', error);
         setErrorMessage('Error uploading audio. Please try again.');
+      } finally {
+        setLoading(false);
       }
     } else {
-      console.error('No audio data available for upload.');
       setErrorMessage('No audio data available for upload.');
+      console.error('No audio data available for upload.');
     }
   };
 
@@ -174,12 +189,16 @@ export const Header = () => {
         <span
           onClick={() => {
             setListen(false);
-            handleUpload();
           }}
-          className="Search_By_Voice Stop_Voice"
-        >
+          className="Search_By_Voice Stop_Voice">
           Stop recording
         </span>
+      )}
+
+      {loading && (
+        <div className="loading-spinner">
+          <ClipLoader color={"#123abc"} loading={loading} size={50} />
+        </div>
       )}
 
       {errorMessage && <p className="error-message">{errorMessage}</p>}

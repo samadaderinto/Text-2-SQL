@@ -97,16 +97,17 @@
                 outline: navy;
             }
         }
-        .Query_Item_container {
+        .Query_Item_Container {
             width: 100%;
             height: max-content;
             padding: 2%;
             padding-left: 23.5%;
             display: flex;
+            background-color: yellow;
             flex-direction: column;
             align-items: center;
     
-            div {
+            ul {
                 width: 94.6%;
                 height: 7vh;
                 margin-top: 1%;

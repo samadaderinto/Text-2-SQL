@@ -129,6 +129,7 @@ export const Signup = () => {
         const data = JSON.stringify({ email, password });
 
         const response = await api.post(`/auth/signup/`, data);
+        console.log(response);
 
         setFormState({
           ...formState,

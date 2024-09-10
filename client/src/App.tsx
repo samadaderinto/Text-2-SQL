@@ -8,7 +8,6 @@ import { Signup } from './Components/Signup'
 import { Forgotpassword } from './Components/Forgotpassword'
 import { Dashboard } from './Components/Dashboard'
 import { Orders } from './Components/Orders'
-import { Customers } from './Components/Customers'
 import { Product } from './Components/Product'
 import { Settings } from './Components/Settings'
 import { Logout } from './Components/Logout'
@@ -22,6 +21,7 @@ import Query from './Components/Query'
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Customers } from './Components/Customers'
 
 
 

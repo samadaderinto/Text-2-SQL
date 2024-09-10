@@ -191,10 +191,14 @@ class QueryService:
         return model_field_mapping
 
     def audio_to_text(self, request, audio_data):
-        response = self.client.audio.transcriptions.create(
-            model='whisper-1', file=audio_data, response_format='text'
-        )
-        return response
+        try:
+            response = self.client.audio.transcriptions.create(
+                model='whisper-1', file=audio_data, response_format='text'
+            )
+            return response
+        except Exception as e:
+            logger.error(f"Error transcribing audio: {str(e)}")
+            return None
 
     def text_to_SQL(self, request, audio_data):
         text = self.audio_to_text(request, audio_data)
@@ -224,17 +228,31 @@ class QueryService:
             logger.error(f"Error calling OpenAI API: {str(e)}")
             return 'Error generating SQL query'
 
+    def validate_sql_query(self, query):
+        for command in self.commands:
+            if query.strip().upper().startswith(command):
+                return True
+        return False
+
     def run_SQL_query(self, request, audio_data):
         query = self.text_to_SQL(request, audio_data)
 
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-            data = cursor.fetchall()
+        if not self.validate_sql_query(query):
+            return 'Invalid SQL query. Please try again.'
 
-            columns = [col[0] for col in cursor.description]
-            result = [dict(zip(columns, row)) for row in data]
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                data = cursor.fetchall()
 
-            return json.dumps(result, default=self.custom_serializer)
+                columns = [col[0] for col in cursor.description]
+                result = [dict(zip(columns, row)) for row in data]
+
+                return json.dumps(result, default=self.custom_serializer)
+
+        except Exception as e:
+            logger.error(f"Error executing SQL query: {str(e)}")
+            return f"Error executing SQL query: {str(e)}"
 
 
 @inject

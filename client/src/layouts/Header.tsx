@@ -25,11 +25,12 @@ export const Header = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const nav = useNavigate();
 
+  // Fetch store name and details, no pagination or filtering
   useEffect(() => {
     const fetchStoreName = async () => {
       try {
         const response = await api.get(`/settings/store/get/`);
-        setStore(response.data);
+        setStore(response.data); // Simple fetch with no pagination/filtering
       } catch (error) {
         console.error('Error fetching store name:', error);
       }
@@ -38,6 +39,7 @@ export const Header = () => {
     fetchStoreName();
   }, []);
 
+  // Function to start audio recording
   const startRecording = async () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
@@ -77,6 +79,7 @@ export const Header = () => {
     }
   };
 
+  // Function to stop recording
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -86,6 +89,7 @@ export const Header = () => {
     }
   };
 
+  // Handle recording start/stop based on listen state
   useEffect(() => {
     if (listen) {
       startRecording();
@@ -94,42 +98,42 @@ export const Header = () => {
     }
   }, [listen]);
 
+  // Upload audio when recording finishes
   useEffect(() => {
     if (audioBlob) {
       handleUpload();
     }
   }, [audioBlob]);
 
+  // Upload the audio file to the server
   const handleUpload = async () => {
     if (audioBlob) {
-      const formData = new FormData();
-      formData.append('file', new File([audioBlob], 'audio.webm', { type: 'audio/webm' }));
+        const formData = new FormData();
+        formData.append('file', new File([audioBlob], 'audio.webm', { type: 'audio/webm' }));
 
-      setLoading(true);
-      try {
-        const response = await api.post(`/query/upload/`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        setLoading(true);
+        try {
+            const response = await api.post(`/query/upload/`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
 
-        if (response.data.success) {
-          console.log(response.data);
-          nav('/query', { state: { data: response.data.results } });
-        } else {
-          setErrorMessage('Data integrity check failed. Please try again.');
+            if (response) {
+               
+                nav('/query', { state: { data: response.data, header: 'Query Results' } });
+            }
+        } catch (error) {
+            console.error('Error uploading audio:', error);
+            setErrorMessage('Error uploading audio. Please try again.');
+        } finally {
+            setLoading(false);
         }
-      } catch (error) {
-        console.error('Error uploading audio:', error);
-        setErrorMessage('Error uploading audio. Please try again.');
-      } finally {
-        setLoading(false);
-      }
     } else {
-      setErrorMessage('No audio data available for upload.');
-      console.error('No audio data available for upload.');
+        setErrorMessage('No audio data available for upload.');
+        console.error('No audio data available for upload.');
     }
-  };
+};
 
   return (
     <div className='Header_Container'>

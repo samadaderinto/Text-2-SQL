@@ -1,44 +1,33 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import { Header } from "../layouts/Header";
-import ReactPaginate from "react-paginate";
-import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
-import SideBar from "../layouts/SideBar";
-import { FiSearch } from 'react-icons/fi';
-import { MdOutlineDownload } from "react-icons/md";
-import { ClipLoader } from 'react-spinners';
-
+import { useLocation } from 'react-router-dom';
+import SideBar from '../layouts/SideBar';
 
 const Query = () => {
   const location = useLocation();
-  const data = location.state?.data || []; // Access the passed data
-
-  const itemsPerPage = 5;
-  const [currentPage, setCurrentPage] = useState(0);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-
-  const totalPages = Math.ceil(data.length / itemsPerPage);
-  const offset = currentPage * itemsPerPage;
-  const currentItems = data.slice(offset, offset + itemsPerPage);
+  const [dataArray, setDataArray] = useState<any[]>([]);
 
   useEffect(() => {
-    if (data.length > 0) {
-      setLoading(false);
+    const data = location.state?.data;
+
+
+    if (typeof data === 'string') {
+      try {
+        const parsedData = JSON.parse(data);
+        if (Array.isArray(parsedData)) {
+          setDataArray(parsedData); // Set the parsed data as an array
+        } else {
+          console.error('Parsed data is not an array');
+        }
+      } catch (error) {
+        console.error('Error parsing JSON string:', error);
+      }
+    } else if (Array.isArray(data)) {
+      setDataArray(data); // If it's already an array, set it directly
+    } else {
+      console.error('No data available or data is not a string or array');
     }
-  }, [data]);
-
-  const handlePageClick = ({ selected }: { selected: number }) => {
-    setCurrentPage(selected);
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const filteredItems = currentItems.filter((item: { name: string; }) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  }, [location.state]);
 
   return (
     <>
@@ -46,78 +35,24 @@ const Query = () => {
       <SideBar />
       <div className="Query_Container">
         <section className="Query_Header">
-          <h1>Items</h1>
-          <button className="Query_Download_Btn">
-            Download <MdOutlineDownload style={{ fontSize: '24px' }} />
-          </button>
+          <h1>Query Request Items</h1>
+          <button className="Query_Download_Btn">Download</button>
         </section>
-
-        <section className="Query_Body">
-          <div className="Input_Holder">
-            <FiSearch style={{ cursor: 'pointer' }} />
-            <input
-              type="text"
-              placeholder="Search Name"
-              value={searchTerm}
-              onChange={handleSearch}
-            />
-          </div>
-
-          <div className="Query_Form_Header">
-            <span className="Query_Name">
-              <p>Product Name</p>
-            </span>
+        <section className="Query_Item_Container">
+          {dataArray.length > 0 ? (
             <ul>
-              <li>Category</li>
-              <li>Status</li>
-              <li>Price</li>
-              <li>Sold</li>
-              <li>Sales</li>
-              <li>Action</li>
-            </ul>
-          </div>
-
-          {loading ? (
-            <div className="spinner-container">
-              <ClipLoader color={"#123abc"} loading={loading} size={50} />
-            </div>
-          ) : (
-            <>
-              <section className="Query_Item_container">
-                {filteredItems.length > 0 ? (
-                  filteredItems.map((item: any, index: number) => (
-                    <div key={index}>
-                      <p>{item.name}</p>
-                      <p>{item.category}</p>
-                      <p>{item.status}</p>
-                      <p>{item.price}</p>
-                      <p>{item.sold}</p>
-                      <p>{item.sales}</p>
-                      <button>Action</button>
+              {dataArray.map((item, index) => (
+                <li key={index}>
+                  {Object.entries(item).map(([key, value], idx) => (
+                    <div key={idx}>
+                      <strong>{key.replace(/_/g, ' ')}:</strong> {value?.toString() || 'N/A'}
                     </div>
-                  ))
-                ) : (
-                  <p style={{ marginLeft: '-45%' }}>No items available</p>
-                )}
-              </section>
-
-              {totalPages > 1 && (
-                <ReactPaginate
-                  previousLabel={<FaAngleLeft className="order_arrow" />}
-                  nextLabel={<FaAngleRight className="order_arrow" />}
-                  breakLabel={'...'}
-                  pageCount={totalPages}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={5}
-                  onPageChange={handlePageClick}
-                  containerClassName={'Product_pagination'}
-                  activeClassName={'Product_page_active'}
-                  previousClassName={'pagination_arrow'}
-                  nextClassName={'pagination_arrow'}
-                  disabledClassName={'pagination_disabled'}
-                />
-              )}
-            </>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No data available</p>
           )}
         </section>
       </div>

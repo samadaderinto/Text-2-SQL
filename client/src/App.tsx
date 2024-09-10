@@ -11,7 +11,6 @@ import { Orders } from './Components/Orders'
 import { Product } from './Components/Product'
 import { Settings } from './Components/Settings'
 import { Logout } from './Components/Logout'
-import { NewCustomer } from './Components/NewCustomer'
 import { NewPassword } from './Components/NewPassword'
 import { NewProduct } from './Components/Newproduct'
 import ProtectedRoute from './utils/hooks'
@@ -22,6 +21,7 @@ import Query from './Components/Query'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Customers } from './Components/Customers'
+import { NewCustomer } from './Components/NewCustomer'
 
 
 

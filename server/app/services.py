@@ -147,44 +147,36 @@ class QueryService:
         self.commands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE']
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model_field_mapping = self.get_all_model_fields()
+        self.sensitive_fields = ['password', 'token', 'secret_key']  # Define sensitive fields
 
     def custom_serializer(self, obj):
         if isinstance(obj, datetime):
-            return obj.isoformat()[:10]
+            return obj.isoformat()[:10]  # Serialize datetime objects to YYYY-MM-DD format
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
     def parse_openai_response(self, response_json):
         try:
             response = json.loads(response_json)
-            if (
-                'choices' in response
-                and response['choices'][0]['finish_reason'] == 'stop'
-            ):
+            if 'choices' in response and response['choices'][0]['finish_reason'] == 'stop':
                 message_content = response['choices'][0]['message']['content']
                 message_content = message_content.strip().strip('```').strip()
-
                 if 'Could you please provide more context or detail' in message_content:
                     return 'The assistant needs more context or detail to generate the SQL query.'
                 return message_content
-
             else:
                 return 'The response was incomplete or there was an issue.'
-
-        except json.JSONDecodeError as e:
-            logger.error(f"Error parsing JSON response: {str(e)}")
+        except json.JSONDecodeError:
+            logger.error("Error parsing JSON response")
             return 'Error parsing the response from OpenAI.'
-
-        except KeyError as e:
-            logger.error(f"Missing key in response: {str(e)}")
+        except KeyError:
+            logger.error("Key error in OpenAI response")
             return 'Error processing the response from OpenAI.'
-
-        except Exception as e:
-            logger.error(f"Unexpected error: {str(e)}")
+        except Exception:
+            logger.error("Unexpected error processing the OpenAI response")
             return 'Unexpected error processing the response.'
 
     def get_all_model_fields(self):
         model_field_mapping = {}
-
         for model in apps.get_models():
             fields = [field.name for field in model._meta.get_fields()]
             model_field_mapping[model.__name__.lower()] = fields
@@ -196,13 +188,14 @@ class QueryService:
                 model='whisper-1', file=audio_data, response_format='text'
             )
             return response
-        except Exception as e:
-            logger.error(f"Error transcribing audio: {str(e)}")
+        except Exception:
+            logger.error("Error transcribing audio")
             return None
 
     def text_to_SQL(self, request, audio_data):
         text = self.audio_to_text(request, audio_data)
         model_mappings = self.get_all_model_fields()
+
         if not text:
             return 'Error in audio transcription'
 
@@ -212,33 +205,22 @@ class QueryService:
                 messages=[
                     {
                         'role': 'user',
-                        'content': f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective field has a guide {model_mappings}: {text}"
+                        'content': f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective fields as a guide {model_mappings}: {text}"
                     }
                 ],
                 max_tokens=150
             )
 
             response_json = response.to_dict()
-
             parsed_response = self.parse_openai_response(json.dumps(response_json))
 
             return parsed_response
-
-        except Exception as e:
-            logger.error(f"Error calling OpenAI API: {str(e)}")
+        except Exception:
+            logger.error("Error generating SQL query from OpenAI API")
             return 'Error generating SQL query'
-
-    # def validate_sql_query(self, query):
-    #     for command in self.commands:
-    #         if query.strip().upper().startswith(command):
-    #             return True
-    #     return False
 
     def run_SQL_query(self, request, audio_data):
         query = self.text_to_SQL(request, audio_data)
-
-        # if not self.validate_sql_query(query):
-        #     return 'Invalid SQL query. Please try again.'
 
         try:
             with connection.cursor() as cursor:
@@ -248,11 +230,26 @@ class QueryService:
                 columns = [col[0] for col in cursor.description]
                 result = [dict(zip(columns, row)) for row in data]
 
-                return json.dumps(result, default=self.custom_serializer)
+                # Filter out sensitive fields like passwords before returning to frontend
+                filtered_result = self.filter_sensitive_data(result)
+
+                return json.dumps(filtered_result, default=self.custom_serializer)
 
         except Exception as e:
             logger.error(f"Error executing SQL query: {str(e)}")
-            return Response(status=500, data={"message": f"Error executing SQL query: {str(e)}"})
+            return "There was an issue executing the SQL query. Please try again later."
+
+    def filter_sensitive_data(self, result):
+        """
+        Remove sensitive fields (e.g., password) from the result set before returning it.
+        """
+        for row in result:
+            for field in self.sensitive_fields:
+                if field in row:
+                    del row[field]
+        return result
+
+
 
 
 @inject
@@ -261,9 +258,7 @@ class ProductService:
         self.User = User
         self.Product = Product
 
-    def get_products(self, data):
-        store = data['store']
-        product_id = data['id']
+    def get_products(self):
         product = get_object_or_404(self.Product)
         serializer = ProductSerializer(product)
         return Response(serializer.data, status=status.HTTP_200_OK)

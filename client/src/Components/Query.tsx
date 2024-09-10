@@ -70,7 +70,7 @@ const Query = () => {
             <>
               <div className="Query_Headers">
                 {Object.keys(dataArray[0]).map((header, idx) => (
-                  <strong key={idx} className=''>
+                  <strong key={idx} >
                     {header.replace(/_/g, ' ')}
                   </strong>
                 ))}

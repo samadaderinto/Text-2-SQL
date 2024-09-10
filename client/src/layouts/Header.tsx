@@ -119,13 +119,16 @@ export const Header = () => {
                 },
             });
 
-            if (response) {
-               
+            if (response.status === 200) {
                 nav('/query', { state: { data: response.data, header: 'Query Results' } });
             }
-        } catch (error) {
+        } catch (error: any) {
+            if (error.response && error.response.status === 500) {
+                setErrorMessage('Unable to process your audio request. Please try again.');
+            } else {
+                setErrorMessage('Unable to find what you\'re looking for. Please try again.');
+            }
             console.error('Error uploading audio:', error);
-            setErrorMessage('Error uploading audio. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -133,7 +136,7 @@ export const Header = () => {
         setErrorMessage('No audio data available for upload.');
         console.error('No audio data available for upload.');
     }
-};
+  };
 
   return (
     <div className='Header_Container'>

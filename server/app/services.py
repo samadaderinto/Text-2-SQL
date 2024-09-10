@@ -150,7 +150,7 @@ class QueryService:
 
     def custom_serializer(self, obj):
         if isinstance(obj, datetime):
-            return obj.isoformat()
+            return obj.isoformat()[:10]
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
     def parse_openai_response(self, response_json):
@@ -228,17 +228,17 @@ class QueryService:
             logger.error(f"Error calling OpenAI API: {str(e)}")
             return 'Error generating SQL query'
 
-    def validate_sql_query(self, query):
-        for command in self.commands:
-            if query.strip().upper().startswith(command):
-                return True
-        return False
+    # def validate_sql_query(self, query):
+    #     for command in self.commands:
+    #         if query.strip().upper().startswith(command):
+    #             return True
+    #     return False
 
     def run_SQL_query(self, request, audio_data):
         query = self.text_to_SQL(request, audio_data)
 
-        if not self.validate_sql_query(query):
-            return 'Invalid SQL query. Please try again.'
+        # if not self.validate_sql_query(query):
+        #     return 'Invalid SQL query. Please try again.'
 
         try:
             with connection.cursor() as cursor:
@@ -252,7 +252,7 @@ class QueryService:
 
         except Exception as e:
             logger.error(f"Error executing SQL query: {str(e)}")
-            return f"Error executing SQL query: {str(e)}"
+            return Response(status=500, data={"message": f"Error executing SQL query: {str(e)}"})
 
 
 @inject

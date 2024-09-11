@@ -40,15 +40,15 @@ function App() {
       <ToastContainer />
       <Routes>
 
-        <Route path='/' element={<Home />}>
-          <Route index path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path='/product' element={<ProtectedRoute><Product /></ProtectedRoute>} />
-          <Route path='/product/add' element={<ProtectedRoute><NewProduct /></ProtectedRoute>} />
-          <Route path='/orders' element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-          <Route path='/customers' element={<ProtectedRoute><Customers /></ProtectedRoute>} />
-          <Route path='/customers/add' element={<ProtectedRoute><NewCustomer /></ProtectedRoute>} />
-          <Route path='/settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        </Route>
+        <Route path='/' element={<Home />}></Route>
+        <Route path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path='/product' element={<ProtectedRoute><Product /></ProtectedRoute>} />
+        <Route path='/product/add' element={<ProtectedRoute><NewProduct /></ProtectedRoute>} />
+        <Route path='/orders' element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+        <Route path='/customers' element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+        <Route path='/customers/add' element={<ProtectedRoute><NewCustomer /></ProtectedRoute>} />
+        <Route path='/settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
 
         <Route path='query' element={<ProtectedRoute><Query /></ProtectedRoute>} />
 

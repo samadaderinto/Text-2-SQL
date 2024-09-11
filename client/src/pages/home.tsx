@@ -1,15 +1,7 @@
-import { Outlet } from "react-router-dom";
+import { Navigate } from 'react-router-dom';
 
 const Home = () => {
-
-
-  return (
-  
-
-  
-      <Outlet />
-
-  )
+  return <Navigate to="/dashboard" replace />;
 }
 
 export default Home;

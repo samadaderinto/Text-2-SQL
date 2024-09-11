@@ -294,13 +294,13 @@ class SearchService:
             return 'There was an issue executing the SQL query. Please try again later.'
 
     def run_SQL_query(self, audio_data):
-        query = self.text_to_SQL(audio_data) if query else None
-
-        if self.commands[0] in query:
+        query = self.text_to_SQL(audio_data)
+        
+        if self.commands[0] in query and query:
             return self.get_from_SQL(query)
-        elif self.commands[1] in query:
+        elif self.commands[1] in query and query:
             return self.create_from_SQL(query)
-        elif self.commands[2] in query:
+        elif self.commands[2] in query and query:
             return self.update_from_SQL(query)
         else:
             return 'Invalid SQL command. Please provide a valid SQL command.'

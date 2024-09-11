@@ -109,10 +109,6 @@ export const NewProduct = () => {
       formData.append('category', formState.category);
       formData.append('available', formState.quantity);
 
-      if (formState.img) {
-        formData.append('image', formState.img);
-      }
-
       try {
         await api.post(`/product/create/`, formData, {
           headers: {

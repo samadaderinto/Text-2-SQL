@@ -273,10 +273,10 @@ class SearchViewSet(viewsets.GenericViewSet):
 
         try:
             with open(file_path, 'rb') as webm_file:
-                open_ai_response, command_type = self.search_service.run_SQL_query(webm_file)
+                open_ai_response = self.search_service.run_SQL_query(webm_file)
 
             logger.info(open_ai_response)
-            return Response(data={"results": open_ai_response, "type": command_type}, status=status.HTTP_200_OK)
+            return Response(data={"results": open_ai_response}, status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error(f"Error processing audio file: {str(e)}")

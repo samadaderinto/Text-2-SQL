@@ -143,7 +143,7 @@ try:
         )
 
 except ImproperlyConfigured:
-    run(f"docker-compose run server pipenv run python3 manage.py makemigrations")
+    # run(f"docker-compose run server pipenv run python3 manage.py makemigrations")
     run(f"docker-compose run server pipenv run python3 manage.py migrate")
     DATABASES = {'default': FALLBACK_DB}
 

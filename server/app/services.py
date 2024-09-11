@@ -295,15 +295,15 @@ class SearchService:
 
     def run_SQL_query(self, audio_data):
         query = self.text_to_SQL(audio_data)
-        
+
         if self.commands[0] in query and query:
-            return self.get_from_SQL(query)
+            return (self.get_from_SQL(query), self.commands[0])
         elif self.commands[1] in query and query:
-            return self.create_from_SQL(query)
+            return (self.create_from_SQL(query), self.commands[1])
         elif self.commands[2] in query and query:
-            return self.update_from_SQL(query)
+            return (self.update_from_SQL(query), self.commands[2])
         else:
-            return 'Invalid SQL command. Please provide a valid SQL command.'
+            raise ValueError('Invalid SQL command. Please provide a valid SQL command.')
 
     def filter_sensitive_data(self, result):
         for row in result:

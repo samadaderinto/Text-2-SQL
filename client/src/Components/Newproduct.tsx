@@ -115,7 +115,7 @@ export const NewProduct = () => {
             'Content-Type': 'multipart/form-data',
           },
         });
-        
+
         toast.success('Product created successfully!');
         nav("/product")
       } catch (error) {
@@ -136,7 +136,7 @@ export const NewProduct = () => {
         <div className="GenProduct_Container">
           <h3>General Product Information</h3>
           <form>
-            <label htmlFor="Product_Name">Product Name </label>
+            <label htmlFor="Product_Name">Product Name</label>
             <input
               type="text"
               placeholder="Input product name"
@@ -185,7 +185,7 @@ export const NewProduct = () => {
               </article>
             </span>
             <div>
-              <span className="Cancel_Btn" onClick={()=>nav("/product")}>Cancel</span>
+              <span className="Cancel_Btn" onClick={() => nav("/product")}>Cancel</span>
               <span className="Add_Btn" onClick={handleCreateProduct}>Add Product</span>
             </div>
           </form>

@@ -256,7 +256,7 @@ class SearchViewSet(viewsets.GenericViewSet):
         try:
             search_results = self.search_service.elastic_search(request, search_query)
             return Response(data=search_results, status=status.HTTP_200_OK)
-        except e:
+        except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
         

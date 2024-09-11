@@ -149,7 +149,7 @@ class SearchService:
         self.model_field_mapping = self.get_all_model_fields()
         self.sensitive_fields = ['password', 'token', 'secret_key']
 
-    def elastic_search(self):
+    def elastic_search(self, request, search_query):
         pass
 
     def custom_serializer(self, obj):
@@ -198,7 +198,7 @@ class SearchService:
             logger.error('Error transcribing audio')
             return None
 
-    def text_to_SQL(self, request, audio_data):
+    def search_text_to_SQL(self, request, audio_data):
         text = self.audio_to_text(request, audio_data)
         model_mappings = self.get_all_model_fields()
 
@@ -225,8 +225,11 @@ class SearchService:
             logger.error('Error generating SQL query from OpenAI API')
             return 'Error generating SQL query'
 
+    def create_text_to_SQL(self, request, audio_data):
+        pass
+
     def run_SQL_query(self, request, audio_data):
-        query = self.text_to_SQL(request, audio_data)
+        query = self.search_text_to_SQL(request, audio_data)
 
         try:
             with connection.cursor() as cursor:

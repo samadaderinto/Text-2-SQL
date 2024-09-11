@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "04377d14240d72cb63fbbffa393b272bd1705bf19413927b9402e9217b3f9334"
+            "sha256": "5867d467c89fef04b1f34c537070dbd5b8bcd47a84fd46c5e7aa5fc0440ef83b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -222,15 +222,6 @@
             "index": "pypi",
             "version": "==0.22"
         },
-        "django-taggit": {
-            "hashes": [
-                "sha256:7094f797b7e5e3727525a0af7bc550860000ddc2248266529d568eca61b39fb1",
-                "sha256:723d98bd5c536daa3c0e1bdae0965f7005a9b15269816bb4053fafec4ebad57e"
-            ],
-            "index": "pypi",
-            "markers": "python_version >= '3.8'",
-            "version": "==6.0.0"
-        },
         "djangorestframework": {
             "hashes": [
                 "sha256:2b8871b062ba1aefc2de01f773875441a961fefbf79f5eed1e32b2f096944b20",
@@ -272,7 +263,6 @@
                 "sha256:5dc8b38ad153e90b328152674c7959bf114bf86360a617a5a4516e135cb832bc",
                 "sha256:beb992d6ece806a2d422ad626983e2472c0a5550de9647a7ed6764716a5abdfe"
             ],
-            "index": "pypi",
             "markers": "python_version >= '3.6'",
             "version": "==2024.7.1"
         },
@@ -367,6 +357,15 @@
             "markers": "python_version >= '3.7'",
             "version": "==2.0.0"
         },
+        "invoke": {
+            "hashes": [
+                "sha256:6ea924cc53d4f78e3d98bc436b08069a03077e6f85ad1ddaa8a116d7dad15820",
+                "sha256:ee6cbb101af1a859c7fe84f2a264c059020b0cb7fe3535f9424300ab568f6bd5"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.6'",
+            "version": "==2.2.0"
+        },
         "jiter": {
             "hashes": [
                 "sha256:044f2f1148b5248ad2c8c3afb43430dccf676c5a5834d2f5089a4e6c5bbd64df",
@@ -458,15 +457,6 @@
             "index": "pypi",
             "markers": "python_version >= '3.8' and python_version < '4.0'",
             "version": "==0.8.0"
-        },
-        "mutagen": {
-            "hashes": [
-                "sha256:719fadef0a978c31b4cf3c956261b3c58b6948b32023078a2117b1de09f0fc99",
-                "sha256:edd96f50c5907a9539d8e5bba7245f62c9f520aef333d13392a79a4f70aca719"
-            ],
-            "index": "pypi",
-            "markers": "python_version >= '3.7'",
-            "version": "==1.47.0"
         },
         "mysqlclient": {
             "hashes": [

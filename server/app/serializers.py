@@ -153,6 +153,7 @@ class AdminSerializer(serializers.Serializer):
 class NotificationSerializer(serializers.Serializer):
     email_notification = serializers.BooleanField(default=False)
     sms_notification = serializers.BooleanField(default=False)
-    
+
+
 class SearchSerializer(serializers.Serializer):
     search = serializers.CharField()

@@ -74,7 +74,6 @@ export const NewCustomer = () => {
     });
   };
 
-
   const handleCreateCustomer = async () => {
     if (validateForm()) {
       const formData = new FormData();
@@ -99,7 +98,6 @@ export const NewCustomer = () => {
         if (error.response && error.response.status === 400 && error.response.data.email) {
           toast.error('Email already exists. Please use a different email.', {
             position: "top-right"
-
           });
         } else {
           toast.error('Error creating customer. Please try again.');

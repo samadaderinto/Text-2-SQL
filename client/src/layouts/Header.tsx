@@ -149,8 +149,14 @@ export const Header = () => {
         });
 
         if (response.status === 200) {
-          console.log(response.data)
-          nav('/query', { state: { data: response.data, header: 'Query Results' } });
+          console.log(response.data.results)
+          // if (response.data.type == "UPDATE") {
+          //   console.log(response.data)
+
+          // } else if (response.data.type == "INSERT") {
+          //   console.log(response.data)
+        
+            nav('/query', { state: { data: response.data.results, header: 'Query Results' } });
         }
       } catch (error: any) {
         if (error.response && error.response.status === 500) {

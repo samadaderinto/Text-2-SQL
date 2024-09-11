@@ -295,15 +295,30 @@ class SearchService:
 
     def run_SQL_query(self, audio_data):
         query = self.text_to_SQL(audio_data)
+        
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                data = cursor.fetchall()
 
-        if self.commands[0] in query and query:
-            return (self.get_from_SQL(query), self.commands[0])
-        elif self.commands[1] in query and query:
-            return (self.create_from_SQL(query), self.commands[1])
-        elif self.commands[2] in query and query:
-            return (self.update_from_SQL(query), self.commands[2])
-        else:
-            raise ValueError('Invalid SQL command. Please provide a valid SQL command.')
+                columns = [col[0] for col in cursor.description]
+                result = [dict(zip(columns, row)) for row in data]
+
+                filtered_result = self.filter_sensitive_data(result)
+                return json.dumps(filtered_result, default=self.custom_serializer)
+
+        except Exception as e:
+            logger.error(f"Error executing SQL query: {str(e)}")
+            return 'There was an issue executing the SQL query. Please try again later.'
+
+        # if self.commands[0] in query and query:
+        #     return (self.get_from_SQL(query), self.commands[0])
+        # elif self.commands[1] in query and query:
+        #     return (self.create_from_SQL(query), self.commands[1])
+        # elif self.commands[2] in query and query:
+        #     return (self.update_from_SQL(query), self.commands[2])
+        # else:
+        #     raise ValueError('Invalid SQL command. Please provide a valid SQL command.')
 
     def filter_sensitive_data(self, result):
         for row in result:

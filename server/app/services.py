@@ -142,22 +142,28 @@ class StoreService:
 
 
 @inject
-class QueryService:
+class SearchService:
     def __init__(self):
         self.commands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE']
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model_field_mapping = self.get_all_model_fields()
-        self.sensitive_fields = ['password', 'token', 'secret_key']  # Define sensitive fields
+        self.sensitive_fields = ['password', 'token', 'secret_key']
+
+    def elastic_search(self):
+        pass
 
     def custom_serializer(self, obj):
         if isinstance(obj, datetime):
-            return obj.isoformat()[:10]  # Serialize datetime objects to YYYY-MM-DD format
+            return obj.isoformat()[:10]
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
     def parse_openai_response(self, response_json):
         try:
             response = json.loads(response_json)
-            if 'choices' in response and response['choices'][0]['finish_reason'] == 'stop':
+            if (
+                'choices' in response
+                and response['choices'][0]['finish_reason'] == 'stop'
+            ):
                 message_content = response['choices'][0]['message']['content']
                 message_content = message_content.strip().strip('```').strip()
                 if 'Could you please provide more context or detail' in message_content:
@@ -166,13 +172,13 @@ class QueryService:
             else:
                 return 'The response was incomplete or there was an issue.'
         except json.JSONDecodeError:
-            logger.error("Error parsing JSON response")
+            logger.error('Error parsing JSON response')
             return 'Error parsing the response from OpenAI.'
         except KeyError:
-            logger.error("Key error in OpenAI response")
+            logger.error('Key error in OpenAI response')
             return 'Error processing the response from OpenAI.'
         except Exception:
-            logger.error("Unexpected error processing the OpenAI response")
+            logger.error('Unexpected error processing the OpenAI response')
             return 'Unexpected error processing the response.'
 
     def get_all_model_fields(self):
@@ -189,7 +195,7 @@ class QueryService:
             )
             return response
         except Exception:
-            logger.error("Error transcribing audio")
+            logger.error('Error transcribing audio')
             return None
 
     def text_to_SQL(self, request, audio_data):
@@ -216,7 +222,7 @@ class QueryService:
 
             return parsed_response
         except Exception:
-            logger.error("Error generating SQL query from OpenAI API")
+            logger.error('Error generating SQL query from OpenAI API')
             return 'Error generating SQL query'
 
     def run_SQL_query(self, request, audio_data):
@@ -230,14 +236,13 @@ class QueryService:
                 columns = [col[0] for col in cursor.description]
                 result = [dict(zip(columns, row)) for row in data]
 
-                # Filter out sensitive fields like passwords before returning to frontend
                 filtered_result = self.filter_sensitive_data(result)
 
                 return json.dumps(filtered_result, default=self.custom_serializer)
 
         except Exception as e:
             logger.error(f"Error executing SQL query: {str(e)}")
-            return "There was an issue executing the SQL query. Please try again later."
+            return 'There was an issue executing the SQL query. Please try again later.'
 
     def filter_sensitive_data(self, result):
         """
@@ -248,8 +253,6 @@ class QueryService:
                 if field in row:
                     del row[field]
         return result
-
-
 
 
 @inject

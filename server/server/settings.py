@@ -14,6 +14,8 @@ from pathlib import Path
 from datetime import timedelta
 import os
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
@@ -23,11 +25,20 @@ SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-
 SECRET_KEY = str(os.environ.get('SECRET_KEY'))
-
 OPENAI_API_KEY = str(os.environ.get('OPENAI_API_KEY'))
 
+MYSQL_USER=str(os.getenv('MYSQL_USER'))
+MYSQL_PASSWORD=str(os.getenv("MYSQL_PASSWORD"))
+MYSQL_NAME=str(os.getenv("MYSQL_NAME"))
+MYSQL_HOST=str(os.getenv("MYSQL_HOST"))
+MYSQL_PORT=str(os.getenv("MYSQL_PORT"))
+
+
+ELASTICSEARCH_PORT = str(os.getenv('ELASTICSEARCH_PORT'))
+ELASTICSEARCH_HOST = str(os.getenv('ELASTICSEARCH_HOST'))
+ELASTICSEARCH_USER = str(os.getenv('ELASTICSEARCH_USER'))
+ELASTICSEARCH_PASSWORD = str(os.getenv('ELASTICSEARCH_PASSWORD'))
 
 EMAIL_HOST = str(os.getenv('EMAIL_HOST'))
 EMAIL_PORT = str(os.getenv('EMAIL_PORT'))
@@ -36,7 +47,7 @@ EMAIL_USE_SSL = True
 EMAIL_HOST_USER = str(os.getenv('EMAIL_HOST_USER'))
 EMAIL_HOST_PASSWORD = str(os.getenv('EMAIL_HOST_PASSWORD'))
 EMAIL_BACKEND = str(os.getenv('EMAIL_BACKEND'))
-DEFAULT_FROM_EMAIL = 'adesamad1234@gmail.com'
+DEFAULT_FROM_EMAIL = str(os.getenv('EMAIL_HOST_USER'))
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -109,19 +120,38 @@ WSGI_APPLICATION = 'server.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+
+
 DATABASE_PATH = os.path.join(BASE_DIR, 'db.sqlite3')
 
+PRIMARY_DB = {
+    'ENGINE': 'django.db.backends.mysql',
+    'NAME': MYSQL_NAME,
+    'USER': MYSQL_USER,
+    'PASSWORD': MYSQL_PASSWORD,
+    'HOST': MYSQL_HOST,
+    'PORT': MYSQL_PORT
+}
 
-DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': DATABASE_PATH}}
+FALLBACK_DB = {'ENGINE': 'django.db.backends.sqlite3', 'NAME': DATABASE_PATH}
+
+
+try:
+    DATABASES = {'default': PRIMARY_DB}
+    if not PRIMARY_DB['NAME'] or not PRIMARY_DB['USER']:
+        raise ImproperlyConfigured(
+            'Missing MySQL configuration. Falling back to SQLite.'
+        )
+
+except ImproperlyConfigured:
+    DATABASES = {'default': FALLBACK_DB}
 
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'}
@@ -155,9 +185,6 @@ AUTH_USER_MODEL = 'app.User'
 
 CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
 
-# AUTHENTICATION_BACKENDS = [
-#     'django.contrib.auth.backends.ModelBackend'
-# ]
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
@@ -175,7 +202,7 @@ PASSWORD_HASHERS = [
 ]
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=3),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
@@ -210,14 +237,20 @@ SIMPLE_JWT = {
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'AudQL API Documentation',
-    'DESCRIPTION': 'This is the official documentation for the AudQL  backend',
+    'DESCRIPTION': 'This is the official documentation for the AudQL backend',
     'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    # "SWAGGER_UI_DIST": "SIDECAR",
-    # "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
-    # "REDOC_DIST": "SIDECAR",
+    'SERVE_INCLUDE_SCHEMA': False
 }
-
 
 CopySTATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': f"{ELASTICSEARCH_HOST}:{ELASTICSEARCH_PORT}",
+        'http_auth': (ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD)
+    }
+}
+
+

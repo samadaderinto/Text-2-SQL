@@ -29,6 +29,9 @@ openai = "*"
 django-filter = "*"
 mutagen = "*"
 django-sslserver = "*"
+mysqlclient = "*"
+django-elasticsearch-dsl = "*"
+elasticsearch = "*"
 
 [dev-packages]
 

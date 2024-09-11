@@ -1,5 +1,6 @@
 from rest_access_policy import AccessPolicy
 
+
 class ServerAccessPolicy(AccessPolicy):
     statements = [
         {
@@ -37,7 +38,8 @@ class ServerAccessPolicy(AccessPolicy):
                 'create_order',
                 'download_order',
                 'delete_order',
-                'logout'
+                'logout',
+                'elastic_searcher'
             ],
             'principal': ['authenticated'],
             'effect': 'allow'

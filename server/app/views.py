@@ -254,12 +254,12 @@ class SearchViewSet(viewsets.GenericViewSet):
         serializer = SearchSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         search_query = serializer.validated_data['search']
-        
 
         try:
             search_results = self.search_service.elastic_search(search_query)
             return Response(data=search_results, status=status.HTTP_200_OK)
         except Exception as e:
+            logger.error(f"Error processing audio file: {str(e)}")
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(request=FileSerializer, responses={status.HTTP_200_OK: None})

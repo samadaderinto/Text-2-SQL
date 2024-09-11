@@ -29,6 +29,7 @@ django-sslserver = "*"
 mysqlclient = "*"
 django-elasticsearch-dsl = "*"
 elasticsearch = "*"
+invoke = "*"
 
 [dev-packages]
 

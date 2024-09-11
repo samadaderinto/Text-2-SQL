@@ -12,25 +12,41 @@ import api from '../utils/api';
 import { sideBarArrayList } from '../utils/sidebar';
 
 export const Header = () => {
-  const [menu, setMenu] = useState(false);
-  const [listen, setListen] = useState(false);
-  const [voice, setVoice] = useState(false);
-  const [activeIndex, setActiveIndex] = useState<number>(0);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [loading, setLoading] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [store, setStore] = useState<{ name: string, email: string }>({ name: "", email: "" });
+  const [state, setState] = useState<{
+    menu: boolean;
+    listen: boolean;
+    voice: boolean;
+    activeIndex: number;
+    errorMessage: string;
+    loading: boolean;
+    audioBlob: Blob | null;
+    isRecording: boolean;
+    store: { name: string; email: string };
+    searchQuery: string;  
+    searchResults: any[]; 
+  }>({
+    menu: false,
+    listen: false,
+    voice: false,
+    activeIndex: 0,
+    errorMessage: '',
+    loading: false,
+    audioBlob: null,
+    isRecording: false,
+    store: { name: "", email: "" },
+    searchQuery: '',
+    searchResults: []  // Initialize searchResults state
+  });
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const nav = useNavigate();
 
-  // Fetch store name and details, no pagination or filtering
   useEffect(() => {
     const fetchStoreName = async () => {
       try {
         const response = await api.get(`/settings/store/get/`);
-        setStore(response.data); // Simple fetch with no pagination/filtering
+        setState(prevState => ({ ...prevState, store: response.data }));
       } catch (error) {
         console.error('Error fetching store name:', error);
       }
@@ -39,7 +55,24 @@ export const Header = () => {
     fetchStoreName();
   }, []);
 
-  // Function to start audio recording
+  const performSearch = async () => {
+    if (state.searchQuery.trim()) {
+      try {
+        const response = await api.get(`query/searc/`, { params: { query: state.searchQuery } });
+        setState(prevState => ({ ...prevState, searchResults: response.data }));
+      } catch (error) {
+        console.error('Error performing search:', error);
+      }
+    } else {
+      setState(prevState => ({ ...prevState, searchResults: [] }));
+    }
+  };
+
+  useEffect(() => {
+
+    performSearch();
+  }, [state.searchQuery]);
+
   const startRecording = async () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
@@ -61,7 +94,7 @@ export const Header = () => {
         mediaRecorder.onstop = () => {
           if (audioChunksRef.current.length > 0) {
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-            setAudioBlob(audioBlob);
+            setState(prevState => ({ ...prevState, audioBlob }));
             console.log("Recording complete and audio blob created.");
           } else {
             console.error("No audio chunks available.");
@@ -69,7 +102,7 @@ export const Header = () => {
         };
 
         mediaRecorder.start();
-        setIsRecording(true);
+        setState(prevState => ({ ...prevState, isRecording: true }));
         console.log("Recording started");
       } catch (error) {
         console.error('Error accessing microphone:', error);
@@ -79,62 +112,58 @@ export const Header = () => {
     }
   };
 
-  // Function to stop recording
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && state.isRecording) {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      setIsRecording(false);
+      setState(prevState => ({ ...prevState, isRecording: false }));
       console.log("Recording stopped");
     }
   };
 
-  // Handle recording start/stop based on listen state
   useEffect(() => {
-    if (listen) {
+    if (state.listen) {
       startRecording();
     } else {
       stopRecording();
     }
-  }, [listen]);
+  }, [state.listen]);
 
-  // Upload audio when recording finishes
   useEffect(() => {
-    if (audioBlob) {
+    if (state.audioBlob) {
       handleUpload();
     }
-  }, [audioBlob]);
+  }, [state.audioBlob]);
 
-  // Upload the audio file to the server
   const handleUpload = async () => {
-    if (audioBlob) {
-        const formData = new FormData();
-        formData.append('file', new File([audioBlob], 'audio.webm', { type: 'audio/webm' }));
+    if (state.audioBlob) {
+      const formData = new FormData();
+      formData.append('file', new File([state.audioBlob], 'audio.webm', { type: 'audio/webm' }));
 
-        setLoading(true);
-        try {
-            const response = await api.post(`/query/upload/`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+      setState(prevState => ({ ...prevState, loading: true }));
+      try {
+        const response = await api.post(`/query/upload/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
 
-            if (response.status === 200) {
-                nav('/query', { state: { data: response.data, header: 'Query Results' } });
-            }
-        } catch (error: any) {
-            if (error.response && error.response.status === 500) {
-                setErrorMessage('Unable to process your audio request. Please try again.');
-            } else {
-                setErrorMessage('Unable to find what you\'re looking for. Please try again.');
-            }
-            console.error('Error uploading audio:', error);
-        } finally {
-            setLoading(false);
+        if (response.status === 200) {
+          nav('/query', { state: { data: response.data, header: 'Query Results' } });
         }
+      } catch (error: any) {
+        if (error.response && error.response.status === 500) {
+          setState(prevState => ({ ...prevState, errorMessage: 'Unable to process your audio request. Please try again.' }));
+        } else {
+          setState(prevState => ({ ...prevState, errorMessage: 'Unable to find what you\'re looking for. Please try again.' }));
+        }
+        console.error('Error uploading audio:', error);
+      } finally {
+        setState(prevState => ({ ...prevState, loading: false }));
+      }
     } else {
-        setErrorMessage('No audio data available for upload.');
-        console.error('No audio data available for upload.');
+      setState(prevState => ({ ...prevState, errorMessage: 'No audio data available for upload.' }));
+      console.error('No audio data available for upload.');
     }
   };
 
@@ -142,7 +171,7 @@ export const Header = () => {
     <div className='Header_Container'>
       <span><PiDiamondsFourFill /> EchoCart</span>
       <section className="Search_Container">
-        {listen ? (
+        {state.listen ? (
           <>
             <span>Listening...</span>
             <p><FaEarListen /></p>
@@ -150,30 +179,35 @@ export const Header = () => {
         ) : (
           <>
             <p className="Header_Search_Icon"><IoSearch /></p>
-            <input type="text" placeholder="Search anything..." />
-            <p onClick={() => setVoice(!voice)}><RiSpeakLine /></p>
+            <input 
+              type="text" 
+              placeholder="Search anything..." 
+              value={state.searchQuery} 
+              onChange={(e) => setState(prevState => ({ ...prevState, searchQuery: e.target.value }))}
+              onKeyDown={(e) => e.key === 'Enter' && performSearch()}
+            />
+            <p onClick={() => setState(prevState => ({ ...prevState, voice: !state.voice }))}><RiSpeakLine /></p>
           </>
         )}
       </section>
       <section className="RightHand_Container">
-        <p className="Exclusive_Store">{store.name ? store.name : "Store Name"}</p>
+        <p className="Exclusive_Store">{state.store.name ? state.store.name : "Store Name"}</p>
         <p><IoIosNotificationsOutline /></p>
         <div className="Image_Container">
           <img src={ProfileImg} alt="profile" />
         </div>
       </section>
-      <p onClick={() => setMenu(!menu)} className="Mobile_Menu"><RxDropdownMenu /></p>
-      {menu && (
+      <p onClick={() => setState(prevState => ({ ...prevState, menu: !state.menu }))} className="Mobile_Menu"><RxDropdownMenu /></p>
+      {state.menu && (
         <article className="Mobile_Menu_Nav">
           {sideBarArrayList.map((obj, index) => (
             <span
               key={index}
               onClick={() => {
-                setActiveIndex(index);
-                setMenu(false);
+                setState(prevState => ({ ...prevState, activeIndex: index, menu: false }));
                 nav(`/${obj.itemName}`);
               }}
-              className={activeIndex === index ? 'Active_List' : ''}
+              className={state.activeIndex === index ? 'Active_List' : ''}
             >
               <p className="List_icon">{obj.icon}</p>
               <p>{obj.itemName}</p>
@@ -181,34 +215,49 @@ export const Header = () => {
           ))}
         </article>
       )}
-      {voice && (
+      {state.voice && (
         <span
           onClick={() => {
-            setVoice(false);
-            setListen(true);
+            setState(prevState => ({ ...prevState, voice: false, listen: true }));
           }}
           className="Search_By_Voice"
         >
           Search By Voice
         </span>
       )}
-      {listen && (
+      {state.listen && (
         <span
           onClick={() => {
-            setListen(false);
+            setState(prevState => ({ ...prevState, listen: false }));
           }}
           className="Search_By_Voice Stop_Voice">
           Stop recording
         </span>
       )}
 
-      {loading && (
+      {state.loading && (
         <div className="loading-spinner">
-          <ClipLoader color={"#123abc"} loading={loading} size={50} />
+          <ClipLoader color={"#123abc"} loading={state.loading} size={50} />
         </div>
       )}
 
-      {errorMessage && <p className="error-message">{errorMessage}</p>}
+      {state.errorMessage && <p className="error-message">{state.errorMessage}</p>}
+      
+     
+      {state.searchQuery && (
+        <div className="search-results">
+          {state.searchResults.length > 0 ? (
+            state.searchResults.map((result, index) => (
+              <div key={index} className="search-result-item">
+   
+                <p>{result.name}</p> 
+              </div>
+            ))
+          ) : (
+            <p>No results found</p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

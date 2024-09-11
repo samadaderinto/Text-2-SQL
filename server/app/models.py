@@ -99,33 +99,32 @@ class Store(DatesMixin):
 
 
 class Product(DatesMixin):
-    # CATEGORIES_CHOICE = (
-    #     ('fishing', 'fishing'),
-    #     ('sports', 'sports'),
-    #     ('electronics', 'electronics'),
-    #     ('phones', 'phones'),
-    #     ('games', 'games'),
-    #     ('tablets', 'tablets'),
-    #     ('outwear', 'outwear'),
-    #     ('pets', 'pets'),
-    #     ('toys', 'toys'),
-    #     ('computing', 'computing'),
-    #     ('lingerie', 'lingerie'),
-    #     ('books', 'books'),
-    #     ('beverages', 'beverages')
-    # )
+    CATEGORIES_CHOICE = (
+        ('fishing', 'fishing'),
+        ('sports', 'sports'),
+        ('electronics', 'electronics'),
+        ('phones', 'phones'),
+        ('games', 'games'),
+        ('tablets', 'tablets'),
+        ('outwear', 'outwear'),
+        ('pets', 'pets'),
+        ('toys', 'toys'),
+        ('computing', 'computing'),
+        ('lingerie', 'lingerie'),
+        ('books', 'books'),
+        ('beverages', 'beverages')
+    )
 
     store = models.ForeignKey('Store', on_delete=models.CASCADE)
     title = models.CharField(max_length=225, blank=False, null=False)
     description = models.TextField(null=False, blank=False)
-    image = models.ImageField(upload_to='products/')
     price = models.DecimalField(
         max_digits=15, decimal_places=2, blank=False, null=False
     )
     available = models.IntegerField(
         null=False, blank=False, validators=[MinValueValidator(0)]
     )
-    category = models.CharField(max_length=15)
+    category = models.CharField(max_length=150)
     currency = models.CharField(max_length=89)
     rating = models.DecimalField(
         max_digits=4,
@@ -175,7 +174,7 @@ class Order(DatesMixin):
     id = models.CharField(
         max_length=15, default=generate(size=15), unique=True, primary_key=True
     )
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     status = models.CharField(choices=ORDER_STATUS_CHOICE, max_length=15)
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)

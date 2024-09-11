@@ -54,10 +54,7 @@ export const NewCustomer = () => {
       newErrors.phone = 'Phone number is required';
       valid = false;
     }
-    if (!formState.date) {
-      newErrors.date = 'Date is required';
-      valid = false;
-    }
+
     if (!formState.quantity || isNaN(Number(formState.quantity))) {
       newErrors.quantity = 'Valid quantity is required';
       valid = false;
@@ -77,12 +74,6 @@ export const NewCustomer = () => {
     });
   };
 
-  const Upload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const url = URL.createObjectURL(e.target.files[0]);
-      setFormState({ ...formState, img: url });
-    }
-  };
 
   const handleCreateCustomer = async () => {
     if (validateForm()) {
@@ -91,11 +82,6 @@ export const NewCustomer = () => {
       formData.append('last_name', formState.lastName);
       formData.append('email', formState.email);
       formData.append('phone_number', formState.phone);
-
-      if (formState.img) {
-        const imageFile = await fetch(formState.img).then(r => r.blob());
-        formData.append('image', imageFile);
-      }
 
       try {
         await api.post(`/customers/create/`, formData, {
@@ -181,22 +167,6 @@ export const NewCustomer = () => {
                 <span onClick={handleCreateCustomer} className="Add_Btn">Add Customer</span>
               </div>
             </form>
-          </div>
-          <div className="Product_Media_Container">
-            <h3>Customer Image</h3>
-            <label htmlFor="fileInput">
-              <section>
-                {formState.img === null ? (
-                  <>
-                    <input type="file" onChange={Upload} style={{ display: "none" }} id="fileInput" />
-                    <LuImagePlus />
-                    <p>Click or drag image</p>
-                  </>
-                ) : (
-                  <img src={formState.img} alt="Customer" />
-                )}
-              </section>
-            </label>
           </div>
         </section>
       </div>

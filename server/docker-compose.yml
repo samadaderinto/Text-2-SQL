@@ -12,16 +12,6 @@ services:
       - 8000:8000
     env_file:
       - .env
-    environment:
-      - DB_ENGINE=${DB_ENGINE}
-      - DB_HOST=${DB_HOST}
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_PORT=${DB_PORT}
-      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
-      - ELASTICSEARCH_PORT=${ELASTICSEARCH_PORT}
-      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
     depends_on:
       - database
       - search_database
@@ -31,9 +21,9 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_NAME}
     ports:
       - "3306:3306"
     volumes:

@@ -128,7 +128,9 @@ class AuthViewSet(viewsets.GenericViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None})
+    @extend_schema(
+        request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None}
+    )
     @action(detail=False, methods=['post'], url_path='logout')
     def logout(self, request):
         data = JSONParser().parse(request)
@@ -167,7 +169,9 @@ class AuthViewSet(viewsets.GenericViewSet):
                 data={'message': 'Invalid user information'}
             )
 
-    @extend_schema(request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None})
+    @extend_schema(
+        request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None}
+    )
     @action(detail=False, methods=['post'], url_path='refresh-token')
     def refresh_token(self, request):
         data = JSONParser().parse(request)
@@ -243,25 +247,21 @@ class SearchViewSet(viewsets.GenericViewSet):
 
     permission_classes = (ServerAccessPolicy,)
     parser_classes = [JSONParser, MultiPartParser, FormParser]
-    
-    
+
     @extend_schema(request=SearchSerializer, responses={status.HTTP_200_OK: None})
     @action(detail=False, methods=['post'], url_path='search')
     def elastic_searcher(self, request):
         serializer = SearchSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
         search_query = serializer.validated_data['search']
         
+
         try:
-            search_results = self.search_service.elastic_search(request, search_query)
+            search_results = self.search_service.elastic_search(search_query)
             return Response(data=search_results, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
-        
-        
-        
+
     @extend_schema(request=FileSerializer, responses={status.HTTP_200_OK: None})
     @action(detail=False, methods=['post'], url_path='upload')
     def audio_to_query(self, request):
@@ -273,7 +273,7 @@ class SearchViewSet(viewsets.GenericViewSet):
 
         try:
             with open(file_path, 'rb') as webm_file:
-                open_ai_response = self.search_service.run_SQL_query(request, webm_file)
+                open_ai_response = self.search_service.run_SQL_query(webm_file)
 
             logger.info(open_ai_response)
             return Response(data=open_ai_response, status=status.HTTP_200_OK)

@@ -1,6 +1,6 @@
 from rest_framework import routers
 from .views import (
-    QueryViewSet,
+    SearchViewSet,
     AuthViewSet,
     ProductViewSet,
     CustomerViewSet,
@@ -12,7 +12,7 @@ from .views import (
 router = routers.DefaultRouter()
 
 router.register(r"auth", AuthViewSet, basename='auth')
-router.register(r"query", QueryViewSet, basename='query')
+router.register(r"query", SearchViewSet, basename='query')
 router.register(r"customers", CustomerViewSet, basename='customers')
 router.register(r"product", ProductViewSet, basename='products')
 router.register(r"orders", OrderViewSet, basename='orders')

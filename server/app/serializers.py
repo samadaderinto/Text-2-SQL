@@ -4,7 +4,6 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 
-
 from phonenumber_field.serializerfields import PhoneNumberField
 
 
@@ -154,3 +153,6 @@ class AdminSerializer(serializers.Serializer):
 class NotificationSerializer(serializers.Serializer):
     email_notification = serializers.BooleanField(default=False)
     sms_notification = serializers.BooleanField(default=False)
+    
+class SearchSerializer(serializers.Serializer):
+    search = serializers.CharField()

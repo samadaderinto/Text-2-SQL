@@ -1,4 +1,5 @@
 import json
+import re
 import secrets
 import logging
 from datetime import datetime
@@ -8,7 +9,7 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404, get_list_or_404
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.db import connection
+from django.db import connection, transaction
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
@@ -61,7 +62,7 @@ class AuthService:
         send_mail(
             f'Welcome, {email}',
             f"This is the link to verify your email. {absolute_url}",
-            'adesamad1234@gmail.com',
+            settings.EMAIL_HOST_USER,
             [email],
             fail_silently=False
         )
@@ -144,12 +145,16 @@ class StoreService:
 @inject
 class SearchService:
     def __init__(self):
-        self.commands = ['SELECT', 'INSERT', 'UPDATE', 'DELETE']
+        self.commands = [
+            'SELECT',
+            'INSERT',
+            'UPDATE'
+        ]  # TODO: you can add 'DELETE' to list of commands, but note this is a really risky option because of potential data loss by the generated sql query
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model_field_mapping = self.get_all_model_fields()
         self.sensitive_fields = ['password', 'token', 'secret_key']
 
-    def elastic_search(self, request, search_query):
+    def elastic_search(self, search_query):
         pass
 
     def custom_serializer(self, obj):
@@ -188,7 +193,7 @@ class SearchService:
             model_field_mapping[model.__name__.lower()] = fields
         return model_field_mapping
 
-    def audio_to_text(self, request, audio_data):
+    def audio_to_text(self, audio_data):
         try:
             response = self.client.audio.transcriptions.create(
                 model='whisper-1', file=audio_data, response_format='text'
@@ -198,8 +203,8 @@ class SearchService:
             logger.error('Error transcribing audio')
             return None
 
-    def search_text_to_SQL(self, request, audio_data):
-        text = self.audio_to_text(request, audio_data)
+    def text_to_SQL(self, audio_data):
+        text = self.audio_to_text(audio_data)
         model_mappings = self.get_all_model_fields()
 
         if not text:
@@ -225,12 +230,54 @@ class SearchService:
             logger.error('Error generating SQL query from OpenAI API')
             return 'Error generating SQL query'
 
-    def create_text_to_SQL(self, request, audio_data):
-        pass
+    @transaction.atomic()
+    def create_from_SQL(self, query):
+        try:
+            match = re.search(r"INSERT\s+INTO\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
+            table_name = match.group(2) if match else 'Unknown table'
 
-    def run_SQL_query(self, request, audio_data):
-        query = self.search_text_to_SQL(request, audio_data)
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                return json.dumps(
+                    {
+                        'status': 'success',
+                        'message': f'{table_name} successfully added.'
+                    }
+                )
+        except Exception as e:
+            logger.error(f"Error executing SQL insert query: {str(e)}")
+            return json.dumps(
+                {
+                    'status': 'error',
+                    'message': 'There was an issue executing the insert query. Please try again later.'
+                }
+            )
 
+    @transaction.atomic()
+    def update_from_SQL(self, query):
+        try:
+            match = re.search(r"UPDATE\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
+            table_name = match.group(2) if match else 'Unknown table'
+
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+
+                return json.dumps(
+                    {
+                        'status': 'success',
+                        'message': f'{table_name} successfully updated.'
+                    }
+                )
+        except Exception as e:
+            logger.error(f"Error executing SQL update query: {str(e)}")
+            return json.dumps(
+                {
+                    'status': 'error',
+                    'message': 'There was an issue executing the update query. Please try again later.'
+                }
+            )
+
+    def get_from_SQL(self, query):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(query)
@@ -240,17 +287,25 @@ class SearchService:
                 result = [dict(zip(columns, row)) for row in data]
 
                 filtered_result = self.filter_sensitive_data(result)
-
                 return json.dumps(filtered_result, default=self.custom_serializer)
 
         except Exception as e:
             logger.error(f"Error executing SQL query: {str(e)}")
             return 'There was an issue executing the SQL query. Please try again later.'
 
+    def run_SQL_query(self, audio_data):
+        query = self.text_to_SQL(audio_data) if query else None
+
+        if self.commands[0] in query:
+            return self.get_from_SQL(query)
+        elif self.commands[1] in query:
+            return self.create_from_SQL(query)
+        elif self.commands[2] in query:
+            return self.update_from_SQL(query)
+        else:
+            return 'Invalid SQL command. Please provide a valid SQL command.'
+
     def filter_sensitive_data(self, result):
-        """
-        Remove sensitive fields (e.g., password) from the result set before returning it.
-        """
         for row in result:
             for field in self.sensitive_fields:
                 if field in row:

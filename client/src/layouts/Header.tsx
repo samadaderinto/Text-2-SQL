@@ -58,7 +58,7 @@ export const Header = () => {
   const performSearch = async () => {
     if (state.searchQuery.trim()) {
       try {
-        const response = await api.get(`query/searc/`, { params: { query: state.searchQuery } });
+        const response = await api.get(`query/search/`, { params: { query: state.searchQuery } });
         setState(prevState => ({ ...prevState, searchResults: response.data }));
       } catch (error) {
         console.error('Error performing search:', error);

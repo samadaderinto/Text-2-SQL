@@ -22,7 +22,7 @@ const Query = () => {
         console.error('Error parsing JSON string:', error);
       }
     } else if (Array.isArray(data)) {
-      setDataArray(data); 
+      setDataArray(data);
     } else {
       console.error('No data available or data is not a string or array');
     }
@@ -78,7 +78,7 @@ const Query = () => {
               <ul>
                 {dataArray.map((item, index) => (
                   <li key={index}>
-                    {Object.entries(item).map(([key, value], idx) => (
+                    {Object.entries(item).map(([_, value], idx) => (
                       <div key={idx}>
                         {value?.toString() || 'N/A'}
                       </div>

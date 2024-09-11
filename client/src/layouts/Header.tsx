@@ -149,6 +149,7 @@ export const Header = () => {
         });
 
         if (response.status === 200) {
+          console.log(response.data)
           nav('/query', { state: { data: response.data, header: 'Query Results' } });
         }
       } catch (error: any) {

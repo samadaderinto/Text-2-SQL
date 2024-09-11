@@ -123,29 +123,29 @@ WSGI_APPLICATION = 'server.wsgi.application'
 
 DATABASE_PATH = os.path.join(BASE_DIR, 'db.sqlite3')
 
-PRIMARY_DB = {
-    'ENGINE': 'django.db.backends.mysql',
-    'NAME': MYSQL_NAME,
-    'USER': MYSQL_USER,
-    'PASSWORD': MYSQL_PASSWORD,
-    'HOST': MYSQL_HOST,
-    'PORT': MYSQL_PORT
-}
+# PRIMARY_DB = {
+#     'ENGINE': 'django.db.backends.mysql',
+#     'NAME': MYSQL_NAME,
+#     'USER': MYSQL_USER,
+#     'PASSWORD': MYSQL_PASSWORD,
+#     'HOST': MYSQL_HOST,
+#     'PORT': MYSQL_PORT
+# }
 
 FALLBACK_DB = {'ENGINE': 'django.db.backends.sqlite3', 'NAME': DATABASE_PATH}
 
 
-try:
-    DATABASES = {'default': PRIMARY_DB}
-    if not PRIMARY_DB['NAME'] or not PRIMARY_DB['USER']:
-        raise ImproperlyConfigured(
-            'Missing MySQL configuration. Falling back to SQLite.'
-        )
+# try:
+#     DATABASES = {'default': PRIMARY_DB}
+#     if not PRIMARY_DB['NAME'] or not PRIMARY_DB['USER']:
+#         raise ImproperlyConfigured(
+#             'Missing MySQL configuration. Falling back to SQLite.'
+#         )
 
-except ImproperlyConfigured:
-    # run(f"docker-compose run server pipenv run python3 manage.py makemigrations")
-    run(f"docker-compose run server pipenv run python3 manage.py migrate")
-    DATABASES = {'default': FALLBACK_DB}
+# except ImproperlyConfigured:
+#     # run(f"docker-compose run server pipenv run python3 manage.py makemigrations")
+#     run(f"docker-compose run server pipenv run python3 manage.py migrate")
+DATABASES = {'default': FALLBACK_DB}
 
 
 # Password validation

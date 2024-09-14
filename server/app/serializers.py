@@ -73,10 +73,6 @@ class StoreSerializer(serializers.ModelSerializer):
         fields = ['user', 'username', 'email', 'name', 'bio', 'phone', 'currency']
 
 
-class StoreSearchSerializer(serializers.Serializer):
-    pass
-
-
 class ProductSerializer(serializers.ModelSerializer):
     # image = serializers.SerializerMethodField()
 

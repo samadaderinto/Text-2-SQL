@@ -48,8 +48,8 @@ export const SignIn = () => {
       const { data, token } = response.data;
 
       
-      const encryptedAccessToken = useEncryptJWT(token, secretKey);
-      const encryptedRefreshToken = useEncryptJWT(token, secretKey);
+      const encryptedAccessToken = useEncryptJWT(token.access, secretKey);
+      const encryptedRefreshToken = useEncryptJWT(token.refresh, secretKey);
 
       localStorage.setItem('refresh', encryptedAccessToken);
       localStorage.setItem('access', encryptedRefreshToken);

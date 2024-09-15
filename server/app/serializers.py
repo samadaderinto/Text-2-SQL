@@ -74,7 +74,7 @@ class StoreSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    # image = serializers.SerializerMethodField()
+    
 
     class Meta:
         model = Product
@@ -85,7 +85,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'available',
             'description',
             'price',
-            # 'image',
+        
             'category',
             'currency',
             'sales',
@@ -94,11 +94,6 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {'sales': {'read_only': True}}
 
-    # def get_image(self, obj):
-    #     request = self.context.get('request')
-    #     if obj.image and request:
-    #         return request.build_absolute_uri(obj.image.url)
-    #     return None
 
 
 class OrderSerializer(serializers.ModelSerializer):

@@ -14,7 +14,6 @@ import { Logout } from './Components/Logout'
 import { NewPassword } from './Components/NewPassword'
 import { Customers } from './Components/Customers'
 import { NewCustomer } from './Components/NewCustomer'
-import { NewProduct } from './Components/Newproduct'
 
 import ProtectedRoute from './utils/hooks'
 
@@ -24,6 +23,7 @@ import Query from './Components/Query'
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { NewProduct } from './Components/NewProduct'
 
 
 

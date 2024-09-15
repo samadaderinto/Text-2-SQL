@@ -8,7 +8,6 @@ import api from '../utils/api';
 import { useEncryptJWT } from '../utils/hooks';
 import { secretKey } from '../utils/constants';
 
-
 export const SignIn = () => {
   const nav = useNavigate();
 
@@ -31,7 +30,7 @@ export const SignIn = () => {
     });
   };
 
-  const SignIn = async () => {
+  const handleSignIn = async () => {
     const { email, password } = formState;
 
     if (email === '' || password === '') {
@@ -47,17 +46,18 @@ export const SignIn = () => {
 
       const { data, token } = response.data;
 
-      
       const encryptedAccessToken = useEncryptJWT(token.access, secretKey);
       const encryptedRefreshToken = useEncryptJWT(token.refresh, secretKey);
 
-      localStorage.setItem('refresh', encryptedAccessToken);
-      localStorage.setItem('access', encryptedRefreshToken);
+      // Corrected token storage
+      localStorage.setItem('access', encryptedAccessToken);
+      localStorage.setItem('refresh', encryptedRefreshToken);
 
+      // Reset form state after successful sign-in
       setFormState({
         show: false,
         pass: 'password',
-        email: data.email,
+        email: '',
         password: ''
       });
 
@@ -66,10 +66,10 @@ export const SignIn = () => {
     } catch (error: any) {
       console.log(error);
 
-      if (error.response.status === 403) {
+      if (error.response?.status === 403) {
         toast.error('Please verify your account before logging in.');
       } else {
-        toast.error('Invalid user information. Please try again');
+        toast.error('Invalid user information. Please try again.');
       }
     }
   };
@@ -116,7 +116,7 @@ export const SignIn = () => {
         </div>
         <p onClick={() => nav('/auth/forgot-password')}>Forgot password?</p>
         <div className="Bottom_Container">
-          <div onClick={SignIn} className="Login_Btn">LOGIN</div>
+          <div onClick={handleSignIn} className="Login_Btn">LOGIN</div>
         </div>
       </section>
       <section className="Blue_Section">

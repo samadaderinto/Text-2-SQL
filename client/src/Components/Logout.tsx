@@ -10,38 +10,26 @@ export const Logout = () => {
   const nav = useNavigate();
 
   const handleLogout = async () => {
-    const refresh: string | any = localStorage.getItem('refresh');
-    const decryptedRefreshToken = useDecryptJWT(refresh, secretKey)
-    const data = JSON.stringify({  });
+    const refresh: string | null = localStorage.getItem('refresh');
 
-    try {
-      const response = await api.post(`/auth/logout/`, data);
-      
-      if (response.status === 205) {
-        setIsSignedIn(false);
-        nav('/auth/signin/');
-      }
+    if (refresh) {
+      try {
+        const decryptedRefreshToken = useDecryptJWT(refresh, secretKey);
+        const data = JSON.stringify({ refresh: decryptedRefreshToken });
 
-    } catch (error: any) {
-      if (error.response && error.response.status === 401) {
-        try {
-          const refreshResponse = await api.post(`/auth/login/refresh/`, data);
-          localStorage.setItem('access', refreshResponse.data.access);
+        const response = await api.post(`/auth/logout/`, data);
 
-          const retryResponse = await api.post(`/auth/logout/`, data);
-
-          if (retryResponse.status === 205) {
-            setIsSignedIn(false);
-            nav('/auth/signin/');
-          }
-        } catch (refreshError) {
-          console.log('Token refresh failed:', refreshError);
+        if (response.status === 205) {
+          localStorage.removeItem('access');
+          localStorage.removeItem('refresh');
           setIsSignedIn(false);
           nav('/auth/signin/');
         }
-      } else {
-        console.log(error);
+      } catch (error: any) {
+        console.log("Error during logout:", error);
       }
+    } else {
+      console.error('No refresh token found');
     }
   };
 

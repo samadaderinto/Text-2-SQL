@@ -14,7 +14,7 @@ const Query = () => {
       try {
         const parsedData = JSON.parse(data);
         if (Array.isArray(parsedData)) {
-          setDataArray(parsedData); // Set the parsed data as an array
+          setDataArray(parsedData);
         } else {
           console.error('Parsed data is not an array');
         }
@@ -31,16 +31,15 @@ const Query = () => {
   const convertToCSV = (array: any[]) => {
     if (array.length === 0) return '';
 
-    const keys = Object.keys(array[0]); // Get the keys from the first object (headers)
-    const csvRows = [keys.join(',')]; // Create the header row
+    const keys = Object.keys(array[0]); 
+    const csvRows = [keys.join(',')];
 
-    // Loop through the array and push the values for each row
     array.forEach(item => {
-      const values = keys.map(key => `"${item[key]}"`); // Escape values and add quotes
+      const values = keys.map(key => `"${item[key]}"`);
       csvRows.push(values.join(','));
     });
 
-    return csvRows.join('\n'); // Join rows by new lines
+    return csvRows.join('\n');
   };
 
   const downloadCSV = () => {
@@ -52,7 +51,7 @@ const Query = () => {
     a.setAttribute('download', 'data.csv');
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a); // Clean up the DOM after triggering the download
+    document.body.removeChild(a);
   };
 
   return (

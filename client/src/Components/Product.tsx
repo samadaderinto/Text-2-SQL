@@ -15,9 +15,9 @@ const initialState = {
   input: '',
   data: [],
   totalPages: 0,
-  editingId: null, // State for tracking which product is being edited
-  editValues: { title: '', description: '', price: '', category: '', currency: '' }, // State for edit form values
-  loading: false, // Add loading state
+  editingId: null,
+  editValues: { title: '', description: '', price: '', category: '', currency: '' },
+  loading: false,
 };
 
 function reducer(state: any, action: { type: string; payload: any; }) {
@@ -52,28 +52,28 @@ export const Product = () => {
   }, [currentPage, input]);
 
   const fetchData = (page: number, query: string) => {
-    dispatch({ type: 'SET_LOADING', payload: true }); // Show loading spinner
+    dispatch({ type: 'SET_LOADING', payload: true });
     const offset = page;
     api.get(`/product/search/?offset=${offset}&limit=${itemsPerPage}&query=${query}`)
       .then(response => {
         const totalItems = response.data.count;
         dispatch({ type: 'SET_DATA', payload: response.data.products });
         dispatch({ type: 'SET_TOTAL_PAGES', payload: Math.ceil(totalItems / itemsPerPage) });
-        dispatch({ type: 'SET_LOADING', payload: false }); // Hide loading spinner
+        dispatch({ type: 'SET_LOADING', payload: false });
       })
       .catch(error => {
         console.error("Error fetching data", error);
-        dispatch({ type: 'SET_LOADING', payload: false }); // Hide loading spinner
+        dispatch({ type: 'SET_LOADING', payload: false });
         dispatch({ type: 'SET_TOTAL_PAGES', payload: 1 });
       });
   };
 
   const handlePageClick = (event: { selected: number }) => {
-    dispatch({ type: 'SET_CURRENT_PAGE', payload: event.selected + 1 }); // Convert 0-based index to 1-based
+    dispatch({ type: 'SET_CURRENT_PAGE', payload: event.selected + 1 });
   };
 
   const handleEditClick = (item: any) => {
-    // Set the product to be edited and populate the edit form values
+
     dispatch({ type: 'SET_EDITING_ID', payload: item.id });
     dispatch({
       type: 'SET_EDIT_VALUES',
@@ -93,17 +93,17 @@ export const Product = () => {
 
   const handleEditSubmit = () => {
     api.put(`/product/update/`, {
-      id: editingId, // Pass the product ID to identify which product to update
+      id: editingId,
       ...editValues
     })
       .then(response => {
-        // Update the product in the data list with the new values
+
         console.log(response)
         const updatedData = data.map((item: any) =>
           item.id === editingId ? { ...item, ...editValues } : item
         );
         dispatch({ type: 'SET_DATA', payload: updatedData });
-        dispatch({ type: 'SET_EDITING_ID', payload: null }); // Exit edit mode
+        dispatch({ type: 'SET_EDITING_ID', payload: null });
       })
       .catch(error => {
         console.error("Error updating product", error);

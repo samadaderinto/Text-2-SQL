@@ -7,7 +7,7 @@ import { RiSpeakLine } from "react-icons/ri";
 import { RxDropdownMenu } from "react-icons/rx";
 import { useNavigate } from 'react-router-dom';
 import ProfileImg from "../assets/profileimg.jfif";
-import ClipLoader from 'react-spinners/ClipLoader';
+import { Oval } from 'react-loader-spinner';
 import api from '../utils/api';
 import { sideBarArrayList } from '../utils/sidebar';
 
@@ -15,10 +15,11 @@ export const Header = () => {
   const [state, setState] = useState<{
     menu: boolean;
     listen: boolean;
+    pop: boolean;
+    loading: boolean;
     voice: boolean;
     activeIndex: number;
     errorMessage: string;
-    loading: boolean;
     audioBlob: Blob | null;
     isRecording: boolean;
     store: { name: string; email: string };
@@ -28,6 +29,7 @@ export const Header = () => {
     menu: false,
     listen: false,
     voice: false,
+    pop: false,
     activeIndex: 0,
     errorMessage: '',
     loading: false,
@@ -35,8 +37,22 @@ export const Header = () => {
     isRecording: false,
     store: { name: "", email: "" },
     searchQuery: '',
-    searchResults: []  // Initialize searchResults state
+    searchResults: []  
   });
+
+  const HandlePop = ()=> {
+    if(state.searchQuery !== '') {
+      setState(prevState => ({ ...prevState, pop: true}))
+
+    } else {
+      setState(prevState => ({ ...prevState, pop: false}))
+    }
+  }
+
+  useEffect(() => {
+    HandlePop()
+  }, [state.searchQuery])
+  
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -190,13 +206,35 @@ export const Header = () => {
               type="text" 
               placeholder="Search anything..." 
               value={state.searchQuery} 
-              onChange={(e) => setState(prevState => ({ ...prevState, searchQuery: e.target.value }))}
+              onChange={(e) =>{ setState(prevState => ({ ...prevState, searchQuery: e.target.value }))
+            }}
               onKeyDown={(e) => e.key === 'Enter' && performSearch()}
             />
             <p onClick={() => setState(prevState => ({ ...prevState, voice: !state.voice }))}><RiSpeakLine /></p>
           </>
         )}
       </section>
+      {
+        state.pop? <ul className='Pop_Search_Container'>
+          <li>Product</li>
+          <li>Product</li>
+          <li>Product</li>
+          <li>Product</li>
+                  <div className="loading-spinner">
+                  <Oval
+                    height={50}
+                    width={50}
+                    color="#4fa94d"
+                    visible={true}
+                    ariaLabel="oval-loading"
+                    secondaryColor="#4fa94d"
+                    strokeWidth={2}
+                    strokeWidthSecondary={2}
+                  />
+        </div>
+        </ul> : null
+      }
+      
       <section className="RightHand_Container">
         <p className="Exclusive_Store">{state.store.name ? state.store.name : "Store Name"}</p>
         <p><IoIosNotificationsOutline /></p>

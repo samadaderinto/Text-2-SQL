@@ -38,6 +38,7 @@
             font-size: 18px;
             cursor: pointer;
             color: rgb(39, 112, 230);
+            margin-right: 12px;
         }
 
 
@@ -46,6 +47,26 @@
             height: 100%;
             border: none;
             outline: none;
+        }
+    }
+
+    .Pop_Search_Container {
+        width: 24vw;
+        height: max-content;
+        border-radius: 5px;
+        padding: 2%;
+        background-color: rgb(250, 247, 247);
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        // align-items: center;
+        margin-top: 29vh;
+        // top: 70;
+        margin-left: 21vw;
+
+        li {
+            list-style: none;
+            padding: 2%;
         }
     }
 

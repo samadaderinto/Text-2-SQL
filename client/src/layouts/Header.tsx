@@ -25,6 +25,8 @@ export const Header = () => {
     store: { name: string; email: string };
     searchQuery: string;  
     searchResults: any[]; 
+    showPopup: boolean;
+    apiResult: string;
   }>({
     menu: false,
     listen: false,
@@ -37,21 +39,22 @@ export const Header = () => {
     isRecording: false,
     store: { name: "", email: "" },
     searchQuery: '',
-    searchResults: []  
+    searchResults: [],
+    showPopup: false,  // New state for popup visibility
+    apiResult: '',  // New state for API result content
   });
 
   const HandlePop = ()=> {
     if(state.searchQuery !== '') {
-      setState(prevState => ({ ...prevState, pop: true}))
-
+      setState(prevState => ({ ...prevState, pop: true }))
     } else {
-      setState(prevState => ({ ...prevState, pop: false}))
+      setState(prevState => ({ ...prevState, pop: false }))
     }
   }
 
   useEffect(() => {
-    HandlePop()
-  }, [state.searchQuery])
+    HandlePop();
+  }, [state.searchQuery]);
   
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -73,20 +76,27 @@ export const Header = () => {
 
   const performSearch = async () => {
     if (state.searchQuery.trim()) {
+      setState(prevState => ({ ...prevState, loading: true })); // Start loading
       try {
         const response = await api.get(`query/search/`, { params: { query: state.searchQuery } });
-        setState(prevState => ({ ...prevState, searchResults: response.data }));
+        setState(prevState => ({
+          ...prevState,
+          searchResults: response.data,
+          loading: false // Stop loading when search completes
+        }));
       } catch (error) {
         console.error('Error performing search:', error);
+        setState(prevState => ({ ...prevState, searchResults: [], loading: false })); // Stop loading on error
       }
     } else {
-      setState(prevState => ({ ...prevState, searchResults: [] }));
+      setState(prevState => ({ ...prevState, searchResults: [], loading: false }));
     }
   };
 
   useEffect(() => {
-
-    performSearch();
+    if (state.searchQuery) {
+      performSearch();
+    }
   }, [state.searchQuery]);
 
   const startRecording = async () => {
@@ -165,24 +175,31 @@ export const Header = () => {
         });
 
         if (response.status === 200) {
-          console.log(response.data.results)
-          // if (response.data.type == "UPDATE") {
-          //   console.log(response.data)
-
-          // } else if (response.data.type == "INSERT") {
-          //   console.log(response.data)
-        
-            nav('/query', { state: { data: response.data.results, header: 'Query Results' } });
+          console.log(response.data.results);
+          setState(prevState => ({
+            ...prevState,
+            apiResult: response.data.results,  // Store API result
+            showPopup: true,  // Show popup after getting result
+            loading: false,
+          }));
         }
       } catch (error: any) {
         if (error.response && error.response.status === 500) {
-          setState(prevState => ({ ...prevState, errorMessage: 'Unable to process your audio request. Please try again.' }));
+          setState(prevState => ({
+            ...prevState,
+            errorMessage: 'Unable to process your audio request. Please try again.',
+            showPopup: true,  // Show popup with error message
+            loading: false,
+          }));
         } else {
-          setState(prevState => ({ ...prevState, errorMessage: 'Unable to find what you\'re looking for. Please try again.' }));
+          setState(prevState => ({
+            ...prevState,
+            errorMessage: 'Unable to find what you\'re looking for. Please try again.',
+            showPopup: true,  // Show popup with error message
+            loading: false,
+          }));
         }
         console.error('Error uploading audio:', error);
-      } finally {
-        setState(prevState => ({ ...prevState, loading: false }));
       }
     } else {
       setState(prevState => ({ ...prevState, errorMessage: 'No audio data available for upload.' }));
@@ -206,34 +223,35 @@ export const Header = () => {
               type="text" 
               placeholder="Search anything..." 
               value={state.searchQuery} 
-              onChange={(e) =>{ setState(prevState => ({ ...prevState, searchQuery: e.target.value }))
-            }}
+              onChange={(e) =>{ setState(prevState => ({ ...prevState, searchQuery: e.target.value })) }}
               onKeyDown={(e) => e.key === 'Enter' && performSearch()}
             />
             <p onClick={() => setState(prevState => ({ ...prevState, voice: !state.voice }))}><RiSpeakLine /></p>
           </>
         )}
       </section>
-      {
-        state.pop? <ul className='Pop_Search_Container'>
+      {state.pop && (
+        <ul className='Pop_Search_Container'>
           <li>Product</li>
           <li>Product</li>
           <li>Product</li>
           <li>Product</li>
-                  <div className="loading-spinner">
-                  <Oval
-                    height={50}
-                    width={50}
-                    color="#4fa94d"
-                    visible={true}
-                    ariaLabel="oval-loading"
-                    secondaryColor="#4fa94d"
-                    strokeWidth={2}
-                    strokeWidthSecondary={2}
-                  />
-        </div>
-        </ul> : null
-      }
+          {state.loading && (
+            <div className="loading-spinner">
+              <Oval
+                height={50}
+                width={50}
+                color="#4fa94d"
+                visible={true}
+                ariaLabel="oval-loading"
+                secondaryColor="#4fa94d"
+                strokeWidth={2}
+                strokeWidthSecondary={2}
+              />
+            </div>
+          )}
+        </ul>
+      )}
       
       <section className="RightHand_Container">
         <p className="Exclusive_Store">{state.store.name ? state.store.name : "Store Name"}</p>
@@ -242,65 +260,14 @@ export const Header = () => {
           <img src={ProfileImg} alt="profile" />
         </div>
       </section>
-      <p onClick={() => setState(prevState => ({ ...prevState, menu: !state.menu }))} className="Mobile_Menu"><RxDropdownMenu /></p>
-      {state.menu && (
-        <article className="Mobile_Menu_Nav">
-          {sideBarArrayList.map((obj, index) => (
-            <span
-              key={index}
-              onClick={() => {
-                setState(prevState => ({ ...prevState, activeIndex: index, menu: false }));
-                nav(`/${obj.itemName}`);
-              }}
-              className={state.activeIndex === index ? 'Active_List' : ''}
-            >
-              <p className="List_icon">{obj.icon}</p>
-              <p>{obj.itemName}</p>
-            </span>
-          ))}
-        </article>
-      )}
-      {state.voice && (
-        <span
-          onClick={() => {
-            setState(prevState => ({ ...prevState, voice: false, listen: true }));
-          }}
-          className="Search_By_Voice"
-        >
-          Search By Voice
-        </span>
-      )}
-      {state.listen && (
-        <span
-          onClick={() => {
-            setState(prevState => ({ ...prevState, listen: false }));
-          }}
-          className="Search_By_Voice Stop_Voice">
-          Stop recording
-        </span>
-      )}
-
-      {state.loading && (
-        <div className="loading-spinner">
-          <ClipLoader color={"#123abc"} loading={state.loading} size={50} />
-        </div>
-      )}
-
-      {state.errorMessage && <p className="error-message">{state.errorMessage}</p>}
-      
-     
-      {state.searchQuery && (
-        <div className="search-results">
-          {state.searchResults.length > 0 ? (
-            state.searchResults.map((result, index) => (
-              <div key={index} className="search-result-item">
-   
-                <p>{result.name}</p> 
-              </div>
-            ))
-          ) : (
-            <p>No results found</p>
-          )}
+      {state.showPopup && (
+        <div>
+          <div>
+            <p>{state.apiResult || state.errorMessage}</p>
+            <button onClick={() => setState(prevState => ({ ...prevState, showPopup: false }))}>
+              Close
+            </button>
+          </div>
         </div>
       )}
     </div>

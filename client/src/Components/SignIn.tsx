@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '../utils/api';
+import { useEncryptJWT } from '../utils/hooks';
+import { secretKey } from '../utils/constants';
 
 
 export const SignIn = () => {
@@ -45,8 +47,12 @@ export const SignIn = () => {
 
       const { data, token } = response.data;
 
-      localStorage.setItem('refresh', token.refresh);
-      localStorage.setItem('access', token.access);
+      
+      const encryptedAccessToken = useEncryptJWT(token, secretKey);
+      const encryptedRefreshToken = useEncryptJWT(token, secretKey);
+
+      localStorage.setItem('refresh', encryptedAccessToken);
+      localStorage.setItem('access', encryptedRefreshToken);
 
       setFormState({
         show: false,
@@ -60,7 +66,6 @@ export const SignIn = () => {
     } catch (error: any) {
       console.log(error);
 
-      // Check if the error is due to unverified account
       if (error.response.status === 403) {
         toast.error('Please verify your account before logging in.');
       } else {

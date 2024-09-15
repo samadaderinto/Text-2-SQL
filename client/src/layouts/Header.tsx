@@ -12,47 +12,21 @@ import api from '../utils/api';
 import { sideBarArrayList } from '../utils/sidebar';
 
 export const Header = () => {
-  const [state, setState] = useState<{
-    menu: boolean;
-    listen: boolean;
-    pop: boolean;
-    loading: boolean;
-    voice: boolean;
-    activeIndex: number;
-    errorMessage: string;
-    audioBlob: Blob | null;
-    isRecording: boolean;
-    store: { name: string; email: string };
-    searchQuery: string;  
-    searchResults: any[]; 
-  }>({
+  const [state, setState] = useState({
     menu: false,
     listen: false,
     voice: false,
     pop: false,
+    popup: false,
     activeIndex: 0,
     errorMessage: '',
     loading: false,
-    audioBlob: null,
+    audioBlob: null as Blob | null,
     isRecording: false,
     store: { name: "", email: "" },
     searchQuery: '',
-    searchResults: []  
+    searchResults: [] as any[],
   });
-
-  const HandlePop = ()=> {
-    if(state.searchQuery !== '') {
-      setState(prevState => ({ ...prevState, pop: true}))
-
-    } else {
-      setState(prevState => ({ ...prevState, pop: false}))
-    }
-  }
-
-  useEffect(() => {
-    HandlePop()
-  }, [state.searchQuery])
-  
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -85,7 +59,6 @@ export const Header = () => {
   };
 
   useEffect(() => {
-
     performSearch();
   }, [state.searchQuery]);
 
@@ -111,7 +84,6 @@ export const Header = () => {
           if (audioChunksRef.current.length > 0) {
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
             setState(prevState => ({ ...prevState, audioBlob }));
-            console.log("Recording complete and audio blob created.");
           } else {
             console.error("No audio chunks available.");
           }
@@ -119,7 +91,6 @@ export const Header = () => {
 
         mediaRecorder.start();
         setState(prevState => ({ ...prevState, isRecording: true }));
-        console.log("Recording started");
       } catch (error) {
         console.error('Error accessing microphone:', error);
       }
@@ -133,7 +104,6 @@ export const Header = () => {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       setState(prevState => ({ ...prevState, isRecording: false }));
-      console.log("Recording stopped");
     }
   };
 
@@ -165,14 +135,15 @@ export const Header = () => {
         });
 
         if (response.status === 200) {
-          console.log(response.data.results)
-          // if (response.data.type == "UPDATE") {
-          //   console.log(response.data)
-
-          // } else if (response.data.type == "INSERT") {
-          //   console.log(response.data)
-        
+          if (response.data.type === "UPDATE" && response.data.error === "incomplete") {
+            setState(prevState => ({ ...prevState, popup: true }));
+          } else if (response.data.type === "INSERT") {
+            // Handle INSERT logic here
+          } else if (response.data.type === "SELECT") {
             nav('/query', { state: { data: response.data.results, header: 'Query Results' } });
+          } else if (response.data.type === "DELETE") {
+            // Handle DELETE logic here
+          }
         }
       } catch (error: any) {
         if (error.response && error.response.status === 500) {
@@ -202,47 +173,56 @@ export const Header = () => {
         ) : (
           <>
             <p className="Header_Search_Icon"><IoSearch /></p>
-            <input 
-              type="text" 
-              placeholder="Search anything..." 
-              value={state.searchQuery} 
-              onChange={(e) =>{ setState(prevState => ({ ...prevState, searchQuery: e.target.value }))
-            }}
+            <input
+              type="text"
+              placeholder="Search anything..."
+              value={state.searchQuery}
+              onChange={(e) => setState(prevState => ({ ...prevState, searchQuery: e.target.value }))}
               onKeyDown={(e) => e.key === 'Enter' && performSearch()}
             />
             <p onClick={() => setState(prevState => ({ ...prevState, voice: !state.voice }))}><RiSpeakLine /></p>
           </>
         )}
       </section>
-      {
-        state.pop? <ul className='Pop_Search_Container'>
+
+      {state.pop && (
+        <ul className='Pop_Search_Container'>
           <li>Product</li>
           <li>Product</li>
           <li>Product</li>
           <li>Product</li>
-                  <div className="loading-spinner">
-                  <Oval
-                    height={50}
-                    width={50}
-                    color="#4fa94d"
-                    visible={true}
-                    ariaLabel="oval-loading"
-                    secondaryColor="#4fa94d"
-                    strokeWidth={2}
-                    strokeWidthSecondary={2}
-                  />
+          <div className="loading-spinner">
+            <Oval
+              height={50}
+              width={50}
+              color="#4fa94d"
+              visible={true}
+              ariaLabel="oval-loading"
+              secondaryColor="#4fa94d"
+              strokeWidth={2}
+              strokeWidthSecondary={2}
+            />
+          </div>
+        </ul>
+      )}
+
+      {state.popup && (
+        <div className="Popup_Container">
+          {/* Content for the popup box goes here */}
+          <p>Popup Content</p>
         </div>
-        </ul> : null
-      }
-      
+      )}
+
       <section className="RightHand_Container">
-        <p className="Exclusive_Store">{state.store.name ? state.store.name : "Store Name"}</p>
+        <p className="Exclusive_Store">{state.store.name || "Store Name"}</p>
         <p><IoIosNotificationsOutline /></p>
         <div className="Image_Container">
           <img src={ProfileImg} alt="profile" />
         </div>
       </section>
+
       <p onClick={() => setState(prevState => ({ ...prevState, menu: !state.menu }))} className="Mobile_Menu"><RxDropdownMenu /></p>
+
       {state.menu && (
         <article className="Mobile_Menu_Nav">
           {sideBarArrayList.map((obj, index) => (
@@ -260,41 +240,48 @@ export const Header = () => {
           ))}
         </article>
       )}
+
       {state.voice && (
         <span
-          onClick={() => {
-            setState(prevState => ({ ...prevState, voice: false, listen: true }));
-          }}
+          onClick={() => setState(prevState => ({ ...prevState, voice: false, listen: true }))}
           className="Search_By_Voice"
         >
           Search By Voice
         </span>
       )}
+
       {state.listen && (
         <span
-          onClick={() => {
-            setState(prevState => ({ ...prevState, listen: false }));
-          }}
-          className="Search_By_Voice Stop_Voice">
+          onClick={() => setState(prevState => ({ ...prevState, listen: false }))}
+          className="Search_By_Voice Stop_Voice"
+        >
           Stop recording
         </span>
       )}
 
       {state.loading && (
         <div className="loading-spinner">
+          <Oval
+            height={50}
+            width={50}
+            color="#4fa94d"
+            visible={true}
+            ariaLabel="oval-loading"
+            secondaryColor="#4fa94d"
+            strokeWidth={2}
+            strokeWidthSecondary={2}
+          />
         </div>
       )}
 
       {state.errorMessage && <p className="error-message">{state.errorMessage}</p>}
-      
-     
+
       {state.searchQuery && (
         <div className="search-results">
           {state.searchResults.length > 0 ? (
             state.searchResults.map((result, index) => (
               <div key={index} className="search-result-item">
-   
-                <p>{result.name}</p> 
+                <p>{result.name}</p>
               </div>
             ))
           ) : (

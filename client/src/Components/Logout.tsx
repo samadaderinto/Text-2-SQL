@@ -2,18 +2,21 @@ import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { useContext } from "react";
 import { AuthContext } from "../contexts/auth-context";
+import { useDecryptJWT } from "../utils/hooks";
+import { secretKey } from "../utils/constants";
 
 export const Logout = () => {
   const { setIsSignedIn } = useContext(AuthContext);
   const nav = useNavigate();
 
   const handleLogout = async () => {
-    const refresh = localStorage.getItem('refresh');
+    const refresh: string = localStorage.getItem('refresh') ? "" : "";
+    useDecryptJWT(refresh, secretKey)
     const data = JSON.stringify({ refresh });
 
     try {
       const response = await api.post(`/auth/logout/`, data);
-
+      
       if (response.status === 205) {
         setIsSignedIn(false);
         nav('/auth/signin/');

@@ -10,9 +10,9 @@ export const Logout = () => {
   const nav = useNavigate();
 
   const handleLogout = async () => {
-    const refresh: string = localStorage.getItem('refresh') ? "" : "";
-    useDecryptJWT(refresh, secretKey)
-    const data = JSON.stringify({ refresh });
+    const refresh: string | any = localStorage.getItem('refresh');
+    const decryptedRefreshToken = useDecryptJWT(refresh, secretKey)
+    const data = JSON.stringify({  });
 
     try {
       const response = await api.post(`/auth/logout/`, data);

@@ -270,27 +270,24 @@ class SearchService:
 
         return incomplete_fields
 
-    def send_update_confirmation_response(self):
-        pass
-        
+  
 
-    def send_delete_verification_response(self):
-        pass
-    
     def extract_update_fields_and_values(self, query):
         try:
-            match = re.search(r"UPDATE\s+\w+\s+SET\s+(.+?)\s+WHERE", query, re.IGNORECASE)
+            match = re.search(
+                r"UPDATE\s+\w+\s+SET\s+(.+?)\s+WHERE", query, re.IGNORECASE
+            )
             if not match:
                 return None
 
             set_clause = match.group(1)
 
-            field_value_pairs = set_clause.split(",")
+            field_value_pairs = set_clause.split(',')
 
             update_data = {}
             for pair in field_value_pairs:
-                field, value = pair.split("=")
-                update_data[field.strip()] = value.strip().strip("'\"")
+                field, value = pair.split('=')
+                update_data[field.strip()] = value.strip().strip('\'"')
 
             return update_data
 
@@ -360,7 +357,7 @@ class SearchService:
         try:
             match = re.search(r"UPDATE\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
             table_name = match.group(2) if match else 'Unknown table'
-            
+
             fields_and_values = self.extract_update_fields_and_values(query)
             if fields_and_values:
                 return json.dumps(
@@ -369,31 +366,13 @@ class SearchService:
                         'message': f"Please validate the following fields for {table_name}.",
                         'update_data': fields_and_values
                     }
+                    
                 )
             else:
                 return json.dumps(
                     {
                         'status': 'error',
                         'message': 'Unable to extract update fields and values from the query.'
-                    }
-                )
-
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-
-                # return json.dumps(
-                #     {
-                #         'status': 'success',
-                #         'message': f"{table_name} successfully updated."
-                #     }
-                # )
-                
-                incomplete_fields = self.send_update_confirmation_response(table_name, query)
-                return json.dumps(
-                    {
-                        'status': 'error',
-                        'message': 'There was an issue with the data integrity. Please ensure all required fields are provided and constraints are met.',
-                        'incomplete_fields': incomplete_fields
                     }
                 )
 

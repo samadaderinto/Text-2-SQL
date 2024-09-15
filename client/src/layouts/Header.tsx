@@ -191,18 +191,20 @@ export const Header = () => {
           <li>Product</li>
           <li>Product</li>
           <li>Product</li>
-          <div className="loading-spinner">
-            <Oval
-              height={50}
-              width={50}
-              color="#4fa94d"
-              visible={true}
-              ariaLabel="oval-loading"
-              secondaryColor="#4fa94d"
-              strokeWidth={2}
-              strokeWidthSecondary={2}
-            />
-          </div>
+          {state.loading && (
+            <div className="loading-spinner">
+              <Oval
+                height={50}
+                width={50}
+                color="#4fa94d"
+                visible={true}
+                ariaLabel="oval-loading"
+                secondaryColor="#4fa94d"
+                strokeWidth={2}
+                strokeWidthSecondary={2}
+              />
+            </div>
+          )}
         </ul>
       )}
 
@@ -257,21 +259,6 @@ export const Header = () => {
         >
           Stop recording
         </span>
-      )}
-
-      {state.loading && (
-        <div className="loading-spinner">
-          <Oval
-            height={50}
-            width={50}
-            color="#4fa94d"
-            visible={true}
-            ariaLabel="oval-loading"
-            secondaryColor="#4fa94d"
-            strokeWidth={2}
-            strokeWidthSecondary={2}
-          />
-        </div>
       )}
 
       {state.errorMessage && <p className="error-message">{state.errorMessage}</p>}

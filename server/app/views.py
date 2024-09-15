@@ -39,7 +39,6 @@ from .serializers import (
     ProductSerializer,
     ResetPasswordSerializer,
     SearchSerializer,
-    StoreSearchSerializer,
     StoreSerializer,
     UserSerializer
 )
@@ -439,8 +438,8 @@ class StoreViewSet(viewsets.GenericViewSet):
         super().__init__(**kwargs)
         self.store_service: StoreService = di[StoreService]
 
-    # permission_classes = (ServerAccessPolicy,)
-    permission_classes = (AllowAny,)
+    permission_classes = (ServerAccessPolicy,)
+   
 
     @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
     @action(detail=False, methods=['post'], url_path='create')
@@ -512,7 +511,7 @@ class OrderViewSet(viewsets.GenericViewSet):
         offset = int(request.GET.get('offset', 0))
         limit = int(request.GET.get('limit', 15))
 
-        # Search across multiple fields using Q objects
+  
         orders = Order.objects.all()
 
         if query:
@@ -597,8 +596,8 @@ class SettingsViewSet(viewsets.GenericViewSet):
         self.settings_service: SettingsService = di[SettingsService]
         self.store_service: StoreService = di[StoreService]
 
-    # permission_classes = (ServerAccessPolicy,)
-    permission_classes = (AllowAny,)
+    permission_classes = (ServerAccessPolicy,)
+
 
     @extend_schema(responses={200: AdminSerializer})
     @action(detail=False, methods=['get'], url_path='admin/get')

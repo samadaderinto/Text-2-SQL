@@ -31,7 +31,7 @@ from .serializers import (
     NotificationSerializer,
     ProductSerializer,
     StoreSerializer,
-    UserSerializer
+    UserSerializer,
 )
 from .models import Customer, Notification, Order, Product, Store, User
 
@@ -50,21 +50,21 @@ class AuthService:
     def get_base_url(self, request):
         scheme = request.scheme
         host = request.get_host()
-        return f'{scheme}://{host}'
+        return f"{scheme}://{host}"
 
     def send_activation_mail(self, request, email):
         user = get_object_or_404(self.User, email=email)
         uidb64 = urlsafe_base64_encode(force_bytes(user.id))
         token = TokenGenerator().make_token(user)
-        link = f'{self.get_base_url(request)}/auth/activate/{uidb64}/{token}/'
+        link = f"{self.get_base_url(request)}/auth/activate/{uidb64}/{token}/"
         absolute_url = request.build_absolute_uri(link)
 
         send_mail(
-            f'Welcome, {email}',
+            f"Welcome, {email}",
             f"This is the link to verify your email. {absolute_url}",
             settings.EMAIL_HOST_USER,
             [email],
-            fail_silently=False
+            fail_silently=False,
         )
 
     def create_user(self, request, email, password):
@@ -82,18 +82,18 @@ class AuthService:
         if user and user.is_active:
             token = auth_token(user)
             serializer = UserSerializer(user)
-            return {'token': token, 'data': serializer.data}
+            return {"token": token, "data": serializer.data}
         elif user and user.is_active == False:
-            return {'verify': 'Please verify your email account'}
+            return {"verify": "Please verify your email account"}
 
-        return {'invalid_info': 'Invalid user information'}
+        return {"invalid_info": "Invalid user information"}
 
     def request_reset_password_user(self, request, email):
         user = get_object_or_404(self.User, email=email)
         uidb64 = urlsafe_base64_encode(force_bytes(user.id))
         token = PasswordResetTokenGenerator().make_token(user)
         link = (
-            f'{self.get_base_url(request)}/auth/reset-password/verify/{uidb64}/{token}/'
+            f"{self.get_base_url(request)}/auth/reset-password/verify/{uidb64}/{token}/"
         )
 
         return request.build_absolute_uri(link)
@@ -103,7 +103,7 @@ class AuthService:
         user.set_password(new_password)
         user.save()
 
-        return {'success': 'Password updated successfully'}
+        return {"success": "Password updated successfully"}
 
 
 @inject
@@ -125,7 +125,7 @@ class StoreService:
     def delete_store(self, request):
         store = get_object_or_404(self.Store, user=request.user)
         store.delete()
-        return {'success': 'Store deleted successfully'}
+        return {"success": "Store deleted successfully"}
 
     def update_store(self, request, data):
         store = get_object_or_404(self.Store, user=request.user)
@@ -145,14 +145,10 @@ class StoreService:
 @inject
 class SearchService:
     def __init__(self):
-        self.commands = [
-            'SELECT',
-            'INSERT',
-            'UPDATE'
-        ]  # TODO: you can add 'DELETE' to list of commands, but note this is a really risky option because of potential data loss by the generated sql query
+        self.commands = ["SELECT", "INSERT", "UPDATE", "DELETE"]
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model_field_mapping = self.get_all_model_fields()
-        self.sensitive_fields = ['password', 'token', 'secret_key']
+        self.sensitive_fields = ["password", "token", "secret_key"]
 
     def elastic_search(self, search_query):
         pass
@@ -166,25 +162,25 @@ class SearchService:
         try:
             response = json.loads(response_json)
             if (
-                'choices' in response
-                and response['choices'][0]['finish_reason'] == 'stop'
+                "choices" in response
+                and response["choices"][0]["finish_reason"] == "stop"
             ):
-                message_content = response['choices'][0]['message']['content']
-                message_content = message_content.strip().strip('```').strip()
-                if 'Could you please provide more context or detail' in message_content:
-                    return 'The assistant needs more context or detail to generate the SQL query.'
+                message_content = response["choices"][0]["message"]["content"]
+                message_content = message_content.strip().strip("```").strip()
+                if "Could you please provide more context or detail" in message_content:
+                    return "The assistant needs more context or detail to generate the SQL query."
                 return message_content
             else:
-                return 'The response was incomplete or there was an issue.'
+                return "The response was incomplete or there was an issue."
         except json.JSONDecodeError:
-            logger.error('Error parsing JSON response')
-            return 'Error parsing the response from OpenAI.'
+            logger.error("Error parsing JSON response")
+            return "Error parsing the response from OpenAI."
         except KeyError:
-            logger.error('Key error in OpenAI response')
-            return 'Error processing the response from OpenAI.'
+            logger.error("Key error in OpenAI response")
+            return "Error processing the response from OpenAI."
         except Exception:
-            logger.error('Unexpected error processing the OpenAI response')
-            return 'Unexpected error processing the response.'
+            logger.error("Unexpected error processing the OpenAI response")
+            return "Unexpected error processing the response."
 
     def get_all_model_fields(self):
         model_field_mapping = {}
@@ -196,11 +192,11 @@ class SearchService:
     def audio_to_text(self, audio_data):
         try:
             response = self.client.audio.transcriptions.create(
-                model='whisper-1', file=audio_data, response_format='text'
+                model="whisper-1", file=audio_data, response_format="text"
             )
             return response
         except Exception:
-            logger.error('Error transcribing audio')
+            logger.error("Error transcribing audio")
             return None
 
     def text_to_SQL(self, audio_data):
@@ -208,18 +204,18 @@ class SearchService:
         model_mappings = self.get_all_model_fields()
 
         if not text:
-            return 'Error in audio transcription'
+            return "Error in audio transcription"
 
         try:
             response = self.client.chat.completions.create(
-                model='gpt-4',
+                model="gpt-4",
                 messages=[
                     {
-                        'role': 'user',
-                        'content': f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective fields as a guide {model_mappings} in MySQL query format: {text}"
+                        "role": "user",
+                        "content": f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective fields as a guide {model_mappings} in MySQL query format: {text}",
                     }
                 ],
-                max_tokens=150
+                max_tokens=150,
             )
 
             response_json = response.to_dict()
@@ -227,29 +223,29 @@ class SearchService:
 
             return parsed_response
         except Exception:
-            logger.error('Error generating SQL query from OpenAI API')
-            return 'Error generating SQL query'
+            logger.error("Error generating SQL query from OpenAI API")
+            return "Error generating SQL query"
 
     @transaction.atomic()
     def create_from_SQL(self, query):
         try:
             match = re.search(r"INSERT\s+INTO\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
-            table_name = match.group(2) if match else 'Unknown table'
+            table_name = match.group(2) if match else "Unknown table"
 
             with connection.cursor() as cursor:
                 cursor.execute(query)
                 return json.dumps(
                     {
-                        'status': 'success',
-                        'message': f'{table_name} successfully added.'
+                        "status": "success",
+                        "message": f"{table_name} successfully added.",
                     }
                 )
         except Exception as e:
             logger.error(f"Error executing SQL insert query: {str(e)}")
             return json.dumps(
                 {
-                    'status': 'error',
-                    'message': 'There was an issue executing the insert query. Please try again later.'
+                    "status": "error",
+                    "message": "There was an issue executing the insert query. Please try again later.",
                 }
             )
 
@@ -257,23 +253,23 @@ class SearchService:
     def update_from_SQL(self, query):
         try:
             match = re.search(r"UPDATE\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
-            table_name = match.group(2) if match else 'Unknown table'
+            table_name = match.group(2) if match else "Unknown table"
 
             with connection.cursor() as cursor:
                 cursor.execute(query)
 
                 return json.dumps(
                     {
-                        'status': 'success',
-                        'message': f'{table_name} successfully updated.'
+                        "status": "success",
+                        "message": f"{table_name} successfully updated.",
                     }
                 )
         except Exception as e:
             logger.error(f"Error executing SQL update query: {str(e)}")
             return json.dumps(
                 {
-                    'status': 'error',
-                    'message': 'There was an issue executing the update query. Please try again later.'
+                    "status": "error",
+                    "message": "There was an issue executing the update query. Please try again later.",
                 }
             )
 
@@ -291,34 +287,49 @@ class SearchService:
 
         except Exception as e:
             logger.error(f"Error executing SQL query: {str(e)}")
-            return 'There was an issue executing the SQL query. Please try again later.'
+            return "There was an issue executing the SQL query. Please try again later."
+
+    def delete_from_SQL(self, audio_data):
+        query = self.text_to_SQL(audio_data)
+        
+        
+
+        try:
+            match = re.search(r"DELETE\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
+            table_name = match.group(2) if match else "Unknown table"
+
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+
+                return json.dumps(
+                    {
+                        "status": "success",
+                        "message": f"{table_name} successfully deleted.",
+                    }
+                )
+        except Exception as e:
+            logger.error(f"Error executing SQL delete query: {str(e)}")
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "There was an issue executing the delete query. Please try again later.",
+                }
+            )
 
     def run_SQL_query(self, audio_data):
         query = self.text_to_SQL(audio_data)
-        
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-                data = cursor.fetchall()
 
-                columns = [col[0] for col in cursor.description]
-                result = [dict(zip(columns, row)) for row in data]
+        if self.commands[0] in query and query:
+            return (self.get_from_SQL(query), self.commands[0])
+        elif self.commands[1] in query and query:
+            return (self.create_from_SQL(query), self.commands[1])
+        elif self.commands[2] in query and query:
+            return (self.update_from_SQL(query), self.commands[2])
+        elif self.commands[3] in query and query:
+            return (self.delete_from_SQL(query), self.commands[3])
+        else:
+            raise ValueError("Invalid SQL command. Please provide a valid SQL command.")
 
-                filtered_result = self.filter_sensitive_data(result)
-                return json.dumps(filtered_result, default=self.custom_serializer)
-
-        except Exception as e:
-            logger.error(f"Error executing SQL query: {str(e)}")
-            return 'There was an issue executing the SQL query. Please try again later.'
-
-        # if self.commands[0] in query and query:
-        #     return (self.get_from_SQL(query), self.commands[0])
-        # elif self.commands[1] in query and query:
-        #     return (self.create_from_SQL(query), self.commands[1])
-        # elif self.commands[2] in query and query:
-        #     return (self.update_from_SQL(query), self.commands[2])
-        # else:
-        #     raise ValueError('Invalid SQL command. Please provide a valid SQL command.')
 
     def filter_sensitive_data(self, result):
         for row in result:
@@ -349,8 +360,8 @@ class ProductService:
         return serializer.data
 
     def update_product(self, data):
-        store = data['store']
-        product_id = data['id']
+        store = data["store"]
+        product_id = data["id"]
         product = get_object_or_404(self.Product, store=store, pk=product_id)
         serializer = ProductSerializer(product, data=data)
         serializer.is_valid(raise_exception=True)
@@ -381,8 +392,8 @@ class CustomerService:
         return CustomerSerializer(customer)
 
     def update_customer(self, data):
-        email = data['email']
-        phone_number = data['phone_number']
+        email = data["email"]
+        phone_number = data["phone_number"]
         customer = get_object_or_404(
             self.Customer, email=email, phone_number=phone_number
         )
@@ -407,8 +418,8 @@ class OrderService:
         return serializer.data
 
     def update_order(self, data):
-        id = data['id']
-        user_id = data['user_id']
+        id = data["id"]
+        user_id = data["user_id"]
         order = get_object_or_404(self.Order, id=id, user__id=user_id)
         serializer = CustomerSerializer(order, data=data)
         serializer.is_valid(raise_exception=True)
@@ -426,9 +437,9 @@ class SettingsService:
         admin = self.User.objects.get(email=email)
 
         return {
-            'email': admin.email,
-            'first_name': admin.first_name,
-            'password': secrets.token_hex(16)
+            "email": admin.email,
+            "first_name": admin.first_name,
+            "password": secrets.token_hex(16),
         }
 
     def edit_admin_info(self, email, data):

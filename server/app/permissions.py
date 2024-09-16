@@ -6,8 +6,8 @@ class ServerAccessPolicy(AccessPolicy):
         {
             'action': [
                 'signup',
-                'login',
                 'verify_activation',
+                'login',
                 'request_reset_password',
                 'verify_password_reset_token',
                 'reset_password'
@@ -39,7 +39,8 @@ class ServerAccessPolicy(AccessPolicy):
                 'download_order',
                 'delete_order',
                 'logout',
-                'elastic_searcher'
+                'elastic_searcher',
+                'refresh_token'
             ],
             'principal': ['authenticated'],
             'effect': 'allow'

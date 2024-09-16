@@ -306,7 +306,7 @@ class SearchService:
 
             query = query.replace(fields_part, new_fields_part)
             query = query.replace(values_part, new_values_part)
-        
+
         if 'is_active' in incomplete_fields:
             fields_part = re.search(r"\((.*?)\)", query).group(1)
             values_part = re.search(r"VALUES\s*\((.*?)\)", query).group(1)
@@ -372,7 +372,6 @@ class SearchService:
 
     @transaction.atomic
     def confirm_and_execute_delete(self, query):
-        """Executes the DELETE query after frontend validation is confirmed."""
         try:
             with connection.cursor() as cursor:
                 cursor.execute(query)

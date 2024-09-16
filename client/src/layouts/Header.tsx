@@ -140,10 +140,12 @@ export const Header = () => {
             console.log(response.data)
           } else if (response.data.type === "INSERT") {
             // Handle INSERT logic here
+            console.log(response.data)
           } else if (response.data.type === "SELECT") {
             nav('/query', { state: { data: response.data.results, header: 'Query Results' } });
           } else if (response.data.type === "DELETE") {
             // Handle DELETE logic here
+            console.log(response.data)
           }
         }
       } catch (error: any) {

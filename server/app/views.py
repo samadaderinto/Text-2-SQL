@@ -459,19 +459,19 @@ class StoreViewSet(viewsets.GenericViewSet):
         store = self.store_service.update_store(data)
         return Response(status=201, data=store)
 
-    @extend_schema(responses={200: StoreSerializer})
-    @action(detail=False, methods=['get'], url_path='get')
-    def retrieve_store(self, request):
-        data = JSONParser().parse(request)
-        serializer = StoreSearchSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        phone_number = serializer.validated_data['phone_number']
-        customer = self.store_service.get_customer(
-            request, email=email, phone_number=phone_number
-        )
+    # @extend_schema(responses={200: StoreSerializer})
+    # @action(detail=False, methods=['get'], url_path='get')
+    # def retrieve_store(self, request):
+    #     data = JSONParser().parse(request)
+    #     serializer = StoreSearchSerializer(data=data)
+    #     serializer.is_valid(raise_exception=True)
+    #     email = serializer.validated_data['email']
+    #     phone_number = serializer.validated_data['phone_number']
+    #     customer = self.store_service.get_customer(
+    #         request, email=email, phone_number=phone_number
+    #     )
 
-        return Response(status=200, data=customer)
+    #     return Response(status=200, data=customer)
 
 
 class OrderViewSet(viewsets.GenericViewSet):

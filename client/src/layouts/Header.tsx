@@ -137,6 +137,7 @@ export const Header = () => {
         if (response.status === 200) {
           if (response.data.type === "UPDATE" && response.data.error === "incomplete") {
             setState(prevState => ({ ...prevState, popup: true }));
+            console.log(response.data)
           } else if (response.data.type === "INSERT") {
             // Handle INSERT logic here
           } else if (response.data.type === "SELECT") {

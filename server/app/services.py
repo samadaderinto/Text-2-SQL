@@ -261,43 +261,63 @@ class SearchService:
             logger.error('Error generating SQL query from OpenAI API')
             return 'Error generating SQL query'
 
-    def get_required_fields(table_name):
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    f"""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = %s AND is_nullable = 'NO'
-                """,
-                    [table_name]
-                )
-                required_fields = [row[0] for row in cursor.fetchall()]
-            return required_fields
-        except Exception as e:
-            logger.error(f"Error retrieving required fields for {table_name}: {str(e)}")
-            return []
+    def get_required_fields(self, table_name):
+        query = f"""
+        PRAGMA table_info({table_name});
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            columns_info = cursor.fetchall()
 
-    def get_incomplete_fields(query, required_fields):
-        match_values = re.search(
-            r"INSERT\s+INTO\s+\w+\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)",
-            query,
-            re.IGNORECASE
-        )
-        if not match_values:
-            return []
+        required_fields = []
+        for column in columns_info:
+            if column[3] == 1:
+                required_fields.append(column[1])
 
-        fields_str, values_str = match_values.groups()
-        fields = [field.strip() for field in fields_str.split(',')]
-        values = [value.strip().strip('\'"') for value in values_str.split(',')]
+        return required_fields
+
+    def get_incomplete_fields(self, query, required_fields):
+        provided_fields = re.findall(r"\((.*?)\)", query)[0].split(',')
+        provided_fields = [field.strip() for field in provided_fields]
 
         incomplete_fields = [
-            field
-            for field, value in zip(fields, values)
-            if field in required_fields and (value == '' or value.lower() == 'null')
+            field for field in required_fields if field not in provided_fields
         ]
 
         return incomplete_fields
+
+    def set_current_date(self, query, incomplete_fields):
+        if 'created' in incomplete_fields:
+            fields_part = re.search(r"\((.*?)\)", query).group(1)
+            values_part = re.search(r"VALUES\s*\((.*?)\)", query).group(1)
+
+            new_fields_part = fields_part + ', created'
+            new_values_part = values_part + ', CURRENT_TIMESTAMP'
+
+            query = query.replace(fields_part, new_fields_part)
+            query = query.replace(values_part, new_values_part)
+
+        if 'updated' in incomplete_fields:
+            fields_part = re.search(r"\((.*?)\)", query).group(1)
+            values_part = re.search(r"VALUES\s*\((.*?)\)", query).group(1)
+
+            new_fields_part = fields_part + ', updated'
+            new_values_part = values_part + ', CURRENT_TIMESTAMP'
+
+            query = query.replace(fields_part, new_fields_part)
+            query = query.replace(values_part, new_values_part)
+        
+        if 'is_active' in incomplete_fields:
+            fields_part = re.search(r"\((.*?)\)", query).group(1)
+            values_part = re.search(r"VALUES\s*\((.*?)\)", query).group(1)
+
+            new_fields_part = fields_part + ', is_active'
+            new_values_part = values_part + ', TRUE'
+
+            query = query.replace(fields_part, new_fields_part)
+            query = query.replace(values_part, new_values_part)
+
+        return query
 
     def extract_update_fields_and_values(self, query):
         try:
@@ -379,14 +399,20 @@ class SearchService:
             match = re.search(r"INSERT\s+INTO\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
             table_name = match.group(2) if match else 'Unknown table'
 
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-                return json.dumps(
-                    {
-                        'status': 'success',
-                        'message': f"{table_name} successfully added."
-                    }
-                )
+            required_fields = self.get_required_fields(table_name)
+            incomplete_fields = self.get_incomplete_fields(query, required_fields)
+
+            if incomplete_fields:
+                query = self.set_current_date(query, incomplete_fields)
+
+                with connection.cursor() as cursor:
+                    cursor.execute(query)
+                    return json.dumps(
+                        {
+                            'status': 'success',
+                            'message': f"{table_name} successfully added."
+                        }
+                    )
 
         except IntegrityError as e:
             logger.error(f"IntegrityError executing SQL insert query: {str(e)}")
@@ -504,7 +530,9 @@ class SearchService:
         elif self.commands[3] in query and query:
             return (self.delete_from_SQL(query), self.commands[3])
         else:
-            raise ValueError('Invalid SQL command. Please provide a valid SQL command.')
+            raise ValueError(
+                query, 'Invalid SQL command. Please provide a valid SQL command.'
+            )
 
     def filter_sensitive_data(self, result):
         for row in result:

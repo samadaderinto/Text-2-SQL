@@ -272,10 +272,13 @@ class SearchViewSet(viewsets.GenericViewSet):
 
         try:
             with open(file_path, 'rb') as webm_file:
-                open_ai_response = self.search_service.run_SQL_query(webm_file)
+                open_ai_response, type = self.search_service.run_SQL_query(webm_file)
 
             logger.info(open_ai_response)
-            return Response(data={"results": open_ai_response}, status=status.HTTP_200_OK)
+            return Response(
+                data={'results': open_ai_response, 'type': type},
+                status=status.HTTP_200_OK
+            )
 
         except Exception as e:
             logger.error(f"Error processing audio file: {str(e)}")
@@ -439,7 +442,6 @@ class StoreViewSet(viewsets.GenericViewSet):
         self.store_service: StoreService = di[StoreService]
 
     permission_classes = (ServerAccessPolicy,)
-   
 
     @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
     @action(detail=False, methods=['post'], url_path='create')
@@ -511,7 +513,6 @@ class OrderViewSet(viewsets.GenericViewSet):
         offset = int(request.GET.get('offset', 0))
         limit = int(request.GET.get('limit', 15))
 
-  
         orders = Order.objects.all()
 
         if query:
@@ -597,7 +598,6 @@ class SettingsViewSet(viewsets.GenericViewSet):
         self.store_service: StoreService = di[StoreService]
 
     permission_classes = (ServerAccessPolicy,)
-
 
     @extend_schema(responses={200: AdminSerializer})
     @action(detail=False, methods=['get'], url_path='admin/get')

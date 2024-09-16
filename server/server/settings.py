@@ -251,7 +251,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 ELASTICSEARCH_DSL = {
     'default': {
-        'hosts': f"{ELASTICSEARCH_HOST}:{ELASTICSEARCH_PORT}",
+        'hosts': f"http://{ELASTICSEARCH_HOST}:{ELASTICSEARCH_PORT}",
         'http_auth': (ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD)
     }
 }

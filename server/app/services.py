@@ -2,7 +2,6 @@ import json
 import re
 import secrets
 import logging
-from datetime import datetime
 
 
 from django.conf import settings
@@ -19,6 +18,7 @@ from typing import Type
 from kink import inject
 from openai import OpenAI
 from datetime import datetime
+from elasticsearch import Elasticsearch
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -149,9 +149,44 @@ class SearchService:
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model_field_mapping = self.get_all_model_fields()
         self.sensitive_fields = ['password', 'token', 'secret_key']
+        self.es = Elasticsearch(
+            hosts=[settings.ELASTICSEARCH_DSL['default']['hosts']], timeout=30
+        )
 
     def elastic_search(self, search_query):
-        pass
+        try:
+            index_name = 'your_index_name'
+
+            query_body = {
+                'query': {
+                    'multi_match': {
+                        'query': search_query,
+                        'fields': ['field1', 'field2', 'field3']
+                    }
+                }
+            }
+
+            response = self.es.search(index=index_name, body=query_body)
+
+            hits = response.get('hits', {}).get('hits', [])
+
+            result_data = [hit['_source'] for hit in hits]
+
+            return json.dumps(
+                {
+                    'status': 'success',
+                    'data': result_data,
+                    'message': f"{len(result_data)} results found for query: {search_query}"
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error executing Elasticsearch query: {str(e)}")
+            return json.dumps(
+                {
+                    'status': 'error',
+                    'message': 'There was an issue executing the search query. Please try again later.'
+                }
+            )
 
     def custom_serializer(self, obj):
         if isinstance(obj, datetime):
@@ -264,14 +299,6 @@ class SearchService:
 
         return incomplete_fields
 
-    def send_create_incompleted_response(self, table_name, query):
-        required_fields = self.get_required_fields(table_name)
-        incomplete_fields = self.get_incomplete_fields(query, required_fields)
-
-        return incomplete_fields
-
-  
-
     def extract_update_fields_and_values(self, query):
         try:
             match = re.search(
@@ -295,6 +322,12 @@ class SearchService:
             logger.error(f"Error extracting fields and values from query: {str(e)}")
             return None
 
+    def send_create_incompleted_response(self, table_name, query):
+        required_fields = self.get_required_fields(table_name)
+        incomplete_fields = self.get_incomplete_fields(query, required_fields)
+
+        return incomplete_fields
+
     @transaction.atomic
     def confirm_and_execute_update(self, query):
         try:
@@ -314,6 +347,29 @@ class SearchService:
                 {
                     'status': 'error',
                     'message': 'There was an issue executing the update query after validation. Please try again later.'
+                }
+            )
+
+    @transaction.atomic
+    def confirm_and_execute_delete(self, query):
+        """Executes the DELETE query after frontend validation is confirmed."""
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+
+            return json.dumps(
+                {
+                    'status': 'success',
+                    'message': 'The delete query was successfully executed.'
+                }
+            )
+
+        except Exception as e:
+            logger.error(f"Error executing SQL delete query after validation: {str(e)}")
+            return json.dumps(
+                {
+                    'status': 'error',
+                    'message': 'There was an issue executing the delete query after validation. Please try again later.'
                 }
             )
 
@@ -366,7 +422,6 @@ class SearchService:
                         'message': f"Please validate the following fields for {table_name}.",
                         'update_data': fields_and_values
                     }
-                    
                 )
             else:
                 return json.dumps(
@@ -401,28 +456,39 @@ class SearchService:
             logger.error(f"Error executing SQL query: {str(e)}")
             return 'There was an issue executing the SQL query. Please try again later.'
 
+    @transaction.atomic
     def delete_from_SQL(self, audio_data):
         query = self.text_to_SQL(audio_data)
 
         try:
-            match = re.search(r"DELETE\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
+            match = re.search(
+                r"DELETE\s+FROM\s+([`'\"]?)(\w+)\1\s+WHERE\s+(.+)", query, re.IGNORECASE
+            )
             table_name = match.group(2) if match else 'Unknown table'
+            condition = match.group(3) if match else 'Unknown condition'
 
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-
+            if table_name and condition:
                 return json.dumps(
                     {
-                        'status': 'success',
-                        'message': f"{table_name} successfully deleted."
+                        'status': 'pending_validation',
+                        'message': f"Please confirm the deletion from {table_name} where {condition}.",
+                        'delete_data': {'table': table_name, 'condition': condition}
                     }
                 )
+            else:
+                return json.dumps(
+                    {
+                        'status': 'error',
+                        'message': 'Unable to extract table name or condition from the DELETE query.'
+                    }
+                )
+
         except Exception as e:
-            logger.error(f"Error executing SQL delete query: {str(e)}")
+            logger.error(f"Error preparing SQL delete query: {str(e)}")
             return json.dumps(
                 {
                     'status': 'error',
-                    'message': 'There was an issue executing the delete query. Please try again later.'
+                    'message': 'There was an issue preparing the delete query. Please try again later.'
                 }
             )
 

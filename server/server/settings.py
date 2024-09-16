@@ -58,7 +58,7 @@ DEBUG = os.getenv('DEBUG') == 'true'
 
 ALLOWED_HOSTS = ['*']
 CORS_ALLOW_HEADERS = ['*']
-CORS_ALLOWED_ORIGINS = ['http://localhost:4174']
+CORS_ALLOWED_ORIGINS = ['http://localhost:4174', 'http://127.0.0.1:4174']
 
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
@@ -123,28 +123,28 @@ WSGI_APPLICATION = 'server.wsgi.application'
 
 DATABASE_PATH = os.path.join(BASE_DIR, 'db.sqlite3')
 
-# PRIMARY_DB = {
-#     'ENGINE': 'django.db.backends.mysql',
-#     'NAME': MYSQL_NAME,
-#     'USER': MYSQL_USER,
-#     'PASSWORD': MYSQL_PASSWORD,
-#     'HOST': MYSQL_HOST,
-#     'PORT': MYSQL_PORT
-# }
+PRIMARY_DB = {
+    'ENGINE': 'django.db.backends.mysql',
+    'NAME': MYSQL_NAME,
+    'USER': MYSQL_USER,
+    'PASSWORD': MYSQL_PASSWORD,
+    'HOST': MYSQL_HOST,
+    'PORT': MYSQL_PORT
+}
 
 FALLBACK_DB = {'ENGINE': 'django.db.backends.sqlite3', 'NAME': DATABASE_PATH}
 
 
-# try:
-#     DATABASES = {'default': PRIMARY_DB}
-#     if not PRIMARY_DB['NAME'] or not PRIMARY_DB['USER']:
-#         raise ImproperlyConfigured(
-#             'Missing MySQL configuration. Falling back to SQLite.'
-#         )
+try:
+    DATABASES = {'default': PRIMARY_DB}
+    if not PRIMARY_DB['NAME'] or not PRIMARY_DB['USER']:
+        raise ImproperlyConfigured(
+            'Missing MySQL configuration. Falling back to SQLite.'
+        )
 
-# except ImproperlyConfigured:
-#     # run(f"docker-compose run server pipenv run python3 manage.py makemigrations")
-#     run(f"docker-compose run server pipenv run python3 manage.py migrate")
+except ImproperlyConfigured:
+    # run(f"docker-compose run server pipenv run python3 manage.py makemigrations")
+    run(f"docker-compose run server pipenv run python3 manage.py migrate")
 DATABASES = {'default': FALLBACK_DB}
 
 
@@ -205,7 +205,7 @@ PASSWORD_HASHERS = [
 ]
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=8),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,

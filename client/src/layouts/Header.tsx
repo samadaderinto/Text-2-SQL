@@ -143,8 +143,8 @@ export const Header = () => {
 
             console.log(parsed_response)
           } else if (type === "INSERT" && parsed_response.incomplete_fields) {
-            // Handle INSERT logic here
-            "incomplete_fields"
+            
+            setState(prevState => ({ ...prevState, popup: true }));
             console.log(parsed_response)
           } else if (type === "SELECT") {
             nav('/query', { state: { data: parsed_response.results, header: 'Query Results' } });

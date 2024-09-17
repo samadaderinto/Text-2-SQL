@@ -135,16 +135,16 @@ PRIMARY_DB = {
 FALLBACK_DB = {'ENGINE': 'django.db.backends.sqlite3', 'NAME': DATABASE_PATH}
 
 
-try:
-    DATABASES = {'default': PRIMARY_DB}
-    if not PRIMARY_DB['NAME'] or not PRIMARY_DB['USER']:
-        raise ImproperlyConfigured(
-            'Missing MySQL configuration. Falling back to SQLite.'
-        )
+# try:
+#     DATABASES = {'default': PRIMARY_DB}
+#     if not PRIMARY_DB['NAME'] or not PRIMARY_DB['USER']:
+#         raise ImproperlyConfigured(
+#             'Missing MySQL configuration. Falling back to SQLite.'
+#         )
 
-except ImproperlyConfigured:
-    # run(f"docker-compose run server pipenv run python3 manage.py makemigrations")
-    run(f"docker-compose run server pipenv run python3 manage.py migrate")
+# except ImproperlyConfigured:
+#     # run(f"docker-compose run server pipenv run python3 manage.py makemigrations")
+#     run(f"docker-compose run server pipenv run python3 manage.py migrate")
 DATABASES = {'default': FALLBACK_DB}
 
 

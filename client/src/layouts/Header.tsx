@@ -134,18 +134,23 @@ export const Header = () => {
           },
         });
 
+        const parsed_response = JSON.parse(response.data.results)
+        const type = response.data.type
+        console.log(parsed_response)
         if (response.status === 200) {
-          if (response.data.type === "UPDATE" && response.data.error === "incomplete") {
-            setState(prevState => ({ ...prevState, popup: true }));
-            console.log(response.data)
-          } else if (response.data.type === "INSERT") {
+          if (parsed_response.type === "UPDATE") {
+            // setState(prevState => ({ ...prevState, popup: true }));
+
+            console.log(parsed_response)
+          } else if (type === "INSERT" && parsed_response.incomplete_fields) {
             // Handle INSERT logic here
-            console.log(response.data)
-          } else if (response.data.type === "SELECT") {
-            nav('/query', { state: { data: response.data.results, header: 'Query Results' } });
-          } else if (response.data.type === "DELETE") {
+            "incomplete_fields"
+            console.log(parsed_response)
+          } else if (type === "SELECT") {
+            nav('/query', { state: { data: parsed_response.results, header: 'Query Results' } });
+          } else if (type === "DELETE") {
             // Handle DELETE logic here
-            console.log(response.data)
+            console.log(parsed_response)
           }
         }
       } catch (error: any) {

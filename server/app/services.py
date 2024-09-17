@@ -271,7 +271,7 @@ class SearchService:
 
         required_fields = []
         for column in columns_info:
-            if column[3] == 1:
+            if column[3] == 1 or column[1] == 'id':
                 required_fields.append(column[1])
 
         return required_fields
@@ -392,29 +392,31 @@ class SearchService:
                 }
             )
 
+       
+
     @transaction.atomic()
     def create_from_SQL(self, query):
         try:
             match = re.search(r"INSERT\s+INTO\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
             table_name = match.group(2) if match else 'Unknown table'
 
+           
             required_fields = self.get_required_fields(table_name)
             incomplete_fields = self.get_incomplete_fields(query, required_fields)
+
 
             if incomplete_fields:
                 query = self.set_current_date(query, incomplete_fields)
 
             with connection.cursor() as cursor:
                 cursor.execute(query)
-
-                cursor.execute('SELECT LAST_INSERT_ID()')
-                last_inserted_id = cursor.fetchone()[0]
+                
+                cursor.execute("SELECT LAST_INSERT_ID()")
 
                 return json.dumps(
                     {
                         'status': 'success',
                         'message': f"{table_name} successfully added.",
-                        'inserted_id': last_inserted_id,  # Include the ID of the new instance
                     }
                 )
 
@@ -438,6 +440,7 @@ class SearchService:
                 }
             )
 
+            
     @transaction.atomic()
     def update_from_SQL(self, query):
         try:

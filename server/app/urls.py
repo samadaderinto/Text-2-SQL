@@ -5,18 +5,18 @@ from .views import (
     ProductViewSet,
     CustomerViewSet,
     OrderViewSet,
-    SettingsViewSet
+    SettingsViewSet,
 )
 
 
 router = routers.DefaultRouter()
 
-router.register(r"auth", AuthViewSet, basename='auth')
-router.register(r"query", SearchViewSet, basename='query')
-router.register(r"customers", CustomerViewSet, basename='customers')
-router.register(r"product", ProductViewSet, basename='products')
-router.register(r"orders", OrderViewSet, basename='orders')
-router.register(r"settings", SettingsViewSet, basename='settings')
+router.register(r"auth", AuthViewSet, basename="auth")
+router.register(r"query", SearchViewSet, basename="query")
+router.register(r"customers", CustomerViewSet, basename="customers")
+router.register(r"product", ProductViewSet, basename="products")
+router.register(r"orders", OrderViewSet, basename="orders")
+router.register(r"settings", SettingsViewSet, basename="settings")
 
 
 urlpatterns = router.urls

@@ -10,8 +10,8 @@ from phonenumber_field.serializerfields import PhoneNumberField
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'email', 'password', 'created', 'updated']
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ["id", "email", "password", "created", "updated"]
+        extra_kwargs = {"password": {"write_only": True}}
 
         def create(self, validated_data):
             user = User.objects.create_user(**validated_data)
@@ -24,13 +24,13 @@ class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = [
-            'id',
-            'first_name',
-            'last_name',
-            'phone_number',
-            'email',
-            'created',
-            'updated'
+            "id",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "email",
+            "created",
+            "updated",
         ]
 
 
@@ -61,8 +61,8 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
         data = super().validate(attrs)
         refresh = self.get_token(self.user)
 
-        data['refresh'] = str(refresh)
-        data['access'] = str(refresh.access_token)
+        data["refresh"] = str(refresh)
+        data["access"] = str(refresh.access_token)
 
         return data
 
@@ -70,30 +70,27 @@ class CustomTokenObtainPairSerializer(EmailTokenObtainSerializer):
 class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
-        fields = ['user', 'username', 'email', 'name', 'bio', 'phone', 'currency']
+        fields = ["user", "username", "email", "name", "bio", "phone", "currency"]
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    
 
     class Meta:
         model = Product
         fields = [
-            'id',
-            'store',
-            'title',
-            'available',
-            'description',
-            'price',
-        
-            'category',
-            'currency',
-            'sales',
-            'created',
-            'updated'
+            "id",
+            "store",
+            "title",
+            "available",
+            "description",
+            "price",
+            "category",
+            "currency",
+            "sales",
+            "created",
+            "updated",
         ]
-        extra_kwargs = {'sales': {'read_only': True}}
-
+        extra_kwargs = {"sales": {"read_only": True}}
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -102,15 +99,15 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id',
-            'user',
-            'name',
-            'status',
-            'cart',
-            'total',
-            'subtotal',
-            'created',
-            'updated'
+            "id",
+            "user",
+            "name",
+            "status",
+            "cart",
+            "total",
+            "subtotal",
+            "created",
+            "updated",
         ]
 
     def get_name(self, obj):

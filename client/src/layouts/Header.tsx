@@ -139,7 +139,7 @@ export const Header = () => {
         console.log(parsed_response)
         if (response.status === 200) {
           if (parsed_response.type === "UPDATE") {
-            // setState(prevState => ({ ...prevState, popup: true }));
+            
            
             console.log(parsed_response)
           } else if (type === "INSERT" && parsed_response.incomplete_fields) {

@@ -23,8 +23,8 @@ with these files in the root  directory,  from the following commands to install
 
 
 ```bash
-$ docker-compose build
-$ docker-compose up
+$ docker compose build
+$ docker compose up
 ```
 
 

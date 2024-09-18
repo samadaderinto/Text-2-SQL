@@ -6,9 +6,19 @@ from .services import (
     ProductService,
     SearchService,
     SettingsService,
-    StoreService
+    StoreService,
 )
-from .models import Notification, User, Store, Product, Cart, CartItem, Order, Customer
+from .models import (
+    Notification,
+    User,
+    Store,
+    Product,
+    Cart,
+    CartItem,
+    Order,
+    Customer,
+    Query,
+)
 
 
 def di_setup():
@@ -21,11 +31,12 @@ def di_setup():
     di[Customer] = Customer
     di[Store] = Store
     di[Notification] = Notification
+    di[Query] = Query
 
     di[AuthService] = AuthService(di[User], di[Store], di[Notification])
     di[ProductService] = ProductService(di[User], di[Product])
     di[OrderService] = OrderService(di[User], di[Order])
     di[CustomerService] = CustomerService(di[User], di[Customer])
-    di[SearchService] = SearchService()
+    di[SearchService] = SearchService(di[Query])
     di[StoreService] = StoreService(di[User], di[Store])
     di[SettingsService] = SettingsService(di[User], di[Notification])

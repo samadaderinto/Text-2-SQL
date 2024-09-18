@@ -2,14 +2,13 @@ import json
 import re
 import secrets
 import logging
-from datetime import datetime
 
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404, get_list_or_404
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.db import connection, transaction
+from django.db import connection, transaction, IntegrityError, ProgrammingError
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
@@ -19,6 +18,7 @@ from typing import Type
 from kink import inject
 from openai import OpenAI
 from datetime import datetime
+from elasticsearch import Elasticsearch
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -33,7 +33,7 @@ from .serializers import (
     StoreSerializer,
     UserSerializer,
 )
-from .models import Customer, Notification, Order, Product, Store, User
+from .models import Customer, Notification, Order, Product, Query, Store, User
 
 logger = logging.getLogger(__name__)
 
@@ -144,14 +144,48 @@ class StoreService:
 
 @inject
 class SearchService:
-    def __init__(self):
+    def __init__(self, Query: Type[Query]):
+        self.Query = Query
         self.commands = ["SELECT", "INSERT", "UPDATE", "DELETE"]
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model_field_mapping = self.get_all_model_fields()
         self.sensitive_fields = ["password", "token", "secret_key"]
+        self.es = Elasticsearch(hosts=[settings.ELASTICSEARCH_DSL["default"]["hosts"]])
 
     def elastic_search(self, search_query):
-        pass
+        try:
+            index_name = "your_index_name"
+
+            query_body = {
+                "query": {
+                    "multi_match": {
+                        "query": search_query,
+                        "fields": ["field1", "field2", "field3"],
+                    }
+                }
+            }
+
+            response = self.es.search(index=index_name, body=query_body)
+
+            hits = response.get("hits", {}).get("hits", [])
+
+            result_data = [hit["_source"] for hit in hits]
+
+            return json.dumps(
+                {
+                    "status": "success",
+                    "data": result_data,
+                    "message": f"{len(result_data)} results found for query: {search_query}",
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error executing Elasticsearch query: {str(e)}")
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "There was an issue executing the search query. Please try again later.",
+                }
+            )
 
     def custom_serializer(self, obj):
         if isinstance(obj, datetime):
@@ -226,20 +260,182 @@ class SearchService:
             logger.error("Error generating SQL query from OpenAI API")
             return "Error generating SQL query"
 
+    def get_required_fields(self, table_name):
+        query = f"""
+        PRAGMA table_info({table_name});
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            columns_info = cursor.fetchall()
+
+        required_fields = []
+        for column in columns_info:
+            if column[3] == 1 or column[1] == "id":
+                required_fields.append(column[1])
+
+        return required_fields
+
+    def get_incomplete_fields(self, query, required_fields):
+        provided_fields = re.findall(r"\((.*?)\)", query)[0].split(",")
+        provided_fields = [field.strip() for field in provided_fields]
+
+        incomplete_fields = [
+            field for field in required_fields if field not in provided_fields
+        ]
+
+        return incomplete_fields
+
+    def fill_defaults_fields(self, query, incomplete_fields):
+        if "created" in incomplete_fields:
+            fields_part = re.search(r"\((.*?)\)", query).group(1)
+            values_part = re.search(r"VALUES\s*\((.*?)\)", query).group(1)
+
+            new_fields_part = fields_part + ", created"
+            new_values_part = values_part + ", CURRENT_TIMESTAMP"
+
+            query = query.replace(fields_part, new_fields_part)
+            query = query.replace(values_part, new_values_part)
+
+        if "updated" in incomplete_fields:
+            fields_part = re.search(r"\((.*?)\)", query).group(1)
+            values_part = re.search(r"VALUES\s*\((.*?)\)", query).group(1)
+
+            new_fields_part = fields_part + ", updated"
+            new_values_part = values_part + ", CURRENT_TIMESTAMP"
+
+            query = query.replace(fields_part, new_fields_part)
+            query = query.replace(values_part, new_values_part)
+
+        if "is_active" in incomplete_fields:
+            fields_part = re.search(r"\((.*?)\)", query).group(1)
+            values_part = re.search(r"VALUES\s*\((.*?)\)", query).group(1)
+
+            new_fields_part = fields_part + ", is_active"
+            new_values_part = values_part + ", TRUE"
+
+            query = query.replace(fields_part, new_fields_part)
+            query = query.replace(values_part, new_values_part)
+
+        return query
+
+    def extract_update_fields_and_values(self, query):
+        try:
+            match = re.search(
+                r"UPDATE\s+\w+\s+SET\s+(.+?)\s+WHERE", query, re.IGNORECASE
+            )
+            if not match:
+                return None
+
+            set_clause = match.group(1)
+
+            field_value_pairs = set_clause.split(",")
+
+            update_data = {}
+            for pair in field_value_pairs:
+                field, value = pair.split("=")
+                update_data[field.strip()] = value.strip().strip("'\"")
+
+            return update_data
+
+        except Exception as e:
+            logger.error(f"Error extracting fields and values from query: {str(e)}")
+            return None
+
+    def send_create_incompleted_response(self, table_name, query):
+        required_fields = self.get_required_fields(table_name)
+        incomplete_fields = self.get_incomplete_fields(query, required_fields)
+
+        return incomplete_fields
+
+    @transaction.atomic
+    def confirm_and_execute_update(self):
+        query = self.Query.objects.last()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(query.query)
+            query.delete()
+            return json.dumps(
+                {
+                    "status": "success",
+                    "message": "The update query was successfully executed.",
+                }
+            )
+
+        except Exception as e:
+            logger.error(f"Error executing SQL update query after validation: {str(e)}")
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "There was an issue executing the update query after validation. Please try again later.",
+                }
+            )
+
+    @transaction.atomic
+    def confirm_and_execute_delete(self):
+        query = self.Query.objects.last()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(query.query)
+
+            query.delete()
+            return json.dumps(
+                {
+                    "status": "success",
+                    "message": "The delete query was successfully executed.",
+                }
+            )
+
+        except Exception as e:
+            logger.error(f"Error executing SQL delete query after validation: {str(e)}")
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "There was an issue executing the delete query after validation. Please try again later.",
+                }
+            )
+
+    @transaction.atomic
+    def confirm_and_execute_completed_create_field(self):
+        query = self.Query.objects.last()
+        with connection.cursor() as cursor:
+            cursor.execute(query.query)
+        query.delete()
+        return json.dumps({"status": "success", "message": f"successfully added."})
+
     @transaction.atomic()
     def create_from_SQL(self, query):
         try:
             match = re.search(r"INSERT\s+INTO\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
             table_name = match.group(2) if match else "Unknown table"
 
+            required_fields = self.get_required_fields(table_name)
+            incomplete_fields = self.get_incomplete_fields(query, required_fields)
+
+            if incomplete_fields:
+                query = self.fill_defaults_fields(query, incomplete_fields)
+
             with connection.cursor() as cursor:
                 cursor.execute(query)
+
                 return json.dumps(
                     {
                         "status": "success",
                         "message": f"{table_name} successfully added.",
                     }
                 )
+
+        except IntegrityError as e:
+            logger.error(f"IntegrityError executing SQL insert query: {str(e)}")
+            incomplete_fields = self.send_create_incompleted_response(table_name, query)
+            self.Query.objects.create(query)
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "There was an issue with the data integrity. Please ensure all required fields are provided and constraints are met.",
+                    "incomplete_fields": incomplete_fields,
+                }
+            )
+
         except Exception as e:
             logger.error(f"Error executing SQL insert query: {str(e)}")
             return json.dumps(
@@ -255,15 +451,24 @@ class SearchService:
             match = re.search(r"UPDATE\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
             table_name = match.group(2) if match else "Unknown table"
 
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-
+            fields_and_values = self.extract_update_fields_and_values(query)
+            if fields_and_values:
+                query
                 return json.dumps(
                     {
-                        "status": "success",
-                        "message": f"{table_name} successfully updated.",
+                        "status": "pending_validation",
+                        "message": f"Please validate the following fields for {table_name}.",
+                        "update_data": fields_and_values,
                     }
                 )
+            else:
+                return json.dumps(
+                    {
+                        "status": "error",
+                        "message": "Unable to extract update fields and values from the query.",
+                    }
+                )
+
         except Exception as e:
             logger.error(f"Error executing SQL update query: {str(e)}")
             return json.dumps(
@@ -289,30 +494,39 @@ class SearchService:
             logger.error(f"Error executing SQL query: {str(e)}")
             return "There was an issue executing the SQL query. Please try again later."
 
+    @transaction.atomic
     def delete_from_SQL(self, audio_data):
         query = self.text_to_SQL(audio_data)
-        
-        
 
         try:
-            match = re.search(r"DELETE\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
+            match = re.search(
+                r"DELETE\s+FROM\s+([`'\"]?)(\w+)\1\s+WHERE\s+(.+)", query, re.IGNORECASE
+            )
             table_name = match.group(2) if match else "Unknown table"
+            condition = match.group(3) if match else "Unknown condition"
 
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-
+            if table_name and condition:
                 return json.dumps(
                     {
-                        "status": "success",
-                        "message": f"{table_name} successfully deleted.",
+                        "status": "pending_validation",
+                        "message": f"Please confirm the deletion from {table_name} where {condition}.",
+                        "delete_data": {"table": table_name, "condition": condition},
                     }
                 )
+            else:
+                return json.dumps(
+                    {
+                        "status": "error",
+                        "message": "Unable to extract table name or condition from the DELETE query.",
+                    }
+                )
+
         except Exception as e:
-            logger.error(f"Error executing SQL delete query: {str(e)}")
+            logger.error(f"Error preparing SQL delete query: {str(e)}")
             return json.dumps(
                 {
                     "status": "error",
-                    "message": "There was an issue executing the delete query. Please try again later.",
+                    "message": "There was an issue preparing the delete query. Please try again later.",
                 }
             )
 
@@ -328,8 +542,9 @@ class SearchService:
         elif self.commands[3] in query and query:
             return (self.delete_from_SQL(query), self.commands[3])
         else:
-            raise ValueError("Invalid SQL command. Please provide a valid SQL command.")
-
+            raise ValueError(
+                query, "Invalid SQL command. Please provide a valid SQL command."
+            )
 
     def filter_sensitive_data(self, result):
         for row in result:

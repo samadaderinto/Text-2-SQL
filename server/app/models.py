@@ -228,4 +228,3 @@ class Query(models.Model):
     
     class Meta:
         db_table = "query"
-        ordering = ["created"]

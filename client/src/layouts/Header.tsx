@@ -20,6 +20,10 @@ export const Header = () => {
     popup: false,
     activeIndex: 0,
     errorMessage: '',
+    firstname: 'Hassan',
+    lastname: 'ademidun',
+    emailadress: 'hassan@gmail.com',
+    phonenumber: '081284658474',
     loading: false,
     audioBlob: null as Blob | null,
     isRecording: false,
@@ -283,6 +287,34 @@ export const Header = () => {
           )}
         </div>
       )}
+
+      <article className='Main_action_pop'>
+        <h1>Are you Sure you want to UPDATE? </h1>
+        <form>
+          <input
+           type="text"
+           value={state.firstname}
+           onChange={(e)=> setState(prevState => ({ ...prevState, firstname:e.target.value  }))}
+          placeholder='First Name'/>
+          <input
+           value={state.lastname}
+           onChange={(e)=> setState(prevState => ({ ...prevState, lastname:e.target.value  }))}
+           type="text" 
+           placeholder='Last Name'/>
+          <input
+           value={state.emailadress}
+           onChange={(e)=> setState(prevState => ({ ...prevState, emailadress:e.target.value  }))}
+           type="email" 
+           placeholder='email address'/>
+          <input
+           type="text" 
+           value={state.phonenumber}
+           onChange={(e)=> setState(prevState => ({ ...prevState, phonenumber:e.target.value  }))}
+           placeholder='phone number'/>
+          <button>Update</button>
+        </form>
+      </article>
+
     </div>
   );
 };

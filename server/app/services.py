@@ -432,7 +432,7 @@ class SearchService:
                 {
                     "status": "error",
                     "message": "There was an issue with the data integrity. Please ensure all required fields are provided and constraints are met.",
-                    "incomplete_fields": incomplete_fields,
+                    "fields": incomplete_fields,
                 }
             )
 
@@ -458,7 +458,7 @@ class SearchService:
                     {
                         "status": "pending_validation",
                         "message": f"Please validate the following fields for {table_name}.",
-                        "update_data": fields_and_values,
+                        "fields": fields_and_values,
                     }
                 )
             else:
@@ -510,7 +510,7 @@ class SearchService:
                     {
                         "status": "pending_validation",
                         "message": f"Please confirm the deletion from {table_name} where {condition}.",
-                        "delete_data": {"table": table_name, "condition": condition},
+                        "fields": {"table": table_name, "condition": condition},
                     }
                 )
             else:

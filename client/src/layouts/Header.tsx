@@ -20,10 +20,7 @@ export const Header = () => {
     popup: false,
     activeIndex: 0,
     errorMessage: '',
-    firstname: 'Hassan',
-    lastname: 'ademidun',
-    emailadress: 'hassan@gmail.com',
-    phonenumber: '081284658474',
+    fields: [] as any[],
     loading: false,
     audioBlob: null as Blob | null,
     isRecording: false,
@@ -139,23 +136,44 @@ export const Header = () => {
         });
 
         const parsed_response = JSON.parse(response.data.results)
-        const type = response.data.type
-        console.log(parsed_response)
+
+        // { type: "DELETE"
+        //   results: {
+        //     "status": "error",
+        //     "message": "There was an issue with the data integrity. Please ensure all required fields are provided and constraints are met.",
+        //     "fields": incomplete_fields,
+        // }
+        // }
+
         if (response.status === 200) {
-          if (parsed_response.type === "UPDATE") {
-            
-           
-            console.log(parsed_response)
-          } else if (type === "INSERT" && parsed_response.incomplete_fields) {
-            
-            console.log(parsed_response)
-          } else if (type === "SELECT") {
-            nav('/query', { state: { data: parsed_response.results, header: 'Query Results' } });
-          } else if (type === "DELETE") {
-            // Handle DELETE logic here
-            console.log(parsed_response)
+          switch (parsed_response.type) {
+            case "UPDATE":
+              if (parsed_response.fields) {
+                setState(prevState => ({ ...prevState, fields: parsed_response.fields }));
+              }
+              break;
+
+            case "INSERT":
+              if (parsed_response.fields) {
+                setState(prevState => ({ ...prevState, fields: parsed_response.fields }));
+              }
+              break;
+
+            case "SELECT":
+              nav('/query', { state: { data: parsed_response.results, header: 'Query Results' } });
+              break;
+
+            case "DELETE":
+              if (parsed_response.fields) {
+                setState(prevState => ({ ...prevState, fields: parsed_response.fields }));
+              }
+              break;
+
+            default:
+              break;
           }
         }
+
       } catch (error: any) {
         if (error.response && error.response.status === 500) {
           setState(prevState => ({ ...prevState, errorMessage: 'Unable to process your audio request. Please try again.' }));
@@ -217,13 +235,6 @@ export const Header = () => {
             </div>
           )}
         </ul>
-      )}
-
-      {state.popup && (
-        <div className="Popup_Container">
-          {/* Content for the popup box goes here */}
-          <p>Popup Content</p>
-        </div>
       )}
 
       <section className="RightHand_Container">
@@ -291,26 +302,13 @@ export const Header = () => {
       <article className='Main_action_pop'>
         <h1>Are you Sure you want to UPDATE? </h1>
         <form>
-          <input
-           type="text"
-           value={state.firstname}
-           onChange={(e)=> setState(prevState => ({ ...prevState, firstname:e.target.value  }))}
-          placeholder='First Name'/>
-          <input
-           value={state.lastname}
-           onChange={(e)=> setState(prevState => ({ ...prevState, lastname:e.target.value  }))}
-           type="text" 
-           placeholder='Last Name'/>
-          <input
-           value={state.emailadress}
-           onChange={(e)=> setState(prevState => ({ ...prevState, emailadress:e.target.value  }))}
-           type="email" 
-           placeholder='email address'/>
-          <input
-           type="text" 
-           value={state.phonenumber}
-           onChange={(e)=> setState(prevState => ({ ...prevState, phonenumber:e.target.value  }))}
-           placeholder='phone number'/>
+          {state.fields.map((data, idx) => (<input
+            type="text"
+            value={data}
+            key={idx}
+            onChange={(e) => setState(prevState => ({ ...prevState, fields: e.target.value }))}
+            placeholder='First Name' />))}
+        
           <button>Update</button>
         </form>
       </article>

@@ -10,6 +10,7 @@ import ProfileImg from "../assets/profileimg.jfif";
 import { Oval } from 'react-loader-spinner';
 import api from '../utils/api';
 import { sideBarArrayList } from '../utils/sidebar';
+import { Field } from '../types/header';
 
 export const Header = () => {
   const [state, setState] = useState({
@@ -20,7 +21,7 @@ export const Header = () => {
     popup: false,
     activeIndex: 0,
     errorMessage: '',
-    fields: [] as any[],
+    fields: [] as Field[],
     loading: false,
     audioBlob: null as Blob | null,
     isRecording: false,
@@ -32,6 +33,12 @@ export const Header = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const nav = useNavigate();
+
+  const handleInputChange = (idx: number, value: string) => {
+    const updatedFields = [...state.fields];
+    updatedFields[idx] = { ...updatedFields[idx], value };
+    setState(prevState => ({ ...prevState, fields: updatedFields }));
+  };
 
   useEffect(() => {
     const fetchStoreName = async () => {
@@ -302,16 +309,22 @@ export const Header = () => {
       <article className='Main_action_pop'>
         <h1>Are you Sure you want to UPDATE? </h1>
         <form>
-          {state.fields.map((data, idx) => (<input
-            type="text"
-            value={data}
-            key={idx}
-            onChange={(e) => setState(prevState => ({ ...prevState, fields: e.target.value }))}
-            placeholder='First Name' />))}
-        
-          <button>Update</button>
+          {state.fields.map((data, idx) => (
+            <div key={idx} className="form-group">
+              <label htmlFor={`field-${idx}`}>{data.name}</label>
+              <input
+                id={`field-${idx}`}
+                type="text"
+                value={data.value}
+                onChange={(e) => handleInputChange(idx, e.target.value)}
+                placeholder={data.name}
+              />
+            </div>
+          ))}
+          <button type="submit">Update</button>
         </form>
       </article>
+
 
     </div>
   );

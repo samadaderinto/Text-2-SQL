@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { FaEarListen } from "react-icons/fa6";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { IoSearch } from "react-icons/io5";
-import { PiDiamondsFourFill } from "react-icons/pi";
 import { RiSpeakLine } from "react-icons/ri";
 import { RxDropdownMenu } from "react-icons/rx";
 import { useNavigate } from 'react-router-dom';
 import ProfileImg from "../assets/profileimg.jfif";
-import { Oval } from 'react-loader-spinner';
 import api from '../utils/api';
 import { sideBarArrayList } from '../utils/sidebar';
 import { Field } from '../types/header';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+
 
 export const Header = () => {
   const [state, setState] = useState({
@@ -27,7 +29,7 @@ export const Header = () => {
     isRecording: false,
     store: { name: "", email: "" },
     searchQuery: '',
-    searchResults: [] as any[],
+    searchResults: [] as any[]
   });
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -49,7 +51,6 @@ export const Header = () => {
         console.error('Error fetching store name:', error);
       }
     };
-
     fetchStoreName();
   }, []);
 
@@ -79,15 +80,12 @@ export const Header = () => {
         }
         const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         mediaRecorderRef.current = mediaRecorder;
-
         audioChunksRef.current = [];
-
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             audioChunksRef.current.push(event.data);
           }
         };
-
         mediaRecorder.onstop = () => {
           if (audioChunksRef.current.length > 0) {
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
@@ -96,7 +94,6 @@ export const Header = () => {
             console.error("No audio chunks available.");
           }
         };
-
         mediaRecorder.start();
         setState(prevState => ({ ...prevState, isRecording: true }));
       } catch (error) {
@@ -133,7 +130,6 @@ export const Header = () => {
     if (state.audioBlob) {
       const formData = new FormData();
       formData.append('file', new File([state.audioBlob], 'audio.webm', { type: 'audio/webm' }));
-
       setState(prevState => ({ ...prevState, loading: true }));
       try {
         const response = await api.post(`/query/upload/`, formData, {
@@ -141,17 +137,7 @@ export const Header = () => {
             'Content-Type': 'multipart/form-data',
           },
         });
-
-        const parsed_response = JSON.parse(response.data.results)
-
-        // { type: "DELETE"
-        //   results: {
-        //     "status": "error",
-        //     "message": "There was an issue with the data integrity. Please ensure all required fields are provided and constraints are met.",
-        //     "fields": incomplete_fields,
-        // }
-        // }
-
+        const parsed_response = JSON.parse(response.data.results);
         if (response.status === 200) {
           switch (parsed_response.type) {
             case "UPDATE":
@@ -159,28 +145,28 @@ export const Header = () => {
                 setState(prevState => ({ ...prevState, fields: parsed_response.fields }));
               }
               break;
-
             case "INSERT":
               if (parsed_response.fields) {
                 setState(prevState => ({ ...prevState, fields: parsed_response.fields }));
+              } else {
+                toast.success(parsed_response.message);
               }
               break;
-
             case "SELECT":
               nav('/query', { state: { data: parsed_response.results, header: 'Query Results' } });
               break;
-
             case "DELETE":
               if (parsed_response.fields) {
                 setState(prevState => ({ ...prevState, fields: parsed_response.fields }));
+              } else {
+                toast.success(parsed_response.message);
               }
               break;
-
             default:
+              toast.error("Unknown action type. Please try again.");
               break;
           }
         }
-
       } catch (error: any) {
         if (error.response && error.response.status === 500) {
           setState(prevState => ({ ...prevState, errorMessage: 'Unable to process your audio request. Please try again.' }));
@@ -199,16 +185,16 @@ export const Header = () => {
 
   return (
     <div className='Header_Container'>
-      <span><PiDiamondsFourFill /> EchoCart</span>
-      <section className="Search_Container">
+      <h1>EchoCart</h1>
+      <div className="Search_Container">
         {state.listen ? (
           <>
-            <span>Listening...</span>
-            <p><FaEarListen /></p>
+            <p>Listening...</p>
+            <FaEarListen />
           </>
         ) : (
           <>
-            <p className="Header_Search_Icon"><IoSearch /></p>
+            <IoSearch className="Header_Search_Icon" />
             <input
               type="text"
               placeholder="Search anything..."
@@ -216,82 +202,63 @@ export const Header = () => {
               onChange={(e) => setState(prevState => ({ ...prevState, searchQuery: e.target.value }))}
               onKeyDown={(e) => e.key === 'Enter' && performSearch()}
             />
-            <p onClick={() => setState(prevState => ({ ...prevState, voice: !state.voice }))}><RiSpeakLine /></p>
+            <RiSpeakLine onClick={() => setState(prevState => ({ ...prevState, voice: !state.voice }))} />
           </>
         )}
-      </section>
+      </div>
 
       {state.pop && (
         <ul className='Pop_Search_Container'>
           <li>Product</li>
           <li>Product</li>
-          <li>Product</li>
-          <li>Product</li>
-          {state.loading && (
-            <div className="loading-spinner">
-              <Oval
-                height={50}
-                width={50}
-                color="#4fa94d"
-                visible={true}
-                ariaLabel="oval-loading"
-                secondaryColor="#4fa94d"
-                strokeWidth={2}
-                strokeWidthSecondary={2}
-              />
-            </div>
-          )}
+          {state.loading && <div className="loading-spinner"></div>}
         </ul>
       )}
 
-      <section className="RightHand_Container">
+      <div className="RightHand_Container">
         <p className="Exclusive_Store">{state.store.name || "Store Name"}</p>
-        <p><IoIosNotificationsOutline /></p>
+        <IoIosNotificationsOutline />
         <div className="Image_Container">
           <img src={ProfileImg} alt="profile" />
         </div>
-      </section>
+      </div>
 
-      <p onClick={() => setState(prevState => ({ ...prevState, menu: !state.menu }))} className="Mobile_Menu"><RxDropdownMenu /></p>
+      <div onClick={() => setState(prevState => ({ ...prevState, menu: !state.menu }))} className="Mobile_Menu">
+        <RxDropdownMenu />
+      </div>
 
       {state.menu && (
-        <article className="Mobile_Menu_Nav">
+        <nav className="Mobile_Menu_Nav">
           {sideBarArrayList.map((obj, index) => (
-            <span
+            <button
               key={index}
               onClick={() => {
                 setState(prevState => ({ ...prevState, activeIndex: index, menu: false }));
                 nav(`/${obj.itemName}`);
               }}
-              className={state.activeIndex === index ? 'Active_List' : ''}
-            >
+              className={state.activeIndex === index ? 'Active_List' : ''}>
               <p className="List_icon">{obj.icon}</p>
               <p>{obj.itemName}</p>
-            </span>
+            </button>
           ))}
-        </article>
+        </nav>
       )}
 
       {state.voice && (
-        <span
+        <button
           onClick={() => setState(prevState => ({ ...prevState, voice: false, listen: true }))}
-          className="Search_By_Voice"
-        >
+          className="Search_By_Voice">
           Search By Voice
-        </span>
+        </button>
       )}
-
       {state.listen && (
-        <span
+        <button
           onClick={() => setState(prevState => ({ ...prevState, listen: false }))}
-          className="Search_By_Voice Stop_Voice"
-        >
+          className="Search_By_Voice Stop_Voice">
           Stop recording
-        </span>
+        </button>
       )}
-
       {state.errorMessage && <p className="error-message">{state.errorMessage}</p>}
-
       {state.searchQuery && (
         <div className="search-results">
           {state.searchResults.length > 0 ? (
@@ -306,25 +273,25 @@ export const Header = () => {
         </div>
       )}
 
-      <article className='Main_action_pop'>
-        <h1>Are you Sure you want to UPDATE? </h1>
-        <form>
-          {state.fields.map((data, idx) => (
-            <div key={idx} className="form-group">
-              <label htmlFor={`field-${idx}`}>{data.name}</label>
-              <input
-                id={`field-${idx}`}
-                type="text"
-                value={data.value}
-                onChange={(e) => handleInputChange(idx, e.target.value)}
-                placeholder={data.name}
-              />
-            </div>
-          ))}
-          <button type="submit">Update</button>
-        </form>
-      </article>
-
+      {state.popup && (
+        <div className=".Header_Popup popup-overlay">
+          <div className="popup-content">
+            <h2>Carry Out Action</h2>
+            {state.fields.map((field, idx) => (
+              <div key={idx} className="form-group">
+                <label>{field.name}</label>
+                <input
+                  type="text"
+                  value={field.value}
+                  onChange={(e) => handleInputChange(idx, e.target.value)}
+                />
+              </div>
+            ))}
+            <button onClick={() => setState(prevState => ({ ...prevState, fields: [] }))}>Submit</button>
+            <button onClick={() => setState(prevState => ({ ...prevState, popup: false }))}>Close</button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

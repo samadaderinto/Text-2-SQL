@@ -9,13 +9,14 @@
 @import '_newproduct';
 @import '_order';
 @import '_settings';
-@import 'customer';
-@import 'pagenotfound';
-@import 'logout';
-@import 'sidebar';
-@import 'newcustomer';
-@import 'signup_pop';
-@import 'query';
+@import '_customer';
+@import '_pagenotfound';
+@import '_logout';
+@import '_sidebar';
+@import '_newcustomer';
+@import '_signup_pop';
+@import '_query';
+@import '_popup';
 
 * {
     padding: 0;
@@ -31,3 +32,4 @@
     height: 100px;
     /* Adjust the height based on your layout */
 }
+

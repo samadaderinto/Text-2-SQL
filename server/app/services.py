@@ -8,7 +8,7 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404, get_list_or_404
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.db import connection, transaction, IntegrityError, ProgrammingError
+from django.db import connection, transaction, IntegrityError
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
@@ -225,9 +225,7 @@ class SearchService:
 
     def audio_to_text(self, audio_data):
         try:
-            response = self.client.audio.transcriptions.create(
-                model="whisper-1", file=audio_data, response_format="text"
-            )
+            response = self.client.audio.transcriptions.create(model="whisper-1", file=audio_data, response_format="text")
             return response
         except Exception:
             logger.error("Error transcribing audio")
@@ -413,6 +411,8 @@ class SearchService:
 
             if incomplete_fields:
                 query = self.fill_defaults_fields(query, incomplete_fields)
+            
+            self.Query.create(query=query)
 
             with connection.cursor() as cursor:
                 cursor.execute(query)
@@ -453,7 +453,7 @@ class SearchService:
 
             fields_and_values = self.extract_update_fields_and_values(query)
             if fields_and_values:
-                query
+                self.Query.create(query=query)
                 return json.dumps(
                     {
                         "status": "pending_validation",

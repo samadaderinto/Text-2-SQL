@@ -35,12 +35,13 @@ api.interceptors.response.use(
         if (refresh) {
           const decryptedRefreshToken = useDecryptJWT(refresh, secretKey);
 
-          const response = await axios.post(`${API_BASE_URL}/refresh-token/`, {
+          const response = await axios.post(`${API_BASE_URL}/auth/refresh-token/`, {
             refresh: decryptedRefreshToken,
           });
+          console.log(response)
 
           const encryptedAccessToken = useEncryptJWT(
-            response.data.token.access,
+            response.data.access,
             secretKey
           );
 

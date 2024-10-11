@@ -288,15 +288,20 @@ class SearchViewSet(viewsets.GenericViewSet):
             if file_path and os.path.exists(file_path):
                 os.remove(file_path)
 
-    @extend_schema(responses={status.HTTP_200_OK: None})
+    @extend_schema(responses={201: None})
     @action(detail=False, methods=["put"], url_path="upload/update")
     def confirm_update(self, request):
         self.search_service.confirm_and_execute_update()
 
-    @extend_schema(responses={status.HTTP_200_OK: None})
+    @extend_schema(responses={205: None})
     @action(detail=False, methods=["delete"], url_path="upload/delete")
     def confirm_delete(self, request):
         self.search_service.confirm_and_execute_delete()
+    
+    @extend_schema(responses={201: None})
+    @action(detail=False, methods=["post"], url_path="upload/create")
+    def confirm_create(self, request):
+        self.search_service.confirm_and_execute_create()
 
 
 class ProductViewSet(viewsets.GenericViewSet):

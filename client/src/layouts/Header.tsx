@@ -26,6 +26,7 @@ export const Header = () => {
     fields: [] as Field[],
     loading: false,
     audioBlob: null as Blob | null,
+    type: "",
     isRecording: false,
     store: { name: "", email: "" },
     searchQuery: '',
@@ -41,6 +42,16 @@ export const Header = () => {
     updatedFields[idx] = { ...updatedFields[idx], value };
     setState(prevState => ({ ...prevState, fields: updatedFields }));
   };
+
+  const handleUploadPopUpClose = async (type: any) => {
+    try {
+      const response = await api.get(`/query/${type}/`);
+      setState(prevState => ({ ...prevState, store: response.data }));
+    } catch (error) {
+      console.error('Error fetching store name:', error);
+    }
+    setState(prevState => ({ ...prevState, popup: false }))
+  }
 
   useEffect(() => {
     const fetchStoreName = async () => {
@@ -137,36 +148,38 @@ export const Header = () => {
             'Content-Type': 'multipart/form-data',
           },
         });
+
         const parsed_response = JSON.parse(response.data.results);
-        if (response.status === 200) {
-          switch (parsed_response.type) {
-            case "UPDATE":
-              if (parsed_response.fields) {
-                setState(prevState => ({ ...prevState, fields: parsed_response.fields }));
-              }
-              break;
-            case "INSERT":
-              if (parsed_response.fields) {
-                setState(prevState => ({ ...prevState, fields: parsed_response.fields }));
-              } else {
-                toast.success(parsed_response.message);
-              }
-              break;
-            case "SELECT":
-              nav('/query', { state: { data: parsed_response.results, header: 'Query Results' } });
-              break;
-            case "DELETE":
-              if (parsed_response.fields) {
-                setState(prevState => ({ ...prevState, fields: parsed_response.fields }));
-              } else {
-                toast.success(parsed_response.message);
-              }
-              break;
-            default:
-              toast.error("Unknown action type. Please try again.");
-              break;
-          }
+        console.log(parsed_response)
+        switch (response.data.type) {
+          case "UPDATE":
+            if (parsed_response.fields) {
+              setState(prevState => ({ ...prevState, fields: parsed_response.fields, type: response.data.type }));
+            }
+            break;
+          case "INSERT":
+            if (parsed_response.fields) {
+
+              setState(prevState => ({ ...prevState, popup: true, fields: parsed_response.fields, type: response.data.type }));
+            } else {
+              toast.success(parsed_response.message);
+            }
+            break;
+          case "SELECT":
+            nav('/query', { state: { data: parsed_response.results, header: 'Query Results' } });
+            break;
+          case "DELETE":
+            if (parsed_response.fields) {
+              setState(prevState => ({ ...prevState, fields: parsed_response.fields, type: response.data.type }));
+            } else {
+              toast.success(parsed_response.message);
+            }
+            break;
+          default:
+            toast.error("Unknown action type. Please try again.");
+            break;
         }
+
       } catch (error: any) {
         if (error.response && error.response.status === 500) {
           setState(prevState => ({ ...prevState, errorMessage: 'Unable to process your audio request. Please try again.' }));
@@ -273,25 +286,25 @@ export const Header = () => {
         </div>
       )}
 
-      {state.popup && (
-        <div className=".Header_Popup popup-overlay">
-          <div className="popup-content">
-            <h2>Carry Out Action</h2>
-            {state.fields.map((field, idx) => (
-              <div key={idx} className="form-group">
-                <label>{field.name}</label>
-                <input
-                  type="text"
-                  value={field.value}
-                  onChange={(e) => handleInputChange(idx, e.target.value)}
-                />
-              </div>
-            ))}
-            <button onClick={() => setState(prevState => ({ ...prevState, fields: [] }))}>Submit</button>
-            <button onClick={() => setState(prevState => ({ ...prevState, popup: false }))}>Close</button>
-          </div>
+      {/* {state.popup && ( */}
+      <div className=".Header_Popup popup-overlay">
+        <div className="popup-content">
+          <h2>Carry Out Action</h2>
+          {state.fields.map((field, idx) => (
+            <div key={idx} className="form-group">
+              <label>{field.name}</label>
+              <input
+                type="text"
+                value={field.value}
+                onChange={(e) => handleInputChange(idx, e.target.value)}
+              />
+            </div>
+          ))}
+          <button onClick={() => handleUploadPopUpClose(state.type)}>Submit</button>
+          <button onClick={() => setState(prevState => ({ ...prevState, fields: [] }))}>Close</button>
         </div>
-      )}
+      </div>
+      {/* )} */}
 
     </div>
   );

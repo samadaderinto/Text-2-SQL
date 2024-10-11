@@ -393,7 +393,7 @@ class SearchService:
             )
 
     @transaction.atomic
-    def confirm_and_execute_completed_create_field(self):
+    def confirm_and_execute_create(self):
         query = self.Query.objects.last()
         with connection.cursor() as cursor:
             cursor.execute(query.query)
@@ -412,7 +412,6 @@ class SearchService:
             if incomplete_fields:
                 query = self.fill_defaults_fields(query, incomplete_fields)
             
-            self.Query.create(query=query)
 
             with connection.cursor() as cursor:
                 cursor.execute(query)
@@ -427,14 +426,26 @@ class SearchService:
         except IntegrityError as e:
             logger.error(f"IntegrityError executing SQL insert query: {str(e)}")
             incomplete_fields = self.send_create_incompleted_response(table_name, query)
-            self.Query.objects.create(query)
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "There was an issue with the data integrity. Please ensure all required fields are provided and constraints are met.",
-                    "fields": incomplete_fields,
-                }
-            )
+            self.Query.objects.create(query=query)
+            
+            if incomplete_fields:
+                
+                return json.dumps(
+                    {
+                        "status": "error",
+                        "message": "There was an issue with the data integrity. Please ensure all required fields are provided and constraints are met.",
+                        "fields": incomplete_fields,
+                    }
+                )
+            else:
+                return json.dumps(
+                    {
+                        "status": "success",
+                        "message": "Verify the data below",
+                        "fields": incomplete_fields,
+                    }
+                )
+                
 
         except Exception as e:
             logger.error(f"Error executing SQL insert query: {str(e)}")
@@ -453,7 +464,7 @@ class SearchService:
 
             fields_and_values = self.extract_update_fields_and_values(query)
             if fields_and_values:
-                self.Query.create(query=query)
+                self.Query.objects.create(query=query)
                 return json.dumps(
                     {
                         "status": "pending_validation",
@@ -470,7 +481,7 @@ class SearchService:
                 )
 
         except Exception as e:
-            logger.error(f"Error executing SQL update query: {str(e)}")
+            logger.error(f"Error executing SQL update query in update: {str(e)}")
             return json.dumps(
                 {
                     "status": "error",

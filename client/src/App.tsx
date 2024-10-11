@@ -41,7 +41,8 @@ function App() {
       <Routes>
 
         <Route path='/' element={<Home />}></Route>
-        <Route index path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route index path='/dashboard' element={<Dashboard/>}/>
+        {/* <Route index path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} /> */}
         <Route path='/product' element={<ProtectedRoute><Product /></ProtectedRoute>} />
         <Route path='/product/add' element={<ProtectedRoute><NewProduct /></ProtectedRoute>} />
         <Route path='/orders' element={<ProtectedRoute><Orders /></ProtectedRoute>} />

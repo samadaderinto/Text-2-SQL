@@ -315,7 +315,7 @@ export const Header = () => {
                 // onChange={(e) => handleInputChange(idx, e.target.value)}
               />
             </div>
-          <button onClick={() => handleUploadPopUpClose(state.type)}>Submit</button>
+          <button className='Popup_submit' onClick={() => handleUploadPopUpClose(state.type)}>Submit</button>
           <button onClick={() => setState(prevState => ({ ...prevState, fields: [] }))}>Close</button>
         </div>
       </div>

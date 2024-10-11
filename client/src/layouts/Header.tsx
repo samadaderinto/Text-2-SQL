@@ -304,7 +304,7 @@ export const Header = () => {
               <input
                 type="text"
                 value={"vfgt hyyj gtc"}
-                onChange={(e) => handleInputChange(idx, e.target.value)}
+                // onChange={(e) => handleInputChange(idx, e.target.value)}
               />
             </div>
             <div  className="form-group">
@@ -312,7 +312,7 @@ export const Header = () => {
               <input
                 type="text"
                 value={"vfgt hyyj gtc"}
-                onChange={(e) => handleInputChange(idx, e.target.value)}
+                // onChange={(e) => handleInputChange(idx, e.target.value)}
               />
             </div>
           <button onClick={() => handleUploadPopUpClose(state.type)}>Submit</button>

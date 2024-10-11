@@ -289,7 +289,7 @@ export const Header = () => {
       <div className=".Header_Popup popup-overlay">
         <div className="popup-content">
           <h2>Carry Out Action</h2>
-          {state.fields.map((field, idx) => (
+          {/* {state.fields.map((field, idx) => (
             <div key={idx} className="form-group">
               <label>{field.name}</label>
               <input
@@ -298,7 +298,23 @@ export const Header = () => {
                 onChange={(e) => handleInputChange(idx, e.target.value)}
               />
             </div>
-          ))}
+          ))} */}
+          <div  className="form-group">
+              <label>id</label>
+              <input
+                type="text"
+                value={"vfgt hyyj gtc"}
+                onChange={(e) => handleInputChange(idx, e.target.value)}
+              />
+            </div>
+            <div  className="form-group">
+              <label>id</label>
+              <input
+                type="text"
+                value={"vfgt hyyj gtc"}
+                onChange={(e) => handleInputChange(idx, e.target.value)}
+              />
+            </div>
           <button onClick={() => handleUploadPopUpClose(state.type)}>Submit</button>
           <button onClick={() => setState(prevState => ({ ...prevState, fields: [] }))}>Close</button>
         </div>

@@ -45,12 +45,12 @@ export const Header = () => {
 
   const handleUploadPopUpClose = async (type: any) => {
     try {
-      const response = await api.get(`/query/${type}/`);
-      setState(prevState => ({ ...prevState, store: response.data }));
+      const response = await api.get(`/query/${type.toLowerCase()}/`);
+      setState(prevState => ({ ...prevState, popup: false, fields: [] }))
     } catch (error) {
       console.error('Error fetching store name:', error);
     }
-    setState(prevState => ({ ...prevState, popup: false }))
+    
   }
 
   useEffect(() => {
@@ -159,7 +159,6 @@ export const Header = () => {
             break;
           case "INSERT":
             if (parsed_response.fields) {
-
               setState(prevState => ({ ...prevState, popup: true, fields: parsed_response.fields, type: response.data.type }));
             } else {
               toast.success(parsed_response.message);

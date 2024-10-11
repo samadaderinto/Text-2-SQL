@@ -11,6 +11,7 @@ class ServerAccessPolicy(AccessPolicy):
                 "request_reset_password",
                 "verify_password_reset_token",
                 "reset_password",
+                "refresh_token"
             ],
             "principal": "*",
             "effect": "allow",
@@ -40,7 +41,7 @@ class ServerAccessPolicy(AccessPolicy):
                 "delete_order",
                 "logout",
                 "elastic_searcher",
-                "refresh_token",
+          
             ],
             "principal": ["authenticated"],
             "effect": "allow",

@@ -15,7 +15,7 @@ import { NewPassword } from './Components/NewPassword'
 import { Customers } from './Components/Customers'
 import { NewCustomer } from './Components/NewCustomer'
 
-// import ProtectedRoute from './utils/hooks'
+import ProtectedRoute from './utils/hooks'
 
 import Home from './pages/home'
 import Query from './Components/Query'
@@ -41,18 +41,18 @@ function App() {
       <Routes>
 
         <Route path='/' element={<Home />}></Route>
-        <Route path='/dashboard' element={<Dashboard />} />
-        <Route path='/product' element={<Product />} />
-        <Route path='/product/add' element={<NewProduct />} />
-        <Route path='/orders' element={<Orders />} />
-        <Route path='/customers' element={<Customers />} />
-        <Route path='/customers/add' element={<NewCustomer />} />
-        <Route path='/settings' element={<Settings />} />
+        <Route index path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path='/product' element={<ProtectedRoute><Product /></ProtectedRoute>} />
+        <Route path='/product/add' element={<ProtectedRoute><NewProduct /></ProtectedRoute>} />
+        <Route path='/orders' element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+        <Route path='/customers' element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+        <Route path='/customers/add' element={<ProtectedRoute><NewCustomer /></ProtectedRoute>} />
+        <Route path='/settings' element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path='query' element={<ProtectedRoute><Query /></ProtectedRoute>} />
 
 
-        <Route path='query' element={<Query />} />
 
-        <Route path='logout' element={<Logout />} />
+        <Route path='logout' element={<ProtectedRoute><Logout /></ProtectedRoute>} />
         <Route path='auth/signup' element={<Signup />} />
         <Route path='auth/signin' element={<SignIn />} />
         <Route path='auth/forgot-password' element={<Forgotpassword />} />

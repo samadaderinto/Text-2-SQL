@@ -225,7 +225,9 @@ class SearchService:
 
     def audio_to_text(self, audio_data):
         try:
-            response = self.client.audio.transcriptions.create(model="whisper-1", file=audio_data, response_format="text")
+            response = self.client.audio.transcriptions.create(
+                model="whisper-1", file=audio_data, response_format="text"
+            )
             return response
         except Exception:
             logger.error("Error transcribing audio")
@@ -338,6 +340,23 @@ class SearchService:
         except Exception as e:
             logger.error(f"Error extracting fields and values from query: {str(e)}")
             return None
+    
+    
+    def extract_insert_fields_and_values_from_query(self, query):
+        match = re.search(r"INSERT\s+INTO\s+[`'\"]?(\w+)[`'\"]?\s*\(([^)]+)\)\s+VALUES\s*\(([^)]+)\)", query, re.IGNORECASE)
+        if match:
+            fields_str = match.group(2)  
+            values_str = match.group(3)
+            
+           
+            fields = [field.strip() for field in fields_str.split(",")]
+            values = [value.strip() for value in values_str.split(",")]
+
+          
+            return dict(zip(fields, values))
+
+        return {}
+
 
     def send_create_incompleted_response(self, table_name, query):
         required_fields = self.get_required_fields(table_name)
@@ -400,36 +419,38 @@ class SearchService:
         query.delete()
         return json.dumps({"status": "success", "message": f"successfully added."})
 
+
+
+
     @transaction.atomic()
     def create_from_SQL(self, query):
         try:
+          
             match = re.search(r"INSERT\s+INTO\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
             table_name = match.group(2) if match else "Unknown table"
 
-            required_fields = self.get_required_fields(table_name)
-            incomplete_fields = self.get_incomplete_fields(query, required_fields)
-
+          
+            fields_and_values = self.extract_fields_and_values_from_query(query)
+            incomplete_fields = self.get_incomplete_fields(query, fields_and_values.keys())
             if incomplete_fields:
                 query = self.fill_defaults_fields(query, incomplete_fields)
             
+            self.Query.objects.create(query=query)
 
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-
-                return json.dumps(
-                    {
-                        "status": "success",
-                        "message": f"{table_name} successfully added.",
-                    }
-                )
+            return json.dumps(
+                {
+                    "status": "pending_validation",
+                    "message": f"Please validate the following fields and values for {table_name}.",
+                    "fields_and_values": fields_and_values,
+                }
+            )
 
         except IntegrityError as e:
             logger.error(f"IntegrityError executing SQL insert query: {str(e)}")
             incomplete_fields = self.send_create_incompleted_response(table_name, query)
-            self.Query.objects.create(query=query)
-            
+           
+
             if incomplete_fields:
-                
                 return json.dumps(
                     {
                         "status": "error",
@@ -445,7 +466,6 @@ class SearchService:
                         "fields": incomplete_fields,
                     }
                 )
-                
 
         except Exception as e:
             logger.error(f"Error executing SQL insert query: {str(e)}")
@@ -455,6 +475,8 @@ class SearchService:
                     "message": "There was an issue executing the insert query. Please try again later.",
                 }
             )
+
+
 
     @transaction.atomic()
     def update_from_SQL(self, query):
@@ -563,6 +585,14 @@ class SearchService:
                 if field in row:
                     del row[field]
         return result
+    
+    def extract_fields_from_query(self, query):
+        match = re.search(r"INSERT\s+INTO\s+[`'\"]?(\w+)[`'\"]?\s*\(([^)]+)\)", query, re.IGNORECASE)
+        if match:
+            field_str = match.group(2)  # Extract the field names within parentheses
+            fields = [field.strip() for field in field_str.split(",")]
+            return fields
+        return []
 
 
 @inject

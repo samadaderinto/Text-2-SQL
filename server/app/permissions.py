@@ -41,6 +41,7 @@ class ServerAccessPolicy(AccessPolicy):
                 "delete_order",
                 "logout",
                 "elastic_searcher",
+                "get_store"
           
             ],
             "principal": ["authenticated"],

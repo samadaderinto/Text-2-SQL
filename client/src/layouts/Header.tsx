@@ -12,8 +12,6 @@ import { Field } from '../types/header';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
-
 export const Header = () => {
   const [state, setState] = useState({
     menu: false,
@@ -22,7 +20,6 @@ export const Header = () => {
     pop: false,
     popup: false,
     activeIndex: 0,
-    errorMessage: '',
     fields: [] as Field[],
     loading: false,
     audioBlob: null as Blob | null,
@@ -45,13 +42,12 @@ export const Header = () => {
 
   const handleUploadPopUpClose = async (type: any) => {
     try {
-      const response = await api.get(`/query/${type.toLowerCase()}/`);
-      setState(prevState => ({ ...prevState, popup: false, fields: [] }))
+      await api.get(`/query/${type.toLowerCase()}/`);
+      setState(prevState => ({ ...prevState, popup: false, fields: [] }));
     } catch (error) {
-      console.error('Error fetching store name:', error);
+      toast.error('Error fetching store name.');
     }
-
-  }
+  };
 
   useEffect(() => {
     const fetchStoreName = async () => {
@@ -59,7 +55,7 @@ export const Header = () => {
         const response = await api.get(`/settings/store/get/`);
         setState(prevState => ({ ...prevState, store: response.data }));
       } catch (error) {
-        console.error('Error fetching store name:', error);
+        toast.error('Error fetching store name.');
       }
     };
     fetchStoreName();
@@ -71,7 +67,7 @@ export const Header = () => {
         const response = await api.get(`query/search/`, { params: { query: state.searchQuery } });
         setState(prevState => ({ ...prevState, searchResults: response.data }));
       } catch (error) {
-        console.error('Error performing search:', error);
+        toast.error('Error performing search.');
       }
     } else {
       setState(prevState => ({ ...prevState, searchResults: [] }));
@@ -102,16 +98,16 @@ export const Header = () => {
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
             setState(prevState => ({ ...prevState, audioBlob }));
           } else {
-            console.error("No audio chunks available.");
+            toast.error("No audio chunks available.");
           }
         };
         mediaRecorder.start();
         setState(prevState => ({ ...prevState, isRecording: true }));
       } catch (error) {
-        console.error('Error accessing microphone:', error);
+        toast.error('Error accessing microphone.');
       }
     } else {
-      console.error('getUserMedia not supported on this browser.');
+      toast.error('getUserMedia not supported on this browser.');
     }
   };
 
@@ -150,16 +146,17 @@ export const Header = () => {
         });
 
         const parsed_response = JSON.parse(response.data.results);
-        console.log(parsed_response)
+        const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
+
         switch (response.data.type) {
           case "UPDATE":
             if (parsed_response.fields) {
-              setState(prevState => ({ ...prevState, fields: parsed_response.fields, type: response.data.type }));
+              setState(prevState => ({ ...prevState, fields: fieldsArray, type: response.data.type }));
             }
             break;
           case "INSERT":
             if (parsed_response.fields) {
-              setState(prevState => ({ ...prevState, popup: true, fields: parsed_response.fields, type: response.data.type }));
+              setState(prevState => ({ ...prevState, popup: true, fields: fieldsArray, type: response.data.type }));
             } else {
               toast.success(parsed_response.message);
             }
@@ -169,7 +166,7 @@ export const Header = () => {
             break;
           case "DELETE":
             if (parsed_response.fields) {
-              setState(prevState => ({ ...prevState, fields: parsed_response.fields, type: response.data.type }));
+              setState(prevState => ({ ...prevState, fields: fieldsArray, type: response.data.type }));
             } else {
               toast.success(parsed_response.message);
             }
@@ -181,17 +178,15 @@ export const Header = () => {
 
       } catch (error: any) {
         if (error.response && error.response.status === 500) {
-          setState(prevState => ({ ...prevState, errorMessage: 'Unable to process your audio request. Please try again.' }));
+          toast.error('Unable to process your audio request. Please try again.');
         } else {
-          setState(prevState => ({ ...prevState, errorMessage: 'Unable to find what you\'re looking for. Please try again.' }));
+          toast.error('Unable to find what you\'re looking for. Please try again.');
         }
-        console.error('Error uploading audio:', error);
       } finally {
         setState(prevState => ({ ...prevState, loading: false }));
       }
     } else {
-      setState(prevState => ({ ...prevState, errorMessage: 'No audio data available for upload.' }));
-      console.error('No audio data available for upload.');
+      toast.error('No audio data available for upload.');
     }
   };
 
@@ -270,42 +265,32 @@ export const Header = () => {
           Stop recording
         </button>
       )}
-      {state.errorMessage && <p className="error-message">{state.errorMessage}</p>}
-      {state.searchQuery && (
-        <div className="search-results">
-          {state.searchResults.length > 0 ? (
-            state.searchResults.map((result, index) => (
-              <div key={index} className="search-result-item">
-                <p>{result.name}</p>
-              </div>
-            ))
-          ) : (
-            <p>No results found</p>
-          )}
-        </div>
-      )}
+
 
       {state.popup && (
-        <div className=".Header_Popup popup-overlay">
+        <div className="Header_Popup popup-overlay">
           <div className="popup-content">
-            <h2>Carry Out Action</h2>
-            {/* {state.fields.map((field, idx) => (
-            <div key={idx} className="form-group">
-              <label>{field.name}</label>
-              <input
-                type="text"
-                value={field.value}
-                onChange={(e) => handleInputChange(idx, e.target.value)}
-              />
-            </div>
-          ))} */}
 
-            <button className='Popup_submit' onClick={() => handleUploadPopUpClose(state.type)}>Submit</button>
-            <button onClick={() => setState(prevState => ({ ...prevState, fields: [], popup: false }))}>Close</button>
+            <div className="form-group">
+              <h2>Carry Out Action</h2>
+
+              {state.fields.map((field, idx) => (
+                <div key={idx}>
+                  <label>{field.name}</label>
+                  <input
+                    type="text"
+                    value={field.value}
+                    onChange={(e) => handleInputChange(idx, e.target.value)}
+                  />
+                </div>
+              ))}
+
+              <button className='Popup_submit' onClick={() => handleUploadPopUpClose(state.type)}>Submit</button>
+              <button onClick={() => setState(prevState => ({ ...prevState, fields: [], popup: false }))}>Close</button>
+            </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };

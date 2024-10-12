@@ -50,7 +50,7 @@ export const Header = () => {
     } catch (error) {
       console.error('Error fetching store name:', error);
     }
-    
+
   }
 
   useEffect(() => {
@@ -285,11 +285,11 @@ export const Header = () => {
         </div>
       )}
 
-      {/* {state.popup && ( */}
-      <div className=".Header_Popup popup-overlay">
-        <div className="popup-content">
-          
-          {/* {state.fields.map((field, idx) => (
+      {state.popup && (
+        <div className=".Header_Popup popup-overlay">
+          <div className="popup-content">
+            <h2>Carry Out Action</h2>
+            {/* {state.fields.map((field, idx) => (
             <div key={idx} className="form-group">
               <label>{field.name}</label>
               <input
@@ -299,32 +299,12 @@ export const Header = () => {
               />
             </div>
           ))} */}
-          <div  className="form-group">
-          <h2>Carry Out Action</h2>
-              <label>id</label>
-              <input
-                type="text"
-                value={"vfgt hyyj gtc"}
-                // onChange={(e) => handleInputChange(idx, e.target.value)}
-              />
-            </div>
-            <div  className="form-group">
-              <label>id</label>
-              <input
-                type="text"
-                value={"vfgt hyyj gtc"}
-                // onChange={(e) => handleInputChange(idx, e.target.value)}
 
-                
-              />
-
-              
-          <button className='Popup_submit' onClick={() => handleUploadPopUpClose(state.type)}>Submit</button>
-          <button onClick={() => setState(prevState => ({ ...prevState, fields: [] }))}>Close</button>
-            </div>
+            <button className='Popup_submit' onClick={() => handleUploadPopUpClose(state.type)}>Submit</button>
+            <button onClick={() => setState(prevState => ({ ...prevState, fields: [], popup: false }))}>Close</button>
+          </div>
         </div>
-      </div>
-      {/* )} */}
+      )}
 
     </div>
   );

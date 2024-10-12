@@ -430,7 +430,7 @@ class SearchService:
             table_name = match.group(2) if match else "Unknown table"
 
           
-            fields_and_values = self.extract_fields_and_values_from_query(query)
+            fields_and_values = self.extract_insert_fields_and_values_from_query(query)
             incomplete_fields = self.get_incomplete_fields(query, fields_and_values.keys())
             if incomplete_fields:
                 query = self.fill_defaults_fields(query, incomplete_fields)
@@ -441,7 +441,7 @@ class SearchService:
                 {
                     "status": "pending_validation",
                     "message": f"Please validate the following fields and values for {table_name}.",
-                    "fields_and_values": fields_and_values,
+                    "fields": fields_and_values,
                 }
             )
 

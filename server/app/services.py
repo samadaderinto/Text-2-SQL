@@ -365,12 +365,21 @@ class SearchService:
         return incomplete_fields
 
     @transaction.atomic
-    def confirm_and_execute_update(self):
+    def confirm_and_execute_update(self, validated_data):
         query = self.Query.objects.last()
+
         try:
+            if validated_data:
+                modified_query = query.query.format(**validated_data)
+
+                query.query = modified_query
+                query.save()
+
             with connection.cursor() as cursor:
                 cursor.execute(query.query)
+
             query.delete()
+
             return json.dumps(
                 {
                     "status": "success",
@@ -380,6 +389,7 @@ class SearchService:
 
         except Exception as e:
             logger.error(f"Error executing SQL update query after validation: {str(e)}")
+
             return json.dumps(
                 {
                     "status": "error",
@@ -412,12 +422,20 @@ class SearchService:
             )
 
     @transaction.atomic
-    def confirm_and_execute_create(self):
+    def confirm_and_execute_create(self, validated_data):
         query = self.Query.objects.last()
+
+        if validated_data:
+            modified_query = query.query.format(**validated_data) 
+            query.query = modified_query
+            query.save()
+            
         with connection.cursor() as cursor:
             cursor.execute(query.query)
+
         query.delete()
-        return json.dumps({"status": "success", "message": f"successfully added."})
+
+        return json.dumps({"status": "success", "message": "Successfully executed and added."})
 
 
 

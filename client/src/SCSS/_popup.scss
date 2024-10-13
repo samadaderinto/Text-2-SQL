@@ -5,8 +5,9 @@
         padding: 20px;
         border-radius: 10px;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        // max-width: 500px;
-        width: 100%;
+        max-width: max-content;
+        // width: 100%;
+
 
 
       
@@ -69,7 +70,7 @@
     z-index: 1000;
 
     input {
-        width: 100%;
+        width: 150px;
         padding: 4%;
         outline: none;
         height: 45px;

@@ -40,12 +40,41 @@ export const Header = () => {
     setState(prevState => ({ ...prevState, fields: updatedFields }));
   };
 
-  const handleUploadPopUpClose = async (type: any) => {
+  const handleUploadPopUpClose = async (type: string) => {
+    const data = state.fields.reduce((acc, field) => {
+      acc[field.name] = field.value;
+      return acc;
+    }, {} as Record<string, string>);
+  
     try {
-      await api.get(`/query/${type.toLowerCase()}/`);
-      setState(prevState => ({ ...prevState, popup: false, fields: [] }));
+      let response;
+      switch (type) {
+        case "INSERT":
+          response = await api.post(`/query/upload/create/`, data);
+          toast.success('Data inserted successfully.');
+          break;
+  
+        case "UPDATE":
+          response = await api.put(`/query/upload/update/`, data);
+          toast.success('Data updated successfully.');
+          break;
+  
+        case "DELETE":
+          response = await api.delete(`/query/upload/delete/`);
+          toast.success('Data deleted successfully.');
+          break;
+  
+        default:
+          toast.error('Invalid action type.');
+          return;
+      }
+
+      console.log(response);
+
+      setState(prevState => ({ ...prevState, popup: false, fields: [], type: "" }));
+  
     } catch (error) {
-      toast.error('Error fetching store name.');
+      toast.error('Error processing the request. Please try again.');
     }
   };
 
@@ -286,7 +315,7 @@ export const Header = () => {
               ))}
 
               <button className='Popup_submit' onClick={() => handleUploadPopUpClose(state.type)}>Submit</button>
-              <button onClick={() => setState(prevState => ({ ...prevState, fields: [], popup: false }))}>Close</button>
+              <button onClick={() => setState(prevState => ({ ...prevState, fields: [], popup: false, type: "" }))}>Close</button>
             </div>
           </div>
         </div>

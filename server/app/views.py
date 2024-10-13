@@ -291,17 +291,50 @@ class SearchViewSet(viewsets.GenericViewSet):
     @extend_schema(responses={201: None})
     @action(detail=False, methods=["put"], url_path="upload/update")
     def confirm_update(self, request):
-        self.search_service.confirm_and_execute_update()
+        try:
+            self.search_service.confirm_and_execute_update(request.data)
+            return Response(
+                {"status": "success", "message": "Update successful."},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            logger.error(f"Error in confirm_update: {str(e)}")
+            return Response(
+                {"status": "error", "message": "Failed to execute update."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     @extend_schema(responses={205: None})
     @action(detail=False, methods=["delete"], url_path="upload/delete")
     def confirm_delete(self, request):
-        self.search_service.confirm_and_execute_delete()
-    
+        try:
+            self.search_service.confirm_and_execute_delete()
+            return Response(
+                {"status": "success", "message": "Delete successful."},
+                status=status.HTTP_205_RESET_CONTENT,
+            )
+        except Exception as e:
+            logger.error(f"Error in confirm_delete: {str(e)}")
+            return Response(
+                {"status": "error", "message": "Failed to execute delete."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
     @extend_schema(responses={201: None})
     @action(detail=False, methods=["post"], url_path="upload/create")
     def confirm_create(self, request):
-        self.search_service.confirm_and_execute_create()
+        try:
+            self.search_service.confirm_and_execute_create(request.data)
+            return Response(
+                {"status": "success", "message": "Creation successful."},
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as e:
+            logger.error(f"Error in confirm_create: {str(e)}")
+            return Response(
+                {"status": "error", "message": "Failed to execute create."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class ProductViewSet(viewsets.GenericViewSet):
@@ -441,13 +474,6 @@ class CustomerViewSet(viewsets.GenericViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @extend_schema(responses={204: None})
-    @action(detail=False, methods=["post"], url_path="ban")
-    def ban(self, request):
-        data = JSONParser().parse(request)
-        serializer = CustomerSerializer(data=data)
-        user = self.customer_service.ban_customer(request.user)
-
 
 class StoreViewSet(viewsets.GenericViewSet):
     def __init__(self, **kwargs):
@@ -471,20 +497,6 @@ class StoreViewSet(viewsets.GenericViewSet):
         data = JSONParser().parse(request)
         store = self.store_service.update_store(data)
         return Response(status=201, data=store)
-
-    # @extend_schema(responses={200: StoreSerializer})
-    # @action(detail=False, methods=['get'], url_path='get')
-    # def retrieve_store(self, request):
-    #     data = JSONParser().parse(request)
-    #     serializer = StoreSearchSerializer(data=data)
-    #     serializer.is_valid(raise_exception=True)
-    #     email = serializer.validated_data['email']
-    #     phone_number = serializer.validated_data['phone_number']
-    #     customer = self.store_service.get_customer(
-    #         request, email=email, phone_number=phone_number
-    #     )
-
-    #     return Response(status=200, data=customer)
 
 
 class OrderViewSet(viewsets.GenericViewSet):

@@ -106,7 +106,7 @@ export const Customers = () => {
                     <div>
                       <img src="" alt="" />
                     </div>
-                    <p className="Customer_Name">{item.first_name}</p>
+                    <p className="Customer_Name">{item.last_name} {item.first_name}</p>
                   </span>
                   <p>{item.email}</p>
                   <span>

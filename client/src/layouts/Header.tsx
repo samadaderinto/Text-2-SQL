@@ -176,7 +176,7 @@ export const Header = () => {
 
         const parsed_response = JSON.parse(response.data.results);
         const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
-
+        console.log(response)
         switch (response.data.type) {
           case "UPDATE":
             if (parsed_response.fields) {

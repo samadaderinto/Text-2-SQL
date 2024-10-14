@@ -227,7 +227,10 @@ class SearchService:
     def audio_to_text(self, audio_data):
         try:
             response = self.client.audio.transcriptions.create(
-                model="whisper-1", file=audio_data, response_format="text"
+                model="whisper-1",
+                file=audio_data,
+                response_format="text",
+                language="en",
             )
             return response
         except Exception:
@@ -247,7 +250,7 @@ class SearchService:
                 messages=[
                     {
                         "role": "user",
-                        "content": f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective fields as a guide {model_mappings} in MySQL query format: {text}",
+                        "content": f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective fields as a guide {model_mappings} in recent MySQL Database query format: {text}",
                     }
                 ],
                 max_tokens=150,
@@ -345,6 +348,8 @@ class SearchService:
             return None
 
     def extract_insert_fields_and_values_from_query(self, query):
+        query = query.strip().rstrip(";")
+
         match = re.search(
             r"INSERT\s+INTO\s+[`'\"]?(\w+)[`'\"]?\s*\(([^)]+)\)\s+VALUES\s*\(([^)]+)\)",
             query,
@@ -355,25 +360,48 @@ class SearchService:
             values_str = match.group(3)
 
             fields = [field.strip() for field in fields_str.split(",")]
-            values = [value.strip() for value in values_str.split(",")]
+
+            # Handle values that might contain commas (e.g., in strings)
+            values = []
+            current_value = ""
+            in_quotes = False
+            for char in values_str:
+                if char == "'" or char == '"':
+                    in_quotes = not in_quotes
+                elif char == "," and not in_quotes:
+                    values.append(current_value.strip())
+                    current_value = ""
+                    continue
+                current_value += char
+            values.append(current_value.strip())
+
+            if len(fields) != len(values):
+                raise ValueError(
+                    f"Mismatch between fields ({len(fields)}) and values ({len(values)})"
+                )
 
             return dict(zip(fields, values))
 
-        return {}
+        raise ValueError("Unable to extract fields and values from the query")
 
     def send_create_incompleted_response(self, table_name, query):
         required_fields = self.get_required_fields(table_name)
 
         provided_fields = self.extract_insert_fields_and_values_from_query(query)
-        incomplete_fields = [field for field in required_fields if field not in provided_fields.keys()]
+        incomplete_fields = [
+            field for field in required_fields if field not in provided_fields.keys()
+        ]
 
-        all_fields = {field: provided_fields.get(field, "") for field in required_fields}
-
-        return {
-            "completed_fields": {field: value for field, value in all_fields.items() if value},
-            "incomplete_fields": {field: "" for field in incomplete_fields},
+        all_fields = {
+            field: provided_fields.get(field, "") for field in required_fields
         }
 
+        return {
+            "completed_fields": {
+                field: value for field, value in all_fields.items() if value
+            },
+            "incomplete_fields": {field: "" for field in incomplete_fields},
+        }
 
     @transaction.atomic
     def confirm_and_execute_update(self, validated_data):
@@ -489,40 +517,50 @@ class SearchService:
             match = re.search(r"INSERT\s+INTO\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
             table_name = match.group(2) if match else "Unknown table"
 
+            # Extract fields and values from the SQL query
             fields_and_values = self.extract_insert_fields_and_values_from_query(query)
+
+            # Get any incomplete fields from the SQL query
             incomplete_fields = self.get_incomplete_fields(query, fields_and_values.keys())
 
             if incomplete_fields:
+                # Send both fields and their corresponding values to the UI
+                all_fields_and_values = fields_and_values  # Dictionary containing all fields and their values
                 response_data = self.send_create_incompleted_response(table_name, query)
-                return json.dumps({
-                    "status": "pending_validation",
-                    "message": f"Please verify the fields for {table_name}.",
-                    "fields": response_data
-                })
+                
+                return json.dumps(
+                    {
+                        "status": "pending_validation",
+                        "message": f"Please verify the fields for {table_name}.",
+                        "incomplete_fields": response_data,  # Incomplete fields sent to UI
+                        "all_fields_and_values": all_fields_and_values,  # Send all fields and values to the UI
+                    }
+                )
 
+            # Create the query in the database if no issues
             self.Query.objects.create(query=query)
 
-            return json.dumps({
-                "status": "success",
-                "message": "Successfully executed and added."
-            })
+            return json.dumps(
+                {
+                    "status": "success",
+                    "message": "Successfully executed and added.",
+                    "fields": list(fields_and_values.keys()),  # Send all fields to UI
+                    "values": list(fields_and_values.values()),  # Send corresponding values to UI
+                }
+            )
 
         except IntegrityError as e:
             logger.error(f"IntegrityError executing SQL insert query: {str(e)}")
             incomplete_fields = self.send_create_incompleted_response(table_name, query)
 
-            return json.dumps({
-                "status": "error",
-                "message": "There was an issue with the data integrity. Please ensure all required fields are provided.",
-                "fields": incomplete_fields,
-            })
-
-        except Exception as e:
-            logger.error(f"Error executing SQL insert query: {str(e)}")
-            return json.dumps({
-                "status": "error",
-                "message": "There was an issue executing the insert query. Please try again later.",
-            })
+            # Return error with fields for the UI popup
+            return json.dumps(
+                {
+                    "status": "error",
+                    "message": "There was an issue with the data integrity. Please ensure all required fields are provided.",
+                    "fields": incomplete_fields,  # Send fields for the popup
+                }
+            )
 
     @transaction.atomic()
     def update_from_SQL(self, query):

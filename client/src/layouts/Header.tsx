@@ -45,7 +45,7 @@ export const Header = () => {
       acc[field.name] = field.value;
       return acc;
     }, {} as Record<string, string>);
-  
+
     try {
       let response;
       switch (type) {
@@ -53,17 +53,17 @@ export const Header = () => {
           response = await api.post(`/query/upload/create/`, data);
           toast.success('Data inserted successfully.');
           break;
-  
+
         case "UPDATE":
           response = await api.put(`/query/upload/update/`, data);
           toast.success('Data updated successfully.');
           break;
-  
+
         case "DELETE":
           response = await api.delete(`/query/upload/delete/`);
           toast.success('Data deleted successfully.');
           break;
-  
+
         default:
           toast.error('Invalid action type.');
           return;
@@ -72,7 +72,7 @@ export const Header = () => {
       console.log(response);
 
       setState(prevState => ({ ...prevState, popup: false, fields: [], type: "" }));
-  
+
     } catch (error) {
       toast.error('Error processing the request. Please try again.');
     }
@@ -173,29 +173,36 @@ export const Header = () => {
             'Content-Type': 'multipart/form-data',
           },
         });
-
-        const parsed_response = JSON.parse(response.data.results);
-        const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
         console.log(response)
+        const parsed_response = JSON.parse(response.data.results);
+
         switch (response.data.type) {
+          case "SELECT":
+            console.log(parsed_response)
+            nav('/query', { state: { data: parsed_response, header: 'Query Results' } });
+            break;
           case "UPDATE":
             if (parsed_response.fields) {
-              setState(prevState => ({ ...prevState, fields: fieldsArray, type: response.data.type }));
+
+              const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
+              setState(prevState => ({ ...prevState, popup: true, fields: fieldsArray, type: response.data.type }));
             }
             break;
           case "INSERT":
             if (parsed_response.fields) {
+
+        const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
               setState(prevState => ({ ...prevState, popup: true, fields: fieldsArray, type: response.data.type }));
             } else {
               toast.success(parsed_response.message);
             }
             break;
-          case "SELECT":
-            nav('/query', { state: { data: parsed_response.results, header: 'Query Results' } });
-            break;
+
           case "DELETE":
             if (parsed_response.fields) {
-              setState(prevState => ({ ...prevState, fields: fieldsArray, type: response.data.type }));
+
+        const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
+              setState(prevState => ({ ...prevState, popup: true, fields: fieldsArray, type: response.data.type }));
             } else {
               toast.success(parsed_response.message);
             }
@@ -208,8 +215,10 @@ export const Header = () => {
       } catch (error: any) {
         if (error.response && error.response.status === 500) {
           toast.error('Unable to process your audio request. Please try again.');
+          console.log('Error occurred:', error);
         } else {
           toast.error('Unable to find what you\'re looking for. Please try again.');
+          console.log('Error occurred:', error);
         }
       } finally {
         setState(prevState => ({ ...prevState, loading: false }));

@@ -44,16 +44,14 @@ export const SignIn = () => {
         password,
       });
 
-      const { data, token } = response.data;
+      const { token } = response.data;
 
       const encryptedAccessToken = useEncryptJWT(token.access, secretKey);
       const encryptedRefreshToken = useEncryptJWT(token.refresh, secretKey);
 
-      // Corrected token storage
       localStorage.setItem('access', encryptedAccessToken);
       localStorage.setItem('refresh', encryptedRefreshToken);
 
-      // Reset form state after successful sign-in
       setFormState({
         show: false,
         pass: 'password',

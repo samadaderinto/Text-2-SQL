@@ -265,20 +265,17 @@ class SearchService:
             return "Error generating SQL query"
 
     def get_required_fields(self, table_name):
-        # Get the model for the provided table name
-        try:
-            model = apps.get_model(table_name)
-        except LookupError:
-            raise ValueError(f"No model found for table name: {table_name}")
+        query = f"""
+        PRAGMA table_info({table_name});
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            columns_info = cursor.fetchall()
 
-        # Get all fields for the model and filter by fields that are not nullable and have no default value
-        required_fields = [
-            field.name
-            for field in model._meta.get_fields()
-            if not field.null
-            and field.default is models.fields.NOT_PROVIDED
-            and not field.auto_created
-        ]
+        required_fields = []
+        for column in columns_info:
+            if column[3] == 1 or column[1] == "id":
+                required_fields.append(column[1])
 
         return required_fields
 
@@ -294,7 +291,9 @@ class SearchService:
         except IndexError:
             logger.error("Failed to extract fields from the SQL query.")
             return required_fields
+        
 
+    
     def get_insert_incomplete_fields(self, query, required_fields):
         try:
             provided_fields = re.findall(r"\((.*?)\)", query)[0].split(",")
@@ -407,28 +406,6 @@ class SearchService:
 
         raise ValueError("Unable to extract fields and values from the query")
 
-    def send_create_incompleted_response(self, table_name, query):
-        required_fields = self.get_required_fields(table_name)
-
-        provided_fields = self.extract_insert_fields_and_values_from_query(query)
-        provided_field_names = [field['name'] for field in provided_fields]
-
-        incomplete_fields = [
-            field for field in required_fields if field not in provided_field_names
-        ]
-
-        all_fields = {
-            field: next((item['value'] for item in provided_fields if item['name'] == field), "")
-            for field in required_fields
-        }
-
-        return {
-            "completed_fields": {
-                field: value for field, value in all_fields.items() if value
-            },
-            "incomplete_fields": {field: "" for field in incomplete_fields},
-            "required_fields": required_fields,
-        }
 
     @transaction.atomic
     def confirm_and_execute_update(self, validated_data):
@@ -493,49 +470,6 @@ class SearchService:
             )
 
 
-    @transaction.atomic
-    def confirm_and_execute_create(self, validated_data):
-
-        query = self.Query.objects.last()
-
-        if validated_data:
-            modified_query = query.query.format(**validated_data)
-            query.query = modified_query
-            query.save()
-
-        match = re.search(
-            r"INSERT\s+INTO\s+[`'\"]?(\w+)[`'\"]?\s*\(", query.query, re.IGNORECASE
-        )
-        table_name = match.group(1) if match else None
-
-        if not table_name:
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "Table name could not be identified in the query.",
-                }
-            )
-
-        required_fields = self.get_required_fields(table_name)
-
-        incomplete_fields = self.get_incomplete_fields(query.query, required_fields)
-
-        if incomplete_fields:
-            query.query = self.fill_defaults_fields(query.query, incomplete_fields)
-
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute(query.query)
-            query.delete()
-
-            return json.dumps(
-                {
-                    "status": "success",
-                    "message": "The create query was successfully executed.",
-                }
-            )
-
-        except Exception as e:
             logger.error(f"Error executing SQL create query: {str(e)}")
             return json.dumps(
                 {
@@ -544,66 +478,71 @@ class SearchService:
                 }
             )
 
+    @transaction.atomic
+    def confirm_and_execute_create(self):
+        query = self.Query.objects.last()
+        with connection.cursor() as cursor:
+            cursor.execute(query.query)
+        query.delete()
+        return json.dumps({"status": "success", "message": f"successfully added."})
+
     @transaction.atomic()
     def create_from_SQL(self, query):
         try:
-            match = re.search(
-                r"INSERT\s+INTO\s+[`'\"]?(\w+)[`'\"]?", query, re.IGNORECASE
-            )
-            table_name = match.group(1) if match else "Unknown table"
-
-            fields_and_values = self.extract_insert_fields_and_values_from_query(query)
+            match = re.search(r"INSERT\s+INTO\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
+            table_name = match.group(2) if match else "Unknown table"
 
             required_fields = self.get_required_fields(table_name)
-
-            incomplete_fields = self.get_insert_incomplete_fields(
-                query, required_fields
-            )
+            incomplete_fields = self.get_incomplete_fields(query, required_fields)
 
             if incomplete_fields:
-                response_data = self.send_create_incompleted_response(table_name, query)
+                query = self.fill_defaults_fields(query, incomplete_fields)
+            
+
+            with connection.cursor() as cursor:
+                cursor.execute(query)
 
                 return json.dumps(
                     {
-                        "status": "pending_validation",
-                        "message": f"Please verify the fields for {table_name}.",
-                        "incomplete_fields": response_data["incomplete_fields"],
-                        "completed_fields": response_data["completed_fields"],
-                        "all_fields_and_values": fields_and_values,
+                        "status": "success",
+                        "message": f"{table_name} successfully added.",
                     }
                 )
-
-            self.Query.objects.create(query=query)
-
-            return json.dumps(
-                {
-                    "status": "success",
-                    "message": "The create query was successfully processed and stored for execution.",
-                }
-            )
 
         except IntegrityError as e:
             logger.error(f"IntegrityError executing SQL insert query: {str(e)}")
             incomplete_fields = self.send_create_incompleted_response(table_name, query)
-
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "There was an issue with data integrity. Please ensure all required fields are provided.",
-                    "incomplete_fields": incomplete_fields["incomplete_fields"],
-                    "completed_fields": incomplete_fields["completed_fields"],
-                }
-            )
+            self.Query.objects.create(query=query)
+            
+            if incomplete_fields:
+                
+                return json.dumps(
+                    {
+                        "status": "error",
+                        "message": "There was an issue with the data integrity. Please ensure all required fields are provided and constraints are met.",
+                        "fields": incomplete_fields,
+                    }
+                )
+            else:
+                return json.dumps(
+                    {
+                        "status": "success",
+                        "message": "Verify the data below",
+                        "fields": incomplete_fields,
+                    }
+                )
+                
 
         except Exception as e:
-            logger.error(f"Error processing SQL insert query: {str(e)}")
+            logger.error(f"Error executing SQL insert query: {str(e)}")
             return json.dumps(
                 {
                     "status": "error",
-                    "message": "There was an issue processing the create query. Please try again later.",
+                    "message": "There was an issue executing the insert query. Please try again later.",
                 }
             )
-
+            
+            
     @transaction.atomic()
     def update_from_SQL(self, query):
         try:
@@ -689,7 +628,11 @@ class SearchService:
                 }
             )
 
+    def send_create_incompleted_response(self, table_name, query):
+            required_fields = self.get_required_fields(table_name)
+            incomplete_fields = self.get_incomplete_fields(query, required_fields)
 
+            return incomplete_fields
 
     def run_SQL_query(self, audio_data):
         query = self.text_to_SQL(audio_data)

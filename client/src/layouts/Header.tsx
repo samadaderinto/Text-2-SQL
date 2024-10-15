@@ -191,7 +191,7 @@ export const Header = () => {
           case "INSERT":
             if (parsed_response.fields) {
 
-        const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
+              const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
               setState(prevState => ({ ...prevState, popup: true, fields: fieldsArray, type: response.data.type }));
             } else {
               toast.success(parsed_response.message);
@@ -201,7 +201,7 @@ export const Header = () => {
           case "DELETE":
             if (parsed_response.fields) {
 
-        const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
+              const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
               setState(prevState => ({ ...prevState, popup: true, fields: fieldsArray, type: response.data.type }));
             } else {
               toast.success(parsed_response.message);

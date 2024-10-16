@@ -11,6 +11,7 @@ import { sideBarArrayList } from '../utils/sidebar';
 import { Field } from '../types/header';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { ClipLoader } from 'react-spinners';
 
 export const Header = () => {
   const [state, setState] = useState({
@@ -259,6 +260,8 @@ export const Header = () => {
           {state.loading && <div className="loading-spinner"></div>}
         </ul>
       )}
+
+      {state.loading && <ClipLoader color="#000000" size={35} />}
 
       <div className="RightHand_Container">
         <p className="Exclusive_Store">{state.store.name || "Store Name"}</p>

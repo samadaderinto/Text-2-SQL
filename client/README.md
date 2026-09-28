@@ -1,5 +1,18 @@
 # React + TypeScript + Vite
 
+## Testing
+
+Run the frontend unit and component integration tests with:
+
+```bash
+npm test
+```
+
+Use `npm run test:watch` while developing. `npm run build` also checks TypeScript
+types and produces the production bundle.
+
+The test suite uses Vitest, jsdom, and React Testing Library.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

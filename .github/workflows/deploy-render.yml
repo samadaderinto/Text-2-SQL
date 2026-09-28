@@ -1,0 +1,55 @@
+name: Deploy to Render
+
+on:
+  workflow_run:
+    workflows: ["Tests"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy frontend and backend
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Render deploy hooks are configured
+        env:
+          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+          RENDER_FRONTEND_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+        run: |
+          test -n "$RENDER_BACKEND_DEPLOY_HOOK" || {
+            echo "::error::Set the RENDER_BACKEND_DEPLOY_HOOK repository secret."
+            exit 1
+          }
+          test -n "$RENDER_FRONTEND_DEPLOY_HOOK" || {
+            echo "::error::Set the RENDER_FRONTEND_DEPLOY_HOOK repository secret."
+            exit 1
+          }
+
+      - name: Deploy backend
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          curl --fail --silent --show-error --get \
+            --data-urlencode "ref=$DEPLOY_SHA" \
+            "$RENDER_DEPLOY_HOOK"
+
+      - name: Deploy frontend
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          curl --fail --silent --show-error --get \
+            --data-urlencode "ref=$DEPLOY_SHA" \
+            "$RENDER_DEPLOY_HOOK"

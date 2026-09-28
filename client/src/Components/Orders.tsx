@@ -4,7 +4,7 @@ import { HiMiniMagnifyingGlass } from "react-icons/hi2";
 import { MdOutlineDelete, MdOutlineDownload } from "react-icons/md";
 import ReactPaginate from 'react-paginate';
 import { Header } from "../layouts/Header";
-import Sidebar from "../layouts/SideBar";
+import Sidebar from "../layouts/Sidebar";
 import api from "../utils/api";
 import { Oval } from 'react-loader-spinner'; // Example from react-loader-spinner
 
@@ -28,7 +28,7 @@ export const Orders = () => {
     const offset = state.currentPage * itemsPerPage;
     setState((prevState) => ({ ...prevState, isLoading: true }));
     try {
-      const response = await api.get(`/orders/search/?offset=${offset}&limit=${itemsPerPage}&query=${state.input}&status=${state.filter}`);
+      const response = await api.get(`/orders/search/?offset=${offset}&limit=${itemsPerPage}&query=${encodeURIComponent(state.input)}&status=${encodeURIComponent(state.filter)}`);
       setState((prevState) => ({
         ...prevState,
         data: response.data.orders,
@@ -58,6 +58,8 @@ export const Orders = () => {
       link.setAttribute('download', 'orders.csv');
       document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading file:", error);
     }

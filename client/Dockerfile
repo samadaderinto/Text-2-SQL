@@ -1,0 +1,12 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --fetch-timeout=600000 --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+COPY . .
+
+EXPOSE 4174
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "4174"]

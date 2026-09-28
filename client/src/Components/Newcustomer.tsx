@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Header } from "../layouts/Header";
-import SideBar from "../layouts/SideBar";
+import Sidebar from "../layouts/Sidebar";
 import api from "../utils/api";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -15,14 +15,12 @@ export const NewCustomer = () => {
     email: '',
     phone: '',
     date: '',
-    quantity: '',
     errors: {
       firstName: '',
       lastName: '',
       email: '',
       phone: '',
       date: '',
-      quantity: '',
     }
   });
 
@@ -33,7 +31,6 @@ export const NewCustomer = () => {
       email: '',
       phone: '',
       date: '',
-      quantity: '',
     };
     let valid = true;
 
@@ -51,11 +48,6 @@ export const NewCustomer = () => {
     }
     if (!formState.phone) {
       newErrors.phone = 'Phone number is required';
-      valid = false;
-    }
-
-    if (!formState.quantity || isNaN(Number(formState.quantity))) {
-      newErrors.quantity = 'Valid quantity is required';
       valid = false;
     }
     setFormState({ ...formState, errors: newErrors });
@@ -108,7 +100,7 @@ export const NewCustomer = () => {
   return (
     <>
       <Header />
-      <SideBar />
+      <Sidebar />
       <div className="Newcustomer_Container">
         <h1>Create New Customer</h1>
         <section className="Product_Form_Container">

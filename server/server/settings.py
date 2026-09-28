@@ -14,8 +14,10 @@ import os
 
 from pathlib import Path
 from datetime import timedelta
-from invoke import run
+
+import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
+from invoke import run
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,38 +29,76 @@ SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = str(os.environ.get("SECRET_KEY"))
-OPENAI_API_KEY = str(os.environ.get("OPENAI_API_KEY"))
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise ImproperlyConfigured("SECRET_KEY must be configured.")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 MYSQL_USER = str(os.getenv("MYSQL_USER"))
 MYSQL_PASSWORD = str(os.getenv("MYSQL_PASSWORD"))
 MYSQL_NAME = str(os.getenv("MYSQL_NAME"))
 MYSQL_HOST = str(os.getenv("MYSQL_HOST"))
-MYSQL_PORT = str(os.getenv("MYSQL_PORT"))
+MYSQL_PORT = os.getenv("MYSQL_PORT", "3306")
 
 
 ELASTICSEARCH_PORT = os.getenv("ELASTICSEARCH_PORT", "9200")
 ELASTICSEARCH_HOST = os.getenv("ELASTICSEARCH_HOST", "localhost")
 ELASTICSEARCH_USER = os.getenv("ELASTICSEARCH_USER")
 ELASTICSEARCH_PASSWORD = os.getenv("ELASTICSEARCH_PASSWORD")
+ELASTICSEARCH_URL = os.getenv(
+    "ELASTICSEARCH_URL",
+    f"http://{ELASTICSEARCH_HOST}:{ELASTICSEARCH_PORT}",
+)
+ELASTICSEARCH_ENABLED = os.getenv("ELASTICSEARCH_ENABLED", "true").lower() == "true"
 
-EMAIL_HOST = str(os.getenv("EMAIL_HOST"))
-EMAIL_PORT = str(os.getenv("EMAIL_PORT"))
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = os.getenv("EMAIL_PORT", "")
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
-EMAIL_HOST_USER = str(os.getenv("EMAIL_HOST_USER"))
-EMAIL_HOST_PASSWORD = str(os.getenv("EMAIL_HOST_PASSWORD"))
-EMAIL_BACKEND = str(os.getenv("EMAIL_BACKEND"))
-DEFAULT_FROM_EMAIL = str(os.getenv("EMAIL_HOST_USER"))
-
-
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or "webmaster@localhost"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "true"
 
 
-ALLOWED_HOSTS = ["*"]
-CORS_ALLOW_HEADERS = ["*"]
-CORS_ALLOWED_ORIGINS = ["http://localhost:4174", "http://127.0.0.1:4174"]
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
+def normalize_origin(value):
+    value = value.strip().rstrip("/")
+    if value and "://" not in value:
+        value = f"https://{value}"
+    return value
+
+
+FRONTEND_URL = normalize_origin(os.getenv("FRONTEND_URL", "http://localhost:4174"))
+additional_origins = [
+    normalize_origin(origin)
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+CORS_ALLOWED_ORIGINS = list(
+    dict.fromkeys(
+        [
+            "http://localhost:4174",
+            "http://127.0.0.1:4174",
+            FRONTEND_URL,
+            *additional_origins,
+        ]
+    )
+)
+CSRF_TRUSTED_ORIGINS = [FRONTEND_URL, *additional_origins]
+
+# Render terminates TLS before forwarding requests to the container.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
@@ -87,6 +127,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -123,28 +164,39 @@ WSGI_APPLICATION = "server.wsgi.application"
 
 DATABASE_PATH = os.path.join(BASE_DIR, "db.sqlite3")
 
-PRIMARY_DB = {
+MYSQL_DATABASE_SETTINGS = {
     "ENGINE": "django.db.backends.mysql",
     "NAME": MYSQL_NAME,
     "USER": MYSQL_USER,
     "PASSWORD": MYSQL_PASSWORD,
     "HOST": MYSQL_HOST,
-    "PORT": MYSQL_PORT,
+    "PORT": MYSQL_PORT or "3306",
 }
 
 FALLBACK_DB = {"ENGINE": "django.db.backends.sqlite3", "NAME": DATABASE_PATH}
 
+mysql_values = {
+    "MYSQL_NAME": os.getenv("MYSQL_NAME"),
+    "MYSQL_USER": os.getenv("MYSQL_USER"),
+    "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
+    "MYSQL_HOST": os.getenv("MYSQL_HOST"),
+}
+configured_mysql_values = {key: value for key, value in mysql_values.items() if value}
+if configured_mysql_values and len(configured_mysql_values) != len(mysql_values):
+    missing_mysql_values = sorted(set(mysql_values) - configured_mysql_values.keys())
+    raise ImproperlyConfigured(
+        f"Incomplete MySQL configuration; missing {', '.join(missing_mysql_values)}."
+    )
 
-# try:
-#     DATABASES = {'default': PRIMARY_DB}
-#     if not PRIMARY_DB['NAME'] or not PRIMARY_DB['USER']:
-#         raise ImproperlyConfigured(
-#             'Missing MySQL configuration. Falling back to SQLite.'
-#         )
-# except ImproperlyConfigured:
-#     # run(f"docker-compose run server pipenv run python3 manage.py makemigrations")
-#     run(f"docker-compose run server pipenv run python3 manage.py migrate")
-DATABASES = {"default": FALLBACK_DB}
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    }
+else:
+    DATABASES = {
+        "default": MYSQL_DATABASE_SETTINGS if configured_mysql_values else FALLBACK_DB
+    }
 
 
 # Password validation
@@ -175,7 +227,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -247,10 +299,3 @@ SPECTACULAR_SETTINGS = {
 CopySTATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-
-ELASTICSEARCH_DSL = {
-    "default": {
-        "hosts": f"http://{ELASTICSEARCH_HOST}:{ELASTICSEARCH_PORT}",
-        "http_auth": (ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD),
-    }
-}

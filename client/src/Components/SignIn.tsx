@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '../utils/api';
-import { useEncryptJWT } from '../utils/hooks';
+import { encryptJWT } from '../utils/hooks';
 import { secretKey } from '../utils/constants';
 
 export const SignIn = () => {
@@ -46,8 +46,8 @@ export const SignIn = () => {
 
       const { token } = response.data;
 
-      const encryptedAccessToken = useEncryptJWT(token.access, secretKey);
-      const encryptedRefreshToken = useEncryptJWT(token.refresh, secretKey);
+      const encryptedAccessToken = encryptJWT(token.access, secretKey);
+      const encryptedRefreshToken = encryptJWT(token.refresh, secretKey);
 
       localStorage.setItem('access', encryptedAccessToken);
       localStorage.setItem('refresh', encryptedRefreshToken);

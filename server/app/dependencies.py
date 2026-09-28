@@ -17,7 +17,6 @@ from .models import (
     CartItem,
     Order,
     Customer,
-    Query,
 )
 
 
@@ -31,12 +30,10 @@ def di_setup():
     di[Customer] = Customer
     di[Store] = Store
     di[Notification] = Notification
-    di[Query] = Query
-
     di[AuthService] = AuthService(di[User], di[Store], di[Notification])
     di[ProductService] = ProductService(di[User], di[Product])
     di[OrderService] = OrderService(di[User], di[Order])
     di[CustomerService] = CustomerService(di[User], di[Customer])
-    di[SearchService] = SearchService(di[Query])
+    di[SearchService] = SearchService()
     di[StoreService] = StoreService(di[User], di[Store])
     di[SettingsService] = SettingsService(di[User], di[Notification])

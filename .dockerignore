@@ -1,0 +1,10 @@
+.git
+server/.git
+.DS_Store
+client
+server/.venv
+server/.env
+server/__pycache__
+server/**/*.pyc
+server/db.sqlite3
+server/test_db.sqlite3

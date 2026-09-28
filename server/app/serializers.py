@@ -1,5 +1,6 @@
-from .models import Customer, Order, Product, Store, User
+from .models import Customer, Notification, Order, Product, Store, User
 
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
@@ -10,14 +11,21 @@ from phonenumber_field.serializerfields import PhoneNumberField
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "password", "created", "updated"]
+        fields = ["id", "email", "password", "first_name", "last_name", "created", "updated"]
         extra_kwargs = {"password": {"write_only": True}}
 
-        def create(self, validated_data):
-            user = User.objects.create_user(**validated_data)
-            user.make_password(self.password)
-            user.save()
-            return user
+    def validate_password(self, value):
+        validate_password(value, user=self.instance)
+        return value
+
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data)
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        if password:
+            instance.set_password(password)
+        return super().update(instance, validated_data)
 
 
 class CustomerSerializer(serializers.ModelSerializer):
@@ -25,6 +33,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         model = Customer
         fields = [
             "id",
+            "user",
             "first_name",
             "last_name",
             "phone_number",
@@ -32,6 +41,7 @@ class CustomerSerializer(serializers.ModelSerializer):
             "created",
             "updated",
         ]
+        extra_kwargs = {"user": {"read_only": True}}
 
 
 class LoginSerializer(serializers.Serializer):
@@ -44,8 +54,13 @@ class LogOutSerializer(serializers.Serializer):
 
 
 class ResetPasswordSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    uidb64 = serializers.CharField()
+    token = serializers.CharField()
     new_password = serializers.CharField()
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
 
 
 class EmailTokenObtainSerializer(TokenObtainSerializer):
@@ -71,6 +86,7 @@ class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
         fields = ["user", "username", "email", "name", "bio", "phone", "currency"]
+        extra_kwargs = {"user": {"read_only": True}}
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -90,7 +106,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "created",
             "updated",
         ]
-        extra_kwargs = {"sales": {"read_only": True}}
+        extra_kwargs = {"sales": {"read_only": True}, "store": {"read_only": True}}
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -109,6 +125,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "created",
             "updated",
         ]
+        extra_kwargs = {"user": {"read_only": True}}
 
     def get_name(self, obj):
         return obj.user.first_name
@@ -135,13 +152,17 @@ class FileSerializer(serializers.Serializer):
 class AdminSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=225)
     email = serializers.EmailField()
-    password = serializers.CharField(max_length=220, read_only=True)
 
 
-class NotificationSerializer(serializers.Serializer):
-    email_notification = serializers.BooleanField(default=False)
-    sms_notification = serializers.BooleanField(default=False)
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ["email_notification", "sms_notification"]
 
 
 class SearchSerializer(serializers.Serializer):
     search = serializers.CharField()
+
+
+class QueryPlanSerializer(serializers.Serializer):
+    prompt = serializers.CharField()

@@ -37,10 +37,12 @@ class ServerAccessPolicy(AccessPolicy):
                 "retrieve_order",
                 "update_order",
                 "create_order",
+                "download_orders",
                 "download_order",
                 "delete_order",
                 "logout",
                 "elastic_searcher",
+                "generate_query",
                 "get_store",
                 
                 "confirm_create",

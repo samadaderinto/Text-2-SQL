@@ -4,7 +4,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
 import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from 'react-icons/md';
 import { FiSearch } from 'react-icons/fi';
 import { Header } from '../layouts/Header';
-import Sidebar from '../layouts/SideBar';
+import Sidebar from '../layouts/Sidebar';
 import { useNavigate } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
 import api from '../utils/api';
@@ -53,8 +53,7 @@ export const Product = () => {
 
   const fetchData = (page: number, query: string) => {
     dispatch({ type: 'SET_LOADING', payload: true });
-    const offset = page;
-    api.get(`/product/search/?offset=${offset}&limit=${itemsPerPage}&query=${query}`)
+    api.get(`/product/search/?offset=${page}&limit=${itemsPerPage}&query=${encodeURIComponent(query)}`)
       .then(response => {
         const totalItems = response.data.count;
         dispatch({ type: 'SET_DATA', payload: response.data.products });
@@ -202,7 +201,7 @@ export const Product = () => {
                         <p>{item.available > 0 ? "Available" : "Sold Out"}</p>
                         <p>${item.price}</p>
                         <p>{item.sales}</p>
-                        <p>${item.sales * parseInt(item.price)}</p>
+                        <p>${item.sales * Number(item.price)}</p>
                         <p className="Product_Icons">
                           <MdOutlineEdit onClick={() => handleEditClick(item)} />
                           <MdOutlineDelete onClick={() => handleDelete(item.id)} />
@@ -235,5 +234,3 @@ export const Product = () => {
     </div>
   );
 };
-
-

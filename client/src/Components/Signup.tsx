@@ -126,9 +126,8 @@ export const Signup = () => {
     if (validateForm()) {
       try {
         const { email, password } = formState;
-        const data = JSON.stringify({ email, password });
 
-        const response = await api.post(`/auth/signup/`, data);
+        const response = await api.post(`/auth/signup/`, { email, password });
         console.log(response);
 
         setFormState({

@@ -4,10 +4,10 @@ import { IoIosNotificationsOutline } from "react-icons/io";
 import { IoSearch } from "react-icons/io5";
 import { RiSpeakLine } from "react-icons/ri";
 import { RxDropdownMenu } from "react-icons/rx";
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ProfileImg from "../assets/profileimg.jfif";
 import api from '../utils/api';
-import { sideBarArrayList } from '../utils/sidebar';
+import { sidebarItems } from '../utils/sidebar';
 import { Field } from '../types/header';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -34,6 +34,7 @@ export const Header = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const nav = useNavigate();
+  const location = useLocation();
 
   const handleInputChange = (idx: number, value: string) => {
     const updatedFields = [...state.fields];
@@ -94,19 +95,18 @@ export const Header = () => {
   const performSearch = async () => {
     if (state.searchQuery.trim()) {
       try {
-        const response = await api.get(`query/search/`, { params: { query: state.searchQuery } });
-        setState(prevState => ({ ...prevState, searchResults: response.data }));
+        setState(prevState => ({ ...prevState, loading: true }));
+        const response = await api.post(`/query/generate/`, { prompt: state.searchQuery });
+        nav('/query', { state: { queryResponse: response.data, header: 'Generated Query' } });
       } catch (error) {
-        toast.error('Error performing search.');
+        toast.error('Unable to generate a query. Please try again.');
+      } finally {
+        setState(prevState => ({ ...prevState, loading: false }));
       }
     } else {
       setState(prevState => ({ ...prevState, searchResults: [] }));
     }
   };
-
-  useEffect(() => {
-    performSearch();
-  }, [state.searchQuery]);
 
   const startRecording = async () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -174,44 +174,7 @@ export const Header = () => {
             'Content-Type': 'multipart/form-data',
           },
         });
-        console.log(response)
-        const parsed_response = JSON.parse(response.data.results);
-
-        switch (response.data.type) {
-          case "SELECT":
-            console.log(parsed_response)
-            nav('/query', { state: { data: parsed_response, header: 'Query Results' } });
-            break;
-          case "UPDATE":
-            if (parsed_response.fields) {
-
-              const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
-              setState(prevState => ({ ...prevState, popup: true, fields: fieldsArray, type: response.data.type }));
-            }
-            break;
-          case "INSERT":
-            if (parsed_response.fields) {
-
-              const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
-              setState(prevState => ({ ...prevState, popup: true, fields: fieldsArray, type: response.data.type }));
-            } else {
-              toast.success(parsed_response.message);
-            }
-            break;
-
-          case "DELETE":
-            if (parsed_response.fields) {
-
-              const fieldsArray: Field[] = Object.entries(parsed_response.fields).map(([name, value]) => ({ name, value: String(value) }));
-              setState(prevState => ({ ...prevState, popup: true, fields: fieldsArray, type: response.data.type }));
-            } else {
-              toast.success(parsed_response.message);
-            }
-            break;
-          default:
-            toast.error("Unknown action type. Please try again.");
-            break;
-        }
+        nav('/query', { state: { queryResponse: response.data, header: 'Voice Query Results' } });
 
       } catch (error: any) {
         if (error.response && error.response.status === 500) {
@@ -230,8 +193,8 @@ export const Header = () => {
   };
 
   return (
-    <div className='Header_Container'>
-      <h1>EchoCart</h1>
+    <header className='Header_Container'>
+      <h1><span className="Header_Brand_Mark"><FaEarListen /></span>EchoCart</h1>
       <div className="Search_Container">
         {state.listen ? (
           <>
@@ -248,7 +211,14 @@ export const Header = () => {
               onChange={(e) => setState(prevState => ({ ...prevState, searchQuery: e.target.value }))}
               onKeyDown={(e) => e.key === 'Enter' && performSearch()}
             />
-            <RiSpeakLine onClick={() => setState(prevState => ({ ...prevState, voice: !state.voice }))} />
+            <button
+              className="Header_Voice_Button"
+              type="button"
+              aria-label="Search by voice"
+              onClick={() => setState(prevState => ({ ...prevState, voice: !state.voice }))}
+            >
+              <RiSpeakLine />
+            </button>
           </>
         )}
       </div>
@@ -261,32 +231,39 @@ export const Header = () => {
         </ul>
       )}
 
-      {state.loading && <ClipLoader color="#000000" size={35} />}
+      {state.loading && <ClipLoader color="#6259e8" size={24} aria-label="Loading" />}
 
       <div className="RightHand_Container">
         <p className="Exclusive_Store">{state.store.name || "Store Name"}</p>
-        <IoIosNotificationsOutline />
+        <IoIosNotificationsOutline aria-label="Notifications" />
         <div className="Image_Container">
           <img src={ProfileImg} alt="profile" />
         </div>
       </div>
 
-      <div onClick={() => setState(prevState => ({ ...prevState, menu: !state.menu }))} className="Mobile_Menu">
+      <button
+        type="button"
+        aria-label={state.menu ? "Close navigation menu" : "Open navigation menu"}
+        aria-expanded={state.menu}
+        onClick={() => setState(prevState => ({ ...prevState, menu: !state.menu }))}
+        className="Mobile_Menu"
+      >
         <RxDropdownMenu />
-      </div>
+      </button>
 
       {state.menu && (
         <nav className="Mobile_Menu_Nav">
-          {sideBarArrayList.map((obj, index) => (
+          {sidebarItems.map((obj, index) => (
             <button
-              key={index}
+              key={obj.itemName}
+              type="button"
               onClick={() => {
                 setState(prevState => ({ ...prevState, activeIndex: index, menu: false }));
                 nav(`/${obj.itemName}`);
               }}
-              className={state.activeIndex === index ? 'Active_List' : ''}>
-              <p className="List_icon">{obj.icon}</p>
-              <p>{obj.itemName}</p>
+              className={location.pathname.split('/').includes(obj.itemName) || (location.pathname === '/' && index === 0) ? 'Active_List' : ''}>
+              <span className="List_icon" aria-hidden="true">{obj.icon}</span>
+              <span>{obj.itemName.charAt(0).toUpperCase() + obj.itemName.slice(1)}</span>
             </button>
           ))}
         </nav>
@@ -332,6 +309,6 @@ export const Header = () => {
           </div>
         </div>
       )}
-    </div>
+    </header>
   );
 };

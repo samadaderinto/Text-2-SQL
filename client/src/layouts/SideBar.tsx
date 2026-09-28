@@ -1,39 +1,49 @@
 import { FC } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { sideBarArrayList } from '../utils/sidebar';
+import { sidebarItems } from '../utils/sidebar';
 
-const SideBar: FC = () => {
+const Sidebar: FC = () => {
   const location = useLocation();
   const nav = useNavigate();
 
-  const currentPath = location.pathname.split('/').filter(Boolean);
-  const currentPathSegment = currentPath.length ? currentPath[currentPath.length - 1] : 'dashboard';
-
-
-  const activeIndex = sideBarArrayList.findIndex(item => item.itemName === currentPathSegment);
+  const activeIndex = sidebarItems.findIndex((item) =>
+    location.pathname.split('/').includes(item.itemName),
+  );
+  const currentIndex = activeIndex === -1 && location.pathname === '/' ? 0 : activeIndex;
 
   const handleClick = (_index: number, itemName: string) => {
     nav(`/${itemName}`);
   };
 
   return (
-    <div>
-      <nav className="Home_Sidebar">
-        <div className="Sidebar_Container">
-          {sideBarArrayList.map((obj, index) => (
-            <span
-              key={index}
-              onClick={() => handleClick(index, obj.itemName)}
-              className={activeIndex === index ? 'Active_List' : ''}
-            >
-              <p className="List_icon">{obj.icon}</p>
-              <p>{obj.itemName}</p>
+    <nav className="Home_Sidebar" aria-label="Main navigation">
+      <p className="Sidebar_Section_Label">WORKSPACE</p>
+      <div className="Sidebar_Container">
+        {sidebarItems.map((item, index) => (
+          <button
+            key={item.itemName}
+            type="button"
+            onClick={() => handleClick(index, item.itemName)}
+            className={currentIndex === index ? "Active_List" : ""}
+            aria-current={currentIndex === index ? "page" : undefined}
+          >
+            <span className="List_icon" aria-hidden="true">{item.icon}</span>
+            <span className="Sidebar_Item_Name">
+              {item.itemName.charAt(0).toUpperCase() + item.itemName.slice(1)}
             </span>
-          ))}
+            {currentIndex === index && <span className="Sidebar_Active_Mark" />}
+          </button>
+        ))}
+      </div>
+      <div className="Sidebar_Footer">
+        <span className="Sidebar_Footer_Orb" />
+        <div>
+          <strong>Your workspace</strong>
+          <span>Everything in one place</span>
         </div>
-      </nav>
-    </div>
+      </div>
+    </nav>
   );
 };
 
-export default SideBar;
+export default Sidebar;

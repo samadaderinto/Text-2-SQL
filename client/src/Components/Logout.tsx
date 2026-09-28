@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { useContext } from "react";
 import { AuthContext } from "../contexts/auth-context";
-import { useDecryptJWT } from "../utils/hooks";
+import { decryptJWT } from "../utils/hooks";
 import { secretKey } from "../utils/constants";
 
 export const Logout = () => {
@@ -14,10 +14,11 @@ export const Logout = () => {
 
     if (refresh) {
       try {
-        const decryptedRefreshToken = useDecryptJWT(refresh, secretKey);
-        const data = JSON.stringify({ refresh: decryptedRefreshToken });
+        const decryptedRefreshToken = decryptJWT(refresh, secretKey);
 
-        const response = await api.post(`/auth/logout/`, data);
+        const response = await api.post(`/auth/logout/`, {
+          refresh: decryptedRefreshToken,
+        });
 
         if (response.status === 205) {
           localStorage.removeItem('access');

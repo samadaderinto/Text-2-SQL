@@ -2,6 +2,32 @@
 
 This is the system that powers the entire AudQL infrastructure. The AudQL backend is a dockerized  Django and Django rest framework application. The bucket application runs in two modes;  the production mode "prod"  and the development mode "dev". 
 
+## Testing
+
+Install the test dependencies and run the backend unit and API integration tests
+from the `server` directory:
+
+```bash
+python -m pip install -r requirements-test.txt
+pytest
+```
+
+Tests use the dedicated `server.test_settings` configuration and an in-memory
+SQLite test database; no MySQL instance or external service is required.
+
+## Search
+
+Product, customer, and order search is powered by Elasticsearch. Local Docker
+Compose starts Elasticsearch automatically and indexes existing records when
+the backend starts. Search indices are updated when these records are saved or
+deleted.
+
+When deploying outside Compose, configure `ELASTICSEARCH_URL` (and optional
+`ELASTICSEARCH_USER` / `ELASTICSEARCH_PASSWORD` credentials), then run
+`python manage.py reindex_search` to initialize indices and index existing
+records. To recreate all indices, run `python manage.py reindex_search
+--rebuild`.
+
 
 ## Installation
 
@@ -72,4 +98,3 @@ these workflows can be found in /.github/workflows/  directory.
 ## Linting and formatting
 
 the project uses a precommit hook that can be set on the local system. the preferred linter is called Black.
-

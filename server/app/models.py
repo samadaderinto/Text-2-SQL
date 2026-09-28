@@ -15,6 +15,10 @@ from nanoid import generate
 # Create your models here.
 
 
+def generate_order_id():
+    return generate(size=15)
+
+
 class UserManager(BaseUserManager):
     def create_user(self, email=None, password=None, **extra_fields):
         """
@@ -142,6 +146,10 @@ class Product(DatesMixin):
     sales = models.IntegerField(validators=[MinValueValidator(0)], default=0)
 
     def set_availability(self, quantity_bought: int):
+        if quantity_bought < 0:
+            raise ValueError("Quantity bought cannot be negative.")
+        if quantity_bought > self.available:
+            raise ValueError("Quantity bought exceeds available stock.")
         self.available -= quantity_bought
 
     def save(self, *args, **kwargs):
@@ -180,7 +188,7 @@ class Order(DatesMixin):
     )
 
     id = models.CharField(
-        max_length=15, default=generate(size=15), unique=True, primary_key=True
+        max_length=15, default=generate_order_id, unique=True, primary_key=True
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     status = models.CharField(choices=ORDER_STATUS_CHOICE, max_length=15)
@@ -195,7 +203,7 @@ class Order(DatesMixin):
 
     def _generate_unique(self, size=15):
         id = generate(size)
-        while Order.objects.filter(username=id).exists():
+        while Order.objects.filter(id=id).exists():
             id = generate(size=size)
         return id
 
@@ -205,6 +213,7 @@ class Order(DatesMixin):
 
 
 class Customer(DatesMixin):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=225)
     last_name = models.CharField(max_length=225)
     email = models.EmailField(unique=True)
@@ -227,7 +236,9 @@ class Notification(DatesMixin):
 
 
 class Query(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     query = models.CharField(max_length=225)
+    action = models.CharField(max_length=20)
     
     class Meta:
         db_table = "query"

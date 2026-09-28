@@ -1,44 +1,67 @@
 import json
-import re
-import secrets
 import logging
+import uuid
 
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404, get_list_or_404
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from django.db import connection, transaction, IntegrityError
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.encoding import force_bytes, smart_str
+from django.db.models import Q
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
-from django.apps import apps
+from django.db import transaction
 
 from typing import Type
-from kink import inject
 from openai import OpenAI
-from datetime import datetime
-from elasticsearch import Elasticsearch
-
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.response import Response
 
 
 from utils.algorithms import TokenGenerator, auth_token
+from .search_index import SEARCH_DEFINITIONS, ensure_search_indices, get_elasticsearch_client
 
 from .serializers import (
     CustomerSerializer,
     NotificationSerializer,
+    OrderSerializer,
     ProductSerializer,
     StoreSerializer,
     UserSerializer,
 )
-from .models import Customer, Notification, Order, Product, Query, Store, User
+from .models import Customer, Notification, Order, Product, Store, User
 
 logger = logging.getLogger(__name__)
 
+QUERY_RESOURCES = {
+    "products": {
+        "model": Product,
+        "serializer": ProductSerializer,
+        "owner_filter": "store__user",
+        "search_fields": ["title", "description", "category"],
+        "filter_fields": {"title", "description", "category", "available", "price", "currency"},
+        "sort_fields": {"created", "updated", "price", "title", "available", "sales"},
+    },
+    "orders": {
+        "model": Order,
+        "serializer": OrderSerializer,
+        "owner_filter": "user",
+        "search_fields": ["id", "status"],
+        "filter_fields": {"id", "status", "total", "subtotal"},
+        "sort_fields": {"created", "updated", "total", "subtotal", "status"},
+    },
+    "customers": {
+        "model": Customer,
+        "serializer": CustomerSerializer,
+        "owner_filter": "user",
+        "search_fields": ["first_name", "last_name", "email", "phone_number"],
+        "filter_fields": {"first_name", "last_name", "email", "phone_number", "is_active"},
+        "sort_fields": {"created", "updated", "first_name", "last_name", "email"},
+    },
+}
 
-@inject
+
 class AuthService:
     def __init__(
         self, User: Type[User], Store: Type[Store], Notification: Type[Notification]
@@ -67,14 +90,16 @@ class AuthService:
             fail_silently=False,
         )
 
+    @transaction.atomic
     def create_user(self, request, email, password):
         if self.User.objects.filter(email=email).exists():
             return None
 
         user = self.User.objects.create_user(email=email, password=password)
-        self.Store.objects.create(user=user, email=email)
+        self.Store.objects.create(user=user, email=email, name=email, bio="")
         self.Notification.objects.create(user=user)
         self.send_activation_mail(request, email)
+        return user
 
     def login_user(self, request, email, password):
         user = authenticate(request, username=email, password=password)
@@ -83,7 +108,9 @@ class AuthService:
             token = auth_token(user)
             serializer = UserSerializer(user)
             return {"token": token, "data": serializer.data}
-        elif user and user.is_active == False:
+
+        inactive_user = self.User.objects.filter(email=email, is_active=False).first()
+        if inactive_user and inactive_user.check_password(password):
             return {"verify": "Please verify your email account"}
 
         return {"invalid_info": "Invalid user information"}
@@ -98,15 +125,25 @@ class AuthService:
 
         return request.build_absolute_uri(link)
 
-    def reset_password_user(self, request, email, new_password):
-        user = get_object_or_404(self.User, email=email)
+    def reset_password_user(self, request, new_password, uidb64, token):
+        try:
+            user_id = self.User._meta.pk.to_python(
+                smart_str(urlsafe_base64_decode(uidb64))
+            )
+        except (TypeError, ValueError, UnicodeDecodeError):
+            return None
+        user = self.User.objects.filter(pk=user_id).first()
+        if user is None:
+            return None
+        if not PasswordResetTokenGenerator().check_token(user, token):
+            return None
+
         user.set_password(new_password)
         user.save()
 
         return {"success": "Password updated successfully"}
 
 
-@inject
 class StoreService:
     def __init__(self, User: Type[User], Store: Type[Store]):
         self.User = User
@@ -114,8 +151,9 @@ class StoreService:
 
     def create_store(self, request, data):
         user = request.user
-        store = self.Store.objects.get_or_create(user=user, **data)
-        return store
+        store, _ = self.Store.objects.get_or_create(user=user, defaults=data)
+        serializer = StoreSerializer(store)
+        return serializer.data
 
     def get_stores_by_user(self, request):
         stores = get_list_or_404(self.Store, user=request.user)
@@ -142,55 +180,68 @@ class StoreService:
         return serializer.data
 
 
-@inject
 class SearchService:
-    def __init__(self, Query: Type[Query]):
-        self.Query = Query
-        self.commands = ["SELECT", "INSERT", "UPDATE", "DELETE"]
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model_field_mapping = self.get_all_model_fields()
-        self.sensitive_fields = ["password", "token", "secret_key"]
-        self.es = Elasticsearch(hosts=[settings.ELASTICSEARCH_DSL["default"]["hosts"]])
+    def __init__(self):
+        self.client = OpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
 
-    def elastic_search(self, search_query):
-        try:
-            index_name = "your_index_name"
+    def search_records(
+        self, resource, user, query="", offset=0, limit=15, filters=None
+    ):
+        definition = SEARCH_DEFINITIONS[resource]
+        client = get_elasticsearch_client()
+        ensure_search_indices(client, [resource])
 
-            query_body = {
-                "query": {
-                    "multi_match": {
-                        "query": search_query,
-                        "fields": ["field1", "field2", "field3"],
-                    }
+        search_query = (
+            {"multi_match": {"query": query, "fields": ["search_text"]}}
+            if query
+            else {"match_all": {}}
+        )
+        search_filters = [{"term": {"owner_id": str(user.pk)}}]
+        for field, value in (filters or {}).items():
+            search_filters.append({"term": {field: value}})
+
+        response = client.search(
+            index=definition["index"],
+            query={"bool": {"must": [search_query], "filter": search_filters}},
+            from_=offset,
+            size=limit,
+            sort=[{"_score": "desc"}, {"created": "desc"}],
+            track_total_hits=True,
+        )
+        hits = response["hits"]["hits"]
+        total = response["hits"]["total"]
+        if isinstance(total, dict):
+            total = total["value"]
+        return [hit["_id"] for hit in hits], total
+
+    def elastic_search(self, search_query, user):
+        client = get_elasticsearch_client()
+        ensure_search_indices(client)
+        response = client.search(
+            index=",".join(
+                definition["index"] for definition in SEARCH_DEFINITIONS.values()
+            ),
+            query={
+                "bool": {
+                    "must": [
+                        {"multi_match": {"query": search_query, "fields": ["search_text"]}}
+                    ],
+                    "filter": [{"term": {"owner_id": str(user.pk)}}],
                 }
-            }
-
-            response = self.es.search(index=index_name, body=query_body)
-
-            hits = response.get("hits", {}).get("hits", [])
-
-            result_data = [hit["_source"] for hit in hits]
-
-            return json.dumps(
-                {
-                    "status": "success",
-                    "data": result_data,
-                    "message": f"{len(result_data)} results found for query: {search_query}",
-                }
-            )
-        except Exception as e:
-            logger.error(f"Error executing Elasticsearch query: {str(e)}")
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "There was an issue executing the search query. Please try again later.",
-                }
-            )
-
-    def custom_serializer(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()[:10]
-        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+            },
+            size=100,
+            track_total_hits=True,
+        )
+        hits = response["hits"]["hits"]
+        result_data = [
+            {"resource": hit["_index"].removeprefix("audql-"), **hit["_source"]}
+            for hit in hits
+        ]
+        return {
+            "status": "success",
+            "data": result_data,
+            "message": f"{len(result_data)} results found for query: {search_query}",
+        }
 
     def parse_openai_response(self, response_json):
         try:
@@ -216,15 +267,10 @@ class SearchService:
             logger.error("Unexpected error processing the OpenAI response")
             return "Unexpected error processing the response."
 
-    def get_all_model_fields(self):
-        model_field_mapping = {}
-        for model in apps.get_models():
-            fields = [field.name for field in model._meta.get_fields()]
-            model_field_mapping[model.__name__.lower()] = fields
-        # logger.info(f"db tables: {str(model_field_mapping)}")
-        return model_field_mapping
-
     def audio_to_text(self, audio_data):
+        if self.client is None:
+            logger.error("OpenAI API key is not configured")
+            return None
         try:
             response = self.client.audio.transcriptions.create(
                 model="whisper-1",
@@ -237,438 +283,175 @@ class SearchService:
             logger.error("Error transcribing audio")
             return None
 
-    def text_to_SQL(self, audio_data):
-        text = self.audio_to_text(audio_data)
-        model_mappings = self.get_all_model_fields()
+    def build_query_plan(self, text):
+        if not text or not text.strip():
+            raise ValueError("A query prompt is required.")
+        if self.client is None:
+            raise ValueError("Text-to-query service is not configured.")
 
-        if not text:
-            return "Error in audio transcription"
+        prompt = """
+You convert store-admin requests into safe JSON query plans.
+Return JSON only. No markdown.
+Allowed resources: products, orders, customers.
+Allowed intents: list, search, summarize.
+Only read data. Never create, update, delete, or mention restricted/user/auth tables.
+Schema:
+{
+  "intent": "list|search|summarize",
+  "resource": "products|orders|customers",
+  "search": "optional broad search text",
+  "filters": {"field": "value"},
+  "sort": "-created",
+  "limit": 25
+}
+Use filters only for fields that naturally belong to that resource.
+"""
 
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": f"Convert the following text into an SQL query and return the query only, using this model mapping and its respective fields as a guide {model_mappings} in recent MySQL Database query format: {text}",
-                    }
-                ],
-                max_tokens=150,
-            )
-
-            response_json = response.to_dict()
-            parsed_response = self.parse_openai_response(json.dumps(response_json))
-
-            return parsed_response
-        except Exception:
-            logger.error("Error generating SQL query from OpenAI API")
-            return "Error generating SQL query"
-
-    def get_required_fields(self, table_name):
-        query = f"""
-        PRAGMA table_info({table_name});
-        """
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-            columns_info = cursor.fetchall()
-
-        required_fields = []
-        for column in columns_info:
-            if column[3] == 1 or column[1] == "id":
-                required_fields.append(column[1])
-
-        return required_fields
-
-    def get_incomplete_fields(self, query, required_fields):
-        try:
-            provided_fields = re.findall(r"\((.*?)\)", query)[0].split(",")
-            provided_fields = [field.strip() for field in provided_fields]
-            incomplete_fields = [
-                field for field in required_fields if field not in provided_fields
-            ]
-
-            return incomplete_fields
-        except IndexError:
-            logger.error("Failed to extract fields from the SQL query.")
-            return required_fields
-        
-
-    
-    def get_insert_incomplete_fields(self, query, required_fields):
-        try:
-            provided_fields = re.findall(r"\((.*?)\)", query)[0].split(",")
-            provided_fields = [field.strip() for field in provided_fields]
-
-            incomplete_fields = [
-                {"name": field, "value": ""}
-                for field in required_fields
-                if field not in provided_fields
-            ]
-
-            return incomplete_fields
-        except IndexError:
-            logger.error("Failed to extract fields from the SQL query.")
-            return [{"name": field, "value": ""} for field in required_fields]
-
-    def fill_defaults_fields(self, query, incomplete_fields):
-        if "created" in incomplete_fields:
-            fields_part = re.search(r"\((.*?)\)", query).group(1)
-            values_part = re.search(r"VALUES\s*\((.*?)\)", query).group(1)
-
-            new_fields_part = fields_part + ", created"
-            new_values_part = values_part + ", CURRENT_TIMESTAMP"
-
-            query = query.replace(fields_part, new_fields_part)
-            query = query.replace(values_part, new_values_part)
-
-        if "updated" in incomplete_fields:
-            fields_part = re.search(r"\((.*?)\)", query).group(1)
-            values_part = re.search(r"VALUES\s*\((.*?)\)", query).group(1)
-
-            new_fields_part = fields_part + ", updated"
-            new_values_part = values_part + ", CURRENT_TIMESTAMP"
-
-            query = query.replace(fields_part, new_fields_part)
-            query = query.replace(values_part, new_values_part)
-
-        if "is_active" in incomplete_fields:
-            fields_part = re.search(r"\((.*?)\)", query).group(1)
-            values_part = re.search(r"VALUES\s*\((.*?)\)", query).group(1)
-
-            new_fields_part = fields_part + ", is_active"
-            new_values_part = values_part + ", TRUE"
-
-            query = query.replace(fields_part, new_fields_part)
-            query = query.replace(values_part, new_values_part)
-
-        return query
-
-    def extract_update_fields_and_values(self, query):
-        try:
-            match = re.search(
-                r"UPDATE\s+\w+\s+SET\s+(.+?)\s+WHERE", query, re.IGNORECASE
-            )
-            if not match:
-                return None
-
-            set_clause = match.group(1)
-
-            field_value_pairs = set_clause.split(",")
-
-            update_data = {}
-            for pair in field_value_pairs:
-                field, value = pair.split("=")
-                update_data[field.strip()] = value.strip().strip("'\"")
-
-            return update_data
-
-        except Exception as e:
-            logger.error(f"Error extracting fields and values from query: {str(e)}")
-            return None
-
-    def extract_insert_fields_and_values_from_query(self, query):
-        query = query.strip().rstrip(";")
-
-        match = re.search(
-            r"INSERT\s+INTO\s+[`'\"]?(\w+)[`'\"]?\s*\(([^)]+)\)\s+VALUES\s*\(([^)]+)\)",
-            query,
-            re.IGNORECASE,
+        response = self.client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": text},
+            ],
+            max_tokens=250,
         )
-        if match:
-            fields_str = match.group(2)
-            values_str = match.group(3)
+        response_json = response.to_dict()
+        content = self.parse_openai_response(json.dumps(response_json))
+        return self.normalize_query_plan(content)
 
-            fields = [field.strip() for field in fields_str.split(",")]
+    def normalize_query_plan(self, content):
+        try:
+            plan = json.loads(content.strip().strip("```").strip())
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("The query plan could not be parsed.") from exc
 
-            # Handle values that might contain commas (e.g., in strings)
-            values = []
-            current_value = ""
-            in_quotes = False
-            for char in values_str:
-                if char == "'" or char == '"':
-                    in_quotes = not in_quotes
-                elif char == "," and not in_quotes:
-                    values.append(current_value.strip())
-                    current_value = ""
-                    continue
-                current_value += char
-            values.append(current_value.strip())
+        if not isinstance(plan, dict):
+            raise ValueError("The query plan must be a JSON object.")
 
-            if len(fields) != len(values):
-                raise ValueError(
-                    f"Mismatch between fields ({len(fields)}) and values ({len(values)})"
-                )
+        resource = str(plan.get("resource", "")).lower()
+        intent = str(plan.get("intent", "search")).lower()
+        if resource not in QUERY_RESOURCES:
+            raise ValueError("Unsupported query resource.")
+        if intent not in {"list", "search", "summarize"}:
+            raise ValueError("Unsupported query intent.")
 
-            # Return as a list of objects with field name and value
-            return [
-                {"name": field, "value": value} for field, value in zip(fields, values)
-            ]
+        filters = plan.get("filters", {})
+        if filters is None:
+            filters = {}
+        if not isinstance(filters, dict):
+            raise ValueError("Query plan filters must be a JSON object.")
 
-        raise ValueError("Unable to extract fields and values from the query")
+        allowed_filters = QUERY_RESOURCES[resource]["filter_fields"]
+        safe_filters = {
+            field: value
+            for field, value in filters.items()
+            if field in allowed_filters and value not in [None, ""]
+        }
+        if any(
+            not isinstance(value, (str, int, float, bool))
+            for value in safe_filters.values()
+        ):
+            raise ValueError("Query plan filter values must be scalar.")
 
+        sort = plan.get("sort") or "-created"
+        sort_field = sort[1:] if isinstance(sort, str) and sort.startswith("-") else sort
+        if (
+            not isinstance(sort, str)
+            or sort_field not in QUERY_RESOURCES[resource]["sort_fields"]
+        ):
+            sort = "-created"
 
-    @transaction.atomic
-    def confirm_and_execute_update(self, validated_data):
-        query = self.Query.objects.last()
+        search = plan.get("search") or ""
+        if not isinstance(search, str):
+            raise ValueError("Query plan search text must be a string.")
 
         try:
-            if validated_data:
-                modified_query = query.query.format(**validated_data)
+            limit = int(plan.get("limit", 25))
+        except (TypeError, ValueError):
+            limit = 25
+        limit = min(max(limit, 1), 100)
 
-                query.query = modified_query
-                query.save()
+        return {
+            "intent": intent,
+            "resource": resource,
+            "search": search.strip(),
+            "filters": safe_filters,
+            "sort": sort,
+            "limit": limit,
+        }
 
-            with connection.cursor() as cursor:
-                cursor.execute(query.query)
+    def execute_query_plan(self, user, plan):
+        config = QUERY_RESOURCES[plan["resource"]]
+        queryset = config["model"].objects.filter(**{config["owner_filter"]: user})
 
-            query.delete()
+        search = plan.get("search")
+        if search:
+            search_filter = Q()
+            for field in config["search_fields"]:
+                search_filter |= Q(**{f"{field}__icontains": search})
+            queryset = queryset.filter(search_filter)
 
-            return json.dumps(
-                {
-                    "status": "success",
-                    "message": "The update query was successfully executed.",
-                }
-            )
-
-        except Exception as e:
-            logger.error(f"Error executing SQL update query after validation: {str(e)}")
-
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "There was an issue executing the update query after validation. Please try again later.",
-                }
-            )
-
-    @transaction.atomic
-    def confirm_and_execute_delete(self):
-        try:
-            # Fetch the last saved query from the Query model
-            query = self.Query.objects.last()
-
-            # Execute the saved delete query
-            with connection.cursor() as cursor:
-                cursor.execute(query.query)
-
-            # Clear the pending query after execution
-            self.pending_delete_query = None
-
-            return json.dumps(
-                {
-                    "status": "success",
-                    "message": "Delete operation executed successfully.",
-                }
-            )
-
-        except Exception as e:
-            logger.error(f"Error executing delete query: {str(e)}")
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "There was an issue executing the delete query. Please try again later.",
-                }
-            )
-
-
-            logger.error(f"Error executing SQL create query: {str(e)}")
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "There was an issue executing the create query. Please try again later.",
-                }
-            )
-
-    @transaction.atomic
-    def confirm_and_execute_create(self):
-        query = self.Query.objects.last()
-        with connection.cursor() as cursor:
-            cursor.execute(query.query)
-        query.delete()
-        return json.dumps({"status": "success", "message": f"successfully added."})
-
-    @transaction.atomic()
-    def create_from_SQL(self, query):
-        try:
-            match = re.search(r"INSERT\s+INTO\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
-            table_name = match.group(2) if match else "Unknown table"
-
-            required_fields = self.get_required_fields(table_name)
-            incomplete_fields = self.get_incomplete_fields(query, required_fields)
-
-            if incomplete_fields:
-                query = self.fill_defaults_fields(query, incomplete_fields)
-            
-
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-
-                return json.dumps(
-                    {
-                        "status": "success",
-                        "message": f"{table_name} successfully added.",
-                    }
-                )
-
-        except IntegrityError as e:
-            logger.error(f"IntegrityError executing SQL insert query: {str(e)}")
-            incomplete_fields = self.send_create_incompleted_response(table_name, query)
-            self.Query.objects.create(query=query)
-            
-            if incomplete_fields:
-                
-                return json.dumps(
-                    {
-                        "status": "error",
-                        "message": "There was an issue with the data integrity. Please ensure all required fields are provided and constraints are met.",
-                        "fields": incomplete_fields,
-                    }
-                )
+        for field, value in plan.get("filters", {}).items():
+            if field in config["search_fields"]:
+                queryset = queryset.filter(**{f"{field}__icontains": value})
             else:
-                return json.dumps(
-                    {
-                        "status": "success",
-                        "message": "Verify the data below",
-                        "fields": incomplete_fields,
-                    }
-                )
-                
+                queryset = queryset.filter(**{field: value})
 
-        except Exception as e:
-            logger.error(f"Error executing SQL insert query: {str(e)}")
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "There was an issue executing the insert query. Please try again later.",
-                }
-            )
-            
-            
-    @transaction.atomic()
-    def update_from_SQL(self, query):
-        try:
-            match = re.search(r"UPDATE\s+([`'\"]?)(\w+)\1", query, re.IGNORECASE)
-            table_name = match.group(2) if match else "Unknown table"
+        queryset = queryset.order_by(plan["sort"])
+        total_count = queryset.count()
+        rows = list(queryset[: plan["limit"]])
+        serializer = config["serializer"](rows, many=True)
+        sql_preview = str(queryset.query)
 
-            fields_and_values = self.extract_update_fields_and_values(query)
-            if fields_and_values:
-                self.Query.objects.create(query=query)
-                return json.dumps(
-                    {
-                        "status": "pending_validation",
-                        "message": f"Please validate the following fields for {table_name}.",
-                        "fields": fields_and_values,
-                    }
-                )
-            else:
-                return json.dumps(
-                    {
-                        "status": "error",
-                        "message": "Unable to extract update fields and values from the query.",
-                    }
-                )
+        return {
+            "status": "success",
+            "message": f"Found {len(rows)} {plan['resource']}.",
+            "plan": plan,
+            "sql_preview": sql_preview,
+            "total_count": total_count,
+            "results": serializer.data,
+        }
 
-        except Exception as e:
-            logger.error(f"Error executing SQL update query in update: {str(e)}")
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "There was an issue executing the update query. Please try again later.",
-                }
-            )
+    def generate_query_response(self, user, text):
+        plan = self.build_query_plan(text)
+        response = self.execute_query_plan(user, plan)
+        response["transcript"] = text
+        return response
 
-    def get_from_SQL(self, query):
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-                data = cursor.fetchall()
+    def generate_query_response_from_audio(self, user, audio_data):
+        transcript = self.audio_to_text(audio_data)
+        if not transcript:
+            raise ValueError("Audio could not be transcribed.")
+        return self.generate_query_response(user, transcript)
 
-                columns = [col[0] for col in cursor.description]
-                result = [dict(zip(columns, row)) for row in data]
+    @staticmethod
+    def create_audio_upload_name():
+        return f"uploads/audio/{uuid.uuid4()}.webm"
 
-                filtered_result = self.filter_sensitive_data(result)
-                return json.dumps(filtered_result, default=self.custom_serializer)
-
-        except Exception as e:
-            logger.error(f"Error executing SQL query: {str(e)}")
-            return "There was an issue executing the SQL query. Please try again later."
-
-
-    @transaction.atomic
-    def delete_from_SQL(self, query):
-        try:
-            # Extract the table name from the DELETE query
-            match = re.search(r"DELETE\s+FROM\s+[`'\"]?(\w+)[`'\"]?", query, re.IGNORECASE)
-            table_name = match.group(1) if match else None
-
-            if not table_name:
-                return json.dumps(
-                    {
-                        "status": "error",
-                        "message": "Table name could not be identified in the query.",
-                    }
-                )
-
-            # Execute the delete query directly
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-
-            return json.dumps(
-                {
-                    "status": "success",
-                    "message": "Delete operation executed successfully.",
-                }
-            )
-
-        except Exception as e:
-            logger.error(f"Error executing delete query: {str(e)}")
-            return json.dumps(
-                {
-                    "status": "error",
-                    "message": "There was an issue executing the delete query. Please try again later.",
-                }
-            )
-
-    def send_create_incompleted_response(self, table_name, query):
-            required_fields = self.get_required_fields(table_name)
-            incomplete_fields = self.get_incomplete_fields(query, required_fields)
-
-            return incomplete_fields
-
-    def run_SQL_query(self, audio_data):
-        query = self.text_to_SQL(audio_data)
-
-        if self.commands[0] in query and query:
-            return (self.get_from_SQL(query), self.commands[0])
-        elif self.commands[1] in query and query:
-            return (self.create_from_SQL(query), self.commands[1])
-        elif self.commands[2] in query and query:
-            return (self.update_from_SQL(query), self.commands[2])
-        elif self.commands[3] in query and query:
-            return (self.delete_from_SQL(query), self.commands[3])
-        else:
-            raise ValueError(
-                query, "Invalid SQL command. Please provide a valid SQL command."
-            )
-
-    def filter_sensitive_data(self, result):
-        for row in result:
-            for field in self.sensitive_fields:
-                if field in row:
-                    del row[field]
-        return result
-
-    def extract_fields_from_query(self, query):
-        match = re.search(
-            r"INSERT\s+INTO\s+[`'\"]?(\w+)[`'\"]?\s*\(([^)]+)\)", query, re.IGNORECASE
+    def confirm_and_execute_update(self, user, validated_data):
+        return json.dumps(
+            {
+                "status": "error",
+                "message": "Generated SQL execution is disabled. Use the typed update endpoints instead.",
+            }
         )
-        if match:
-            field_str = match.group(2)  # Extract the field names within parentheses
-            fields = [field.strip() for field in field_str.split(",")]
-            return fields
-        return []
 
+    def confirm_and_execute_delete(self, user):
+        return json.dumps(
+            {
+                "status": "error",
+                "message": "Generated SQL execution is disabled. Use the typed delete endpoints instead.",
+            }
+        )
 
-@inject
+    def confirm_and_execute_create(self, user, validated_data=None):
+        return json.dumps(
+            {
+                "status": "error",
+                "message": "Generated SQL execution is disabled. Use the typed create endpoints instead.",
+            }
+        )
+
 class ProductService:
     def __init__(self, User: Type[User], Product: Type[Product]):
         self.User = User
@@ -679,26 +462,25 @@ class ProductService:
         serializer = ProductSerializer(product)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def delete_product(self, product_id):
-        product = get_object_or_404(self.Product, pk=product_id)
+    def delete_product(self, user, product_id):
+        product = get_object_or_404(self.Product, pk=product_id, store__user=user)
         product.delete()
         return Response(status=status.HTTP_202_ACCEPTED)
 
-    def create_product(self, serializer):
-        serializer.save()
+    def create_product(self, user, serializer):
+        store = get_object_or_404(Store, user=user)
+        serializer.save(store=store)
         return serializer.data
 
-    def update_product(self, data):
-        store = data["store"]
+    def update_product(self, user, data):
         product_id = data["id"]
-        product = get_object_or_404(self.Product, store=store, pk=product_id)
-        serializer = ProductSerializer(product, data=data)
+        product = get_object_or_404(self.Product, pk=product_id, store__user=user)
+        serializer = ProductSerializer(product, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
 
 
-@inject
 class CustomerService:
     def __init__(self, User: Type[User], Customer: Type[Customer]):
         self.User = User
@@ -714,17 +496,15 @@ class CustomerService:
         serializer = CustomerSerializer(customer)
         return serializer.data
 
-    def create_customer(self, serializer):
-        customer, created = self.Customer.objects.get_or_create(**serializer.data)
-        if not created:
-            return None
-        return CustomerSerializer(customer)
+    def create_customer(self, user, serializer):
+        serializer.save(user=user)
+        return serializer
 
-    def update_customer(self, data):
+    def update_customer(self, user, data):
         email = data["email"]
         phone_number = data["phone_number"]
         customer = get_object_or_404(
-            self.Customer, email=email, phone_number=phone_number
+            self.Customer, user=user, email=email, phone_number=phone_number
         )
         serializer = CustomerSerializer(customer, data=data)
         serializer.is_valid(raise_exception=True)
@@ -732,7 +512,6 @@ class CustomerService:
         return serializer.data
 
 
-@inject
 class OrderService:
     def __init__(self, User: Type[User], Order: Type[Order]):
         self.User = User
@@ -742,21 +521,25 @@ class OrderService:
         order = get_list_or_404(self.Order, user=user)
         return order
 
-    def create_order(self, serializer):
-        serializer.save()
+    def create_order(self, request, serializer):
+        cart = serializer.validated_data.get("cart")
+        if cart and cart.user != request.user:
+            raise serializers.ValidationError({"cart": "Invalid cart for this user."})
+        serializer.save(user=request.user)
         return serializer.data
 
-    def update_order(self, data):
+    def update_order(self, user, data):
         id = data["id"]
-        user_id = data["user_id"]
-        order = get_object_or_404(self.Order, id=id, user__id=user_id)
-        serializer = CustomerSerializer(order, data=data)
+        order = get_object_or_404(self.Order, id=id, user=user)
+        serializer = OrderSerializer(order, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
+        cart = serializer.validated_data.get("cart")
+        if cart and cart.user_id != user.id:
+            raise serializers.ValidationError({"cart": "Invalid cart for this user."})
         serializer.save()
         return serializer.data
 
 
-@inject
 class SettingsService:
     def __init__(self, User: Type[User], Notification: Type[Notification]):
         self.User = User
@@ -768,7 +551,6 @@ class SettingsService:
         return {
             "email": admin.email,
             "first_name": admin.first_name,
-            "password": secrets.token_hex(16),
         }
 
     def edit_admin_info(self, email, data):
@@ -784,5 +566,7 @@ class SettingsService:
 
     def update_notification_info(self, user, data):
         notification_settings = get_object_or_404(self.Notification, user=user)
-        serializer = NotificationSerializer(notification_settings, data)
-        return serializer
+        serializer = NotificationSerializer(notification_settings, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer.data

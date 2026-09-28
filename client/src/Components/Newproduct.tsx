@@ -1,6 +1,6 @@
-import { useState, ChangeEvent, useEffect } from "react";
+import { useState, ChangeEvent, useEffect, useMemo } from "react";
 import { LuImagePlus } from "react-icons/lu";
-import SideBar from "../layouts/SideBar";
+import Sidebar from "../layouts/Sidebar";
 import { Header } from "../layouts/Header";
 import { ProductFormStateProps } from "../types/add-product-state";
 import { toast } from 'react-toastify';
@@ -29,6 +29,18 @@ export const NewProduct = () => {
   });
 
   const nav = useNavigate()
+  const imagePreviewUrl = useMemo(
+    () => formState.img ? URL.createObjectURL(formState.img) : '',
+    [formState.img]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -130,7 +142,7 @@ export const NewProduct = () => {
   return (
     <div className="Newproduct_Container">
       <Header />
-      <SideBar />
+      <Sidebar />
       <h1>Create New Product</h1>
       <section className="Product_Form_Container">
         <div className="GenProduct_Container">
@@ -207,7 +219,7 @@ export const NewProduct = () => {
                 </label>
               </>
             ) : (
-              <img src={URL.createObjectURL(formState.img)} alt="Product" />
+              <img src={imagePreviewUrl} alt="Product" />
             )}
           </section>
           <span>
@@ -247,5 +259,4 @@ export const NewProduct = () => {
     </div>
   );
 };
-
 

@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../utils/api";
 
-export const Forgotpassword = () => {
+export const ForgotPassword = () => {
   const [pop, setPop] = useState(false);
   const [email, setEmail] = useState('');
   const nav = useNavigate();
@@ -28,8 +28,7 @@ export const Forgotpassword = () => {
         return;
       }
 
-      const data = JSON.stringify({ email });
-      const response = await api.post(`/auth/reset-password/request/`, data);
+      const response = await api.post(`/auth/reset-password/request/`, { email });
 
       if (response.status === 200) {
         toast.success('Password reset email sent successfully!');

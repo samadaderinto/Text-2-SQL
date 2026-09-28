@@ -1,0 +1,200 @@
+name: Security Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-audit:
+    name: Frontend npm audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit all dependencies
+        run: npm audit --audit-level=critical
+
+  backend-audit:
+    name: Backend pip audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: server/requirements-test.txt
+
+      - name: Install audit tooling
+        run: python -m pip install --upgrade pip pip-audit
+
+      - name: Audit Python dependencies
+        run: pip-audit -r requirements-test.txt
+
+  django-check:
+    name: Django system check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    env:
+      DEBUG: "true"
+      SECRET_KEY: ci-secret-key-for-checks-only
+      OPENAI_API_KEY: ci-placeholder
+      EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
+      ELASTICSEARCH_HOST: localhost
+      ELASTICSEARCH_PORT: "9200"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: server/requirements.txt
+
+      - name: Install backend dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt
+
+      - name: Run Django checks
+        run: python manage.py check
+
+      - name: Check for missing migrations
+        run: python manage.py makemigrations --check --dry-run
+
+  secret-scan:
+    name: Secret pattern scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan tracked files for common secrets
+        run: |
+          python - <<'PY'
+          import re
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          allowlisted = {
+              "CONTAINERIZATION.md",
+              "compose.yaml",
+          }
+          skipped_suffixes = {
+              ".lock",
+              ".png",
+              ".jpg",
+              ".jpeg",
+              ".gif",
+              ".webp",
+              ".jfif",
+              ".sqlite3",
+          }
+          patterns = [
+              re.compile(r"sk-[A-Za-z0-9_\-]{20,}"),
+              re.compile(r"gh[pousr]_[A-Za-z0-9_]{20,}"),
+              re.compile(r"AKIA[0-9A-Z]{16}"),
+              re.compile(r"(?i)(api[_-]?key|secret|token|password)\s*[:=]\s*['\"][^'\"\s]{12,}['\"]"),
+          ]
+
+          result = subprocess.run(
+              ["git", "ls-files"],
+              check=True,
+              text=True,
+              capture_output=True,
+          )
+
+          findings = []
+          for file_name in result.stdout.splitlines():
+              path = Path(file_name)
+              if file_name in allowlisted or path.suffix.lower() in skipped_suffixes:
+                  continue
+              try:
+                  text = path.read_text(encoding="utf-8")
+              except (FileNotFoundError, UnicodeDecodeError):
+                  continue
+              for line_number, line in enumerate(text.splitlines(), start=1):
+                  if any(pattern.search(line) for pattern in patterns):
+                      findings.append(f"{file_name}:{line_number}")
+
+          if findings:
+              print("Potential secrets found in tracked files:")
+              print("\n".join(findings))
+              sys.exit(1)
+          PY
+
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-3.0, AGPL-3.0
+
+  trivy-filesystem:
+    name: Trivy filesystem scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,config
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif

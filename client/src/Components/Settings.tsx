@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
-import Sidebar from '../layouts/SideBar';
+import Sidebar from '../layouts/Sidebar';
 import { useNavigate } from "react-router-dom";
 import { Header } from "../layouts/Header";
 import api from "../utils/api";
@@ -31,14 +30,14 @@ export const Settings = () => {
   }, []);
 
   useEffect(() => {
-    fetchData(`/settings/admin/get/`, ({ first_name, email, password }) => {
+    fetchData(`/settings/admin/get/`, ({ first_name, email }) => {
 
       setFormData((prev) => ({
         ...prev,
 
         adminName: first_name,
         adminEmail: email,
-        password: password,
+        password: '',
       }));
     });
 
@@ -74,28 +73,28 @@ export const Settings = () => {
     const endpoints: any = {
       'General': `/settings/store/update/`,
       'Account': `/settings/admin/update/`,
-      'Notifications': `/api/settings/notifications/`,
+      'Notifications': `/settings/notifications/update/`,
     };
 
     const dataMap: any = {
       'General': {
-        storeName: formData.storeName,
-        storeEmail: formData.storeEmail,
+        name: formData.storeName,
+        email: formData.storeEmail,
         currency: formData.currency,
       },
       'Account': {
-        adminName: formData.adminName,
-        adminEmail: formData.adminEmail,
-        password: formData.password,
+        first_name: formData.adminName,
+        email: formData.adminEmail,
+        ...(formData.password ? { password: formData.password } : {}),
       },
       'Notifications': {
-        emailNotifications: formData.emailNotifications,
-        smsNotifications: formData.smsNotifications,
+        email_notification: formData.emailNotifications,
+        sms_notification: formData.smsNotifications,
       },
     };
 
     try {
-      await axios.put(endpoints[active], dataMap[active]);
+      await api.put(endpoints[active], dataMap[active]);
     } catch (error) {
       console.error('Error updating settings:', error);
     }

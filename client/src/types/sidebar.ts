@@ -1,6 +1,6 @@
 import { ReactElement } from "react";
 
-export interface SideBarProps {
+export interface SidebarProps {
     icon: ReactElement,
     itemName: string
   }

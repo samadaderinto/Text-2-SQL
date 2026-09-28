@@ -6,7 +6,7 @@ import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-ic
 import ReactPaginate from "react-paginate";
 import { useNavigate } from "react-router-dom";
 import { Header } from "../layouts/Header";
-import Sidebar from '../layouts/SideBar';
+import Sidebar from '../layouts/Sidebar';
 import { CustomerProps } from "../types/customers";
 import api from "../utils/api";
 import { ClipLoader } from "react-spinners";
@@ -14,17 +14,18 @@ import { ClipLoader } from "react-spinners";
 export const Customers = () => {
   const itemsPerPage = 15;
   const [data, setData] = useState<CustomerProps[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
   const nav = useNavigate();
 
   const fetchData = async () => {
-    const offset = currentPage * itemsPerPage;
     setLoading(true);
     try {
-      const response = await api.get(`/customers/search/?offset=${offset}&limit=${itemsPerPage}&query=${searchQuery}`);
-      setData(response.data.customers);
+      const response = await api.get(`/customers/search/?offset=${currentPage}&limit=${itemsPerPage}&query=${encodeURIComponent(searchQuery)}`);
+      setData(response.data.customers ?? []);
+      setTotalItems(response.data.count ?? 0);
     } catch (error) {
       console.error("Error fetching data", error);
     } finally {
@@ -37,16 +38,16 @@ export const Customers = () => {
   }, [currentPage, searchQuery]);
 
   const handlePageClick = (event: { selected: number }) => {
-    setCurrentPage(event.selected);
+    setCurrentPage(event.selected + 1);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(0);
+    setCurrentPage(1);
   };
 
   // Calculate the total number of pages
-  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
     <>

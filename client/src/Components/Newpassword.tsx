@@ -1,15 +1,15 @@
 import { PiDiamondsFourFill } from "react-icons/pi";
 import { useState } from "react";
 import { IoEye, IoEyeOff } from 'react-icons/io5';
+import { useNavigate, useParams } from "react-router-dom";
 
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../utils/api";
 
 export const NewPassword = () => {
-  const currentUrl = window.location.href;
-  const parts = currentUrl.split('/');
-  const savedEmail = parts[parts.length - 1];
+  const { uidb64, token } = useParams();
+  const nav = useNavigate();
 
   const [formState, setFormState] = useState({
     showPassword: false,
@@ -18,7 +18,6 @@ export const NewPassword = () => {
     confirmType: 'password',
     passwordValue: '',
     confirmPasswordValue: '',
-    email: savedEmail,
     strength: '',
     class1: '',
     class2: '',
@@ -35,9 +34,9 @@ export const NewPassword = () => {
     const specialCharsRegex = /[!@#$%&*]/;
     const digitsRegex = /[0-9]/;
 
-    let newCheck1 = specialCharsRegex.test(password);
-    let newCheck2 = digitsRegex.test(password);
-    let newCheck3 = password.length >= 8;
+    const newCheck1 = specialCharsRegex.test(password);
+    const newCheck2 = digitsRegex.test(password);
+    const newCheck3 = password.length >= 8;
 
     setFormState(prevState => {
       const class1 = newCheck1 ? 'filled_div_green' : '';
@@ -89,7 +88,12 @@ export const NewPassword = () => {
   };
 
   const Reset = async () => {
-    const { email, passwordValue, confirmPasswordValue } = formState;
+    const { passwordValue, confirmPasswordValue } = formState;
+
+    if (!uidb64 || !token) {
+      toast.error('This reset link is invalid. Please request a new one.');
+      return;
+    }
 
     if (passwordValue !== confirmPasswordValue) {
       toast.error('Passwords do not match.');
@@ -101,17 +105,23 @@ export const NewPassword = () => {
       return;
     }
 
-    const data = JSON.stringify({ email, new_password: passwordValue });
-
     try {
-      const response = await api.post(`/auth/reset-password/reset/`, data);
+      const response = await api.post(`/auth/reset-password/reset/`, {
+        uidb64,
+        token,
+        new_password: passwordValue,
+      });
 
-      if (response.status === 200) {
+      if (response.status === 200 || response.status === 205) {
         toast.success('Password reset successfully!');
         setPop(true);
       }
-    } catch (error) {
-      toast.error('Failed to reset password. Please try again later.');
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        toast.error('This reset link is invalid or expired. Please request a new one.');
+      } else {
+        toast.error('Failed to reset password. Please try again later.');
+      }
     }
   };
 
@@ -120,17 +130,6 @@ export const NewPassword = () => {
       <section className="Newpassword_White">
         <span><PiDiamondsFourFill /> EchoCart</span>
         <h1>Create New Password</h1>
-        <label htmlFor="email">Email</label>
-        <div className="Input_Container">
-          <input
-            type="email"
-            name="email"
-            value={formState.email}
-            onChange={handleInputChange}
-            id="email"
-            placeholder="Input email"
-          />
-        </div>
         <label htmlFor="passwordValue">Password</label>
         <div className="Input_Container" tabIndex={0}>
           <input
@@ -178,7 +177,7 @@ export const NewPassword = () => {
             <div>
               <h3>Password Reset</h3>
               <p>You have successfully changed your password.</p>
-              <span onClick={() => setPop(false)} className="Login_Btn">Go To Login</span>
+              <span onClick={() => nav('/auth/signin')} className="Login_Btn">Go To Login</span>
             </div>
           </section>
         )

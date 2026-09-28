@@ -30,21 +30,12 @@
     justify-content: space-between;
     height: 11%;
     margin-bottom: 4%;
-    border: 1px solid rgb(220, 220, 220);
+    border: 1px solid #d9e2ef;
     outline: none;
     padding: 4%;
-
-    &:focus-within {
-        border-color: rgb(20, 106, 235);
-    }
-
-    input {
-        width: 90%;
-        padding: 3%;
-        border: none;
-        outline: none;
-    }
-
+    background-color: #fff;
+    border-radius: 8px;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
 
 }
 
@@ -56,13 +47,13 @@
     padding: 10% 5%;
     flex-direction: column;
     // justify-content: flex-end;
-    background-color: rgb(60, 137, 253);
+    background: linear-gradient(145deg, #0f68d8 0%, #157af0 55%, #36a3ff 100%);
 
 }
 
 @mixin Button {
     width: 100%;
-    background-color: rgb(20, 106, 235);
+    background-color: #157af0;
     color: white;
     padding: 3%;
     text-align: center;
@@ -72,5 +63,6 @@
     cursor: pointer;
     justify-self: right;
     outline: none;
-    border-radius: 5px;
+    border-radius: 8px;
+    transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }

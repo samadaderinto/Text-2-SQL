@@ -1,40 +1,60 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { GoContainer } from "react-icons/go";
-import { HiOutlineChartSquareBar } from 'react-icons/hi';
-import { IoPeopleOutline } from 'react-icons/io5';
-import { RiShoppingBag4Line } from 'react-icons/ri';
-
-import { ArcElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js';
-import { Line, Pie } from 'react-chartjs-2';
-import { useNavigate } from "react-router-dom";
+import { HiOutlineChartSquareBar } from "react-icons/hi";
+import { IoPeopleOutline } from "react-icons/io5";
+import { RiShoppingBag4Line } from "react-icons/ri";
+import {
+  ArcElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+} from "chart.js";
+import { Doughnut, Line } from "react-chartjs-2";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/auth-context";
 import { Header } from "../layouts/Header";
-import SideBar from "../layouts/SideBar";
-import { DashboardCardProps } from "../types/dashboard";
+import Sidebar from "../layouts/Sidebar";
 import { OrderProps } from "../types/order";
 import api from "../utils/api";
-import { Oval } from 'react-loader-spinner';
+import { Oval } from "react-loader-spinner";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+);
+
+const formatCurrency = (value: string | number) => {
+  const amount = Number(value);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number.isFinite(amount) ? amount : 0);
+};
 
 export const Dashboard = () => {
   const { isSignedIn, user } = useContext(AuthContext);
-  const [Active, setActive] = useState<number | null>(0);
   const [orders, setOrders] = useState<OrderProps[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const nav = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        setLoading(true);
-        const response = await api.get(`/orders/search/?limit=5`);
-        setOrders(response.data.orders);
-        setLoading(false);
-      } catch (err) {
-        setError("Failed to load orders.");
+        const response = await api.get("/orders/search/?limit=5");
+        setOrders(response.data.orders ?? []);
+      } catch {
+        setError("We couldn't load your latest orders. Please refresh to try again.");
+      } finally {
         setLoading(false);
       }
     };
@@ -42,169 +62,278 @@ export const Dashboard = () => {
     fetchOrders();
   }, []);
 
-  const cardArray: DashboardCardProps[] = [
+  const paidOrders = useMemo(
+    () => orders.filter((order) => order.status.toLowerCase() === "paid"),
+    [orders],
+  );
+  const pendingOrders = useMemo(
+    () => orders.filter((order) => order.status.toLowerCase() === "pending"),
+    [orders],
+  );
+  const recentRevenue = useMemo(
+    () =>
+      orders.reduce((total, order) => {
+        const amount = Number(order.subtotal);
+        return total + (Number.isFinite(amount) ? amount : 0);
+      }, 0),
+    [orders],
+  );
+
+  const metrics = [
     {
       icon: <HiOutlineChartSquareBar />,
-      title: 'Total Sales',
-      value: 271568.09,
-      percent: 25.5,
-      increment: 15,
+      label: "Recent orders",
+      value: loading ? "—" : String(orders.length),
+      detail: "Latest five orders",
+      tone: "violet",
     },
     {
       icon: <RiShoppingBag4Line />,
-      title: 'Total Sale',
-      value: 271568.09,
-      percent: 25.5,
-      increment: 15,
+      label: "Paid",
+      value: loading ? "—" : String(paidOrders.length),
+      detail: "In your latest five",
+      tone: "green",
     },
     {
       icon: <GoContainer />,
-      title: 'Total Sales',
-      value: 271568.09,
-      percent: 25.5,
-      increment: 15,
+      label: "Awaiting payment",
+      value: loading ? "—" : String(pendingOrders.length),
+      detail: "In your latest five",
+      tone: "amber",
     },
     {
       icon: <IoPeopleOutline />,
-      title: 'Total Sale',
-      value: 271568.09,
-      percent: 25.5,
-      increment: 15,
+      label: "Recent order value",
+      value: loading ? "—" : formatCurrency(recentRevenue),
+      detail: "Subtotal of latest five",
+      tone: "blue",
     },
   ];
 
-  const salesData = {
-    labels: [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ],
+  const statusData = {
+    labels: ["Paid", "Pending", "Cancelled"],
     datasets: [
       {
-        label: "Total Sales",
-        data: [1200, 1900, 3000, 5000, 2400, 3400, 2900, 4700, 5200, 6000, 7000, 8000],
-        fill: false,
-        backgroundColor: "blue",
-        borderColor: "blue",
-        tension: 0.1,
+        data: [
+          paidOrders.length,
+          pendingOrders.length,
+          orders.filter((order) => order.status.toLowerCase() === "cancelled")
+            .length,
+        ],
+        backgroundColor: ["#20a779", "#f3a541", "#e46e78"],
+        borderWidth: 0,
+        hoverOffset: 5,
       },
     ],
   };
 
-  const pieData = {
-    labels: ['Product A', 'Product B', 'Product C', 'Product D'],
+  const revenueData = {
+    labels: orders.map((order) => `#${order.id.slice(-5)}`),
     datasets: [
       {
-        label: 'Product Distribution',
-        data: [300, 200, 100, 150],
-        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#E7E9ED'],
-        borderColor: '#fff',
-        borderWidth: 1,
+        label: "Order subtotal",
+        data: orders.map((order) => {
+          const amount = Number(order.subtotal);
+          return Number.isFinite(amount) ? amount : 0;
+        }),
+        borderColor: "#6259e8",
+        backgroundColor: "rgba(98, 89, 232, 0.10)",
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: "#fff",
+        pointBorderColor: "#6259e8",
+        pointBorderWidth: 2,
+        fill: true,
+        tension: 0.38,
       },
     ],
   };
 
-  const options = {
-    scales: {
-      y: {
-        beginAtZero: true,
-      },
-    },
-  };
+  const userName = user?.email?.split("@")[0] || "there";
 
   return (
     <>
       <Header />
-
       <div className="Dashboard_container">
-        <SideBar />
+        <Sidebar />
 
-        <h1>{isSignedIn ? `Welcome, ${user?.email?.split("@")[0]}` : "Welcome"}</h1>
-        <p>Here's what's happening with your store today.</p>
-
-        <section className="Dashboard_Card_Container">
-          {cardArray.map((obj, index) => (
-            <article
-              key={index}
-              onClick={() => {
-                setActive(index);
-              }}
-              className={Active === index ? 'Blue_Card' : ''}
+        <main className="Dashboard_Content">
+          <section className="Dashboard_Intro">
+            <div>
+              <span className="Dashboard_Eyebrow">YOUR BUSINESS, IN FOCUS</span>
+              <h1>
+                {isSignedIn ? `Good to see you, ${userName}` : "Your store at a glance"}
+              </h1>
+              <p>A clear view of what’s happening across your store.</p>
+            </div>
+            <button
+              className="Dashboard_Query_Button"
+              onClick={() => nav("/query")}
+              type="button"
             >
-              <span>
-                <div>{obj.icon}</div>
-                <h4>{obj.title}</h4>
-              </span>
-              <h3>{obj.title === 'Total Sales' ? `$${obj.value}` : obj.value}</h3>
-              <span>
-                <p className="Card_percentage">{`${obj.percent}%`}</p>
-                <p>{`+${obj.increment}k Today`}</p>
-              </span>
-            </article>
-          ))}
-        </section>
+              <HiOutlineChartSquareBar aria-hidden="true" />
+              Ask your data
+            </button>
+          </section>
 
-        <section className="Graph_Container">
-          <div className="Main_Graph_Container">
-            <span>
-              <h3>Total Sales Over the Year</h3>
-              <p onClick={() => nav("/orders")}>View All</p>
-            </span>
+          <section className="Dashboard_Card_Container" aria-label="Recent order summary">
+            {metrics.map((metric) => (
+              <article key={metric.label} className={`Dashboard_Metric ${metric.tone}`}>
+                <div className="Dashboard_Metric_Top">
+                  <span className="Dashboard_Metric_Icon">{metric.icon}</span>
+                  <span className="Dashboard_Metric_Label">{metric.label}</span>
+                </div>
+                <h2>{metric.value}</h2>
+                <p>{metric.detail}</p>
+              </article>
+            ))}
+          </section>
 
-            <span className="Graph_Subheader">
-              <h4>Name</h4>
-              <ul>
-                <li>ID</li>
-                <li>Amount</li>
-                <li>Status</li>
-              </ul>
-            </span>
-
-            <article>
+          <section className="Dashboard_Analytics">
+            <article className="Dashboard_Panel Dashboard_Revenue_Panel">
+              <header className="Dashboard_Panel_Header">
+                <div>
+                  <span className="Dashboard_Eyebrow">ORDER ACTIVITY</span>
+                  <h2>Recent order value</h2>
+                </div>
+                <Link to="/orders">All orders <span aria-hidden="true">↗</span></Link>
+              </header>
               {loading ? (
-                <div className="spinner-container">
-                  <Oval
-                    height={50}
-                    width={50}
-                    color="#4fa94d"
-                    visible={true}
-                    ariaLabel="oval-loading"
-                    secondaryColor="#4fa94d"
-                    strokeWidth={2}
-                    strokeWidthSecondary={2}
-                  />
+                <div className="Dashboard_Chart_State">
+                  <Oval height={34} width={34} color="#6259e8" ariaLabel="Loading orders" />
                 </div>
               ) : error ? (
-                <p>{error}</p>
+                <p className="Dashboard_Chart_State Dashboard_Error">{error}</p>
               ) : orders.length === 0 ? (
-                <p className="No_Items_Found">No items found</p>
+                <div className="Dashboard_Chart_State">
+                  <span>No orders yet</span>
+                  <p>Your recent order activity will show up here.</p>
+                </div>
               ) : (
-                orders.map((order) => (
-                  <span key={order.id} className="Order_Item Dashboard_Order_Item">
-                    <div className="Dashboard_Order_Item_Description">
-                      <span>
-                        <h2>{order.name}</h2>
-                        <h4>{order.category}</h4>
-                      </span>
-                    </div>
-                    <div>
-                      <p>{order.id}</p>
-                      <p>{order.subtotal}</p>
-                      <p>{order.status}</p>
-                    </div>
-                  </span>
-                ))
+                <div className="Dashboard_Line_Chart">
+                  <Line
+                    data={revenueData}
+                    options={{
+                      maintainAspectRatio: false,
+                      plugins: { legend: { display: false } },
+                      scales: {
+                        x: { grid: { display: false }, border: { display: false } },
+                        y: {
+                          beginAtZero: true,
+                          grid: { color: "#f0f1f7" },
+                          border: { display: false, dash: [4, 4] },
+                          ticks: { maxTicksLimit: 5 },
+                        },
+                      },
+                    }}
+                  />
+                </div>
               )}
+              <p className="Dashboard_Chart_Footnote">Based on your latest five orders</p>
             </article>
 
-          </div>
-          <div className="Side_Graph_Container">
-            <Pie data={pieData} />
-          </div>
-        </section>
+            <article className="Dashboard_Panel Dashboard_Status_Panel">
+              <header className="Dashboard_Panel_Header">
+                <div>
+                  <span className="Dashboard_Eyebrow">AT A GLANCE</span>
+                  <h2>Order status</h2>
+                </div>
+                <span className="Dashboard_Sample_Label">LATEST 5</span>
+              </header>
+              {loading ? (
+                <div className="Dashboard_Chart_State">
+                  <Oval height={34} width={34} color="#6259e8" ariaLabel="Loading order status" />
+                </div>
+              ) : error ? (
+                <p className="Dashboard_Chart_State Dashboard_Error">{error}</p>
+              ) : orders.length === 0 ? (
+                <div className="Dashboard_Chart_State">
+                  <span>Nothing to chart yet</span>
+                  <p>Order statuses will appear here.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="Dashboard_Doughnut">
+                    <Doughnut
+                      data={statusData}
+                      options={{
+                        cutout: "76%",
+                        plugins: { legend: { display: false } },
+                        maintainAspectRatio: false,
+                      }}
+                    />
+                    <div className="Dashboard_Doughnut_Center">
+                      <strong>{orders.length}</strong>
+                      <span>orders</span>
+                    </div>
+                  </div>
+                  <ul className="Dashboard_Status_Legend">
+                    <li><span className="paid-dot" />Paid <strong>{paidOrders.length}</strong></li>
+                    <li><span className="pending-dot" />Pending <strong>{pendingOrders.length}</strong></li>
+                    <li>
+                      <span className="cancelled-dot" />Cancelled
+                      <strong>{statusData.datasets[0].data[2]}</strong>
+                    </li>
+                  </ul>
+                </>
+              )}
+            </article>
+          </section>
 
-        <section className="Bottom_Graph_Container">
-          <Line data={salesData} options={options} />
-        </section>
+          <section className="Dashboard_Panel Dashboard_Orders_Panel">
+            <header className="Dashboard_Panel_Header">
+              <div>
+                <span className="Dashboard_Eyebrow">THE LATEST</span>
+                <h2>Recent orders</h2>
+              </div>
+              <Link to="/orders">View all orders <span aria-hidden="true">↗</span></Link>
+            </header>
+
+            {loading ? (
+              <div className="Dashboard_Orders_State">
+                <Oval height={36} width={36} color="#6259e8" ariaLabel="Loading orders" />
+              </div>
+            ) : error ? (
+              <p className="Dashboard_Orders_State Dashboard_Error">{error}</p>
+            ) : orders.length === 0 ? (
+              <div className="Dashboard_Orders_State">
+                <span>It’s quiet in here — for now.</span>
+                <p>Your new orders will appear here as soon as they come in.</p>
+              </div>
+            ) : (
+              <div className="Dashboard_Table_Wrapper">
+                <table className="Dashboard_Table">
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th>Customer</th>
+                      <th>Category</th>
+                      <th>Status</th>
+                      <th className="amount-cell">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map((order) => (
+                      <tr key={order.id}>
+                        <td className="order-id">#{order.id.slice(-8)}</td>
+                        <td>{order.name || "—"}</td>
+                        <td>{order.category || "—"}</td>
+                        <td>
+                          <span className={`Dashboard_Status_Badge ${order.status.toLowerCase()}`}>
+                            <span />
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="amount-cell">{formatCurrency(order.subtotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </main>
       </div>
     </>
   );

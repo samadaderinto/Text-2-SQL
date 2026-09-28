@@ -9,3 +9,4 @@ class AppConfig(AppConfig):
         from .dependencies import di_setup
 
         di_setup()
+        from . import signals  # noqa: F401

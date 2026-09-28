@@ -224,9 +224,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             f"http://localhost:4174/auth/reset-password/{user.email}", permanent=True
         )
 
-    @extend_schema(
-        request=ResetPasswordSerializer, responses={status.HTTP_205_RESET_CONTENT: None}
-    )
+    @extend_schema(request=ResetPasswordSerializer, responses={status.HTTP_205_RESET_CONTENT: None})
     @action(detail=False, methods=["post"], url_path="reset-password/reset")
     def reset_password(self, request):
         serializer = ResetPasswordSerializer(data=request.data)

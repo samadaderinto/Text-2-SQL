@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export interface CustomerProps {
     last_name: ReactNode;
     id: string;

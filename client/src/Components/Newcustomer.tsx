@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { LuImagePlus } from "react-icons/lu";
 import { Header } from "../layouts/Header";
 import SideBar from "../layouts/SideBar";
 import api from "../utils/api";

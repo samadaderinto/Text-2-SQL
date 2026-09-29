@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
 import { AuthContext } from '../contexts/auth-context';
+import { notifyApiError } from '../utils/api-errors';
 
 
 
@@ -127,8 +128,7 @@ export const Signup = () => {
       try {
         const { email, password } = formState;
 
-        const response = await api.post(`/auth/signup/`, { email, password });
-        console.log(response);
+        await api.post(`/auth/signup/`, { email, password });
 
         setFormState({
           ...formState,
@@ -139,19 +139,8 @@ export const Signup = () => {
         toast.success('Sign up successful! A verification link has been sent to your email address.');
         setIsSignedIn(true)
 
-      } catch (error: any) {
-        if (error.response && error.response.status === 400) {
-          const errorData = error.response.data;
-          if (errorData.email && errorData.email.includes('exists')) {
-            setErrors({ ...errors, email: 'Email already exists. Please use a different email.' });
-            toast.error('Email already exists. Please use a different email.');
-          } else {
-            setErrors({ ...errors, ...errorData });
-            toast.error('Invalid signup details, please check your input.');
-          }
-        } else {
-          toast.error('Sign up failed. Please try again.');
-        }
+      } catch (error) {
+        notifyApiError(error, "Could not create your account. Please try again.");
       }
     }
 

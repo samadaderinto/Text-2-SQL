@@ -19,14 +19,66 @@ SQLite test database; no MySQL instance or external service is required.
 
 Product, customer, and order search is powered by Elasticsearch. Local Docker
 Compose starts Elasticsearch automatically and indexes existing records when
-the backend starts. Search indices are updated when these records are saved or
-deleted.
+the backend starts. Search index updates are queued when these records are
+saved or deleted.
+
+Repeated Elasticsearch searches and query-plan data retrievals are cached for
+300 seconds by default. Product, customer, and order changes invalidate the
+corresponding cached results after the database transaction commits. The
+default Django `LocMemCache` backend is process-local; configure `CACHE_BACKEND`
+and `CACHE_LOCATION` to use a shared Django cache backend in multi-process or
+multi-instance deployments. `DATA_CACHE_TIMEOUT` controls the cache lifetime
+in seconds.
 
 When deploying outside Compose, configure `ELASTICSEARCH_URL` (and optional
 `ELASTICSEARCH_USER` / `ELASTICSEARCH_PASSWORD` credentials), then run
 `python manage.py reindex_search` to initialize indices and index existing
 records. To recreate all indices, run `python manage.py reindex_search
 --rebuild`.
+
+## Background jobs
+
+The API queues query generation, audio transcription, email delivery, order
+exports, and search-index updates through Kafka. Job records are stored in the
+database so the worker can recover pending work if Kafka is temporarily
+unavailable. Start the Compose stack with `docker compose up --build` to run the
+worker alongside the API. Authenticated clients poll `/jobs/<job_id>/` for
+completion; order exports can then be downloaded from
+`/jobs/<job_id>/download/`. Configure `KAFKA_JOB_TOPIC` and
+`KAFKA_JOB_GROUP_ID` to override the local defaults. Audio uploads are stored
+until a worker finishes processing them, so multi-instance deployments must
+configure a shared Django storage backend for media files.
+
+## Logs and errors
+
+The root Compose stack includes a local observability pipeline:
+
+```bash
+docker compose up --build
+```
+
+Open Grafana at <http://localhost:3000> (default local login `admin` /
+`change-me-local`) and select the **AudQL application logs** dashboard. It
+includes log-volume and error trends, newest-first log details, and service,
+environment, and severity filters. For ad-hoc searching, use **Explore** and
+the provisioned Loki data source; filter by labels such as
+`{service="backend", level="error"}` and search message text with
+`|= "search phrase"`.
+
+Backend JSON logs go to the console and, in Compose, Kafka. Vector consumes
+`audql.logs` and ships events to Loki. Frontend uncaught exceptions,
+unhandled promise rejections, and API server errors are sent to a throttled
+backend endpoint and use the same pipeline. Events omit request bodies and
+authentication headers; email addresses and common credential patterns are
+redacted. Set `KAFKA_LOGGING_ENABLED=false` to keep backend logs on the console
+only, or `VITE_ERROR_REPORTING_ENABLED=false` to turn off browser reporting.
+The default Grafana credentials are for local development only; change them
+before exposing Grafana outside a trusted development machine.
+
+The services also run individually if needed: Django API on port 8000,
+Grafana on 3000, Loki on 3100, and Kafka on 9092. Keep the Kafka-to-Loki
+services on the same private network; do not expose Loki, Vector, or the
+unauthenticated local Kafka broker to the public internet.
 
 
 ## Installation

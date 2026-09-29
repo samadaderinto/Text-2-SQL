@@ -17,21 +17,27 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.http import JsonResponse
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
     SpectacularAPIView,
 )
-
-
-def health_check(request):
-    return JsonResponse({"status": "ok"})
+from app.observability import client_log
+from app.health import liveness_check, readiness_check
+from app.views import QueueJobDownloadView, QueueJobStatusView
 
 
 urlpatterns = [
-    path("health/", health_check, name="health"),
+    path("health/", readiness_check, name="health"),
+    path("health/live/", liveness_check, name="health-live"),
+    path("logs/client/", client_log, name="client-log"),
+    path("jobs/<uuid:job_id>/", QueueJobStatusView.as_view(), name="queue-job-status"),
+    path(
+        "jobs/<uuid:job_id>/download/",
+        QueueJobDownloadView.as_view(),
+        name="queue-job-download",
+    ),
     path("admin/", admin.site.urls),
     path("", include("app.urls")),
     path("docs/", SpectacularAPIView.as_view(), name="schema"),

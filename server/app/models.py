@@ -2,7 +2,10 @@ from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
+import uuid
 
+from django.core.serializers.json import DjangoJSONEncoder
+from django.utils import timezone
 
 
 
@@ -242,3 +245,47 @@ class Query(models.Model):
     
     class Meta:
         db_table = "query"
+
+
+class QueueJob(models.Model):
+    class Kind(models.TextChoices):
+        SEARCH_INDEX = "search.index", "Search index"
+        SEARCH_DELETE = "search.delete", "Search delete"
+        QUERY_GENERATE = "query.generate", "Generate query"
+        QUERY_AUDIO = "query.audio", "Transcribe audio query"
+        EMAIL_ACTIVATION = "email.activation", "Activation email"
+        EMAIL_PASSWORD_RESET = "email.password_reset", "Password reset email"
+        ORDERS_EXPORT = "orders.export", "Export orders"
+
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        RUNNING = "running", "Running"
+        SUCCEEDED = "succeeded", "Succeeded"
+        FAILED = "failed", "Failed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="queue_jobs",
+    )
+    kind = models.CharField(max_length=40, choices=Kind.choices)
+    status = models.CharField(
+        max_length=12, choices=Status.choices, default=Status.QUEUED, db_index=True
+    )
+    payload = models.JSONField(default=dict)
+    result = models.JSONField(
+        null=True, blank=True, encoder=DjangoJSONEncoder
+    )
+    error = models.CharField(max_length=500, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    available_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "queue_job"
+        ordering = ["created_at"]

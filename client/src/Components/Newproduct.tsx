@@ -6,6 +6,7 @@ import { ProductFormStateProps } from "../types/add-product-state";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../utils/api";
+import { notifyApiError } from "../utils/api-errors";
 import { useNavigate } from "react-router-dom";
 
 
@@ -52,7 +53,7 @@ export const NewProduct = () => {
         })
 
       } catch (error) {
-        console.log(error)
+        notifyApiError(error, "Could not load the store. Please try again.");
       }
     }
 
@@ -131,8 +132,7 @@ export const NewProduct = () => {
         toast.success('Product created successfully!');
         nav("/product")
       } catch (error) {
-        console.error('Error creating product:', error);
-        toast.error('Failed to create product. Please try again.');
+        notifyApiError(error, "Could not create the product. Please try again.");
       }
     } else {
       toast.error('Please fill in all required fields correctly.');
@@ -259,4 +259,3 @@ export const NewProduct = () => {
     </div>
   );
 };
-

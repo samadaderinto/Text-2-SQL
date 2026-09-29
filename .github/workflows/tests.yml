@@ -85,3 +85,98 @@ jobs:
 
       - name: Run backend tests
         run: pytest
+
+  report-pr-status:
+    name: Report PR check status
+    if: >-
+      always() &&
+      github.event_name == 'pull_request' &&
+      (needs.frontend.result == 'failure' ||
+       needs.backend.result == 'failure' ||
+       (needs.frontend.result == 'success' && needs.backend.result == 'success'))
+    needs:
+      - frontend
+      - backend
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Add failure summary to workflow run
+        if: needs.frontend.result == 'failure' || needs.backend.result == 'failure'
+        env:
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "## PR checks need attention"
+            echo
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| Frontend tests and build | $FRONTEND_RESULT |"
+            echo "| Backend tests | $BACKEND_RESULT |"
+            echo
+            echo "Review the failed job logs: [$RUN_URL]($RUN_URL)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Update PR incident summary
+        uses: actions/github-script@v7
+        env:
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const marker = '<!-- audql-pr-check-failure -->';
+            const failed =
+              process.env.FRONTEND_RESULT === 'failure' ||
+              process.env.BACKEND_RESULT === 'failure';
+            const body = failed
+              ? [
+                  marker,
+                  '## PR checks need attention',
+                  '',
+                  `- Frontend tests and build: **${process.env.FRONTEND_RESULT}**`,
+                  `- Backend tests: **${process.env.BACKEND_RESULT}**`,
+                  '',
+                  `[Review the failed job logs](${process.env.RUN_URL}).`,
+                ].join('\n')
+              : [
+                  marker,
+                  '## PR checks recovered',
+                  '',
+                  'Frontend tests/build and backend tests are passing again.',
+                  '',
+                  `[View the successful workflow run](${process.env.RUN_URL}).`,
+                ].join('\n');
+
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                per_page: 100,
+              });
+              const existing = comments.find((comment) =>
+                comment.user?.login === 'github-actions[bot]' &&
+                comment.body?.includes(marker)
+              );
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id,
+                  body,
+                });
+              } else if (failed) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body,
+                });
+              }
+            } catch (error) {
+              core.warning(`Could not post the PR summary (the run summary is still available): ${error.message}`);
+            }

@@ -982,6 +982,58 @@ button {
     }
 }
 
+.Signup_Container .White_Section,
+.Forgot_Container .White_Section {
+    > span:first-child {
+        border-color: #e5e2fb;
+        color: #6259e8;
+    }
+
+    .Input_Container:focus-within {
+        border-color: #817af0;
+        box-shadow: 0 0 0 4px rgba(98, 89, 232, 0.12), 0 14px 28px rgba(35, 36, 67, 0.07);
+    }
+
+    .Signup_Btn,
+    .Bottom_Container .Login_Btn,
+    > .Login_Btn {
+        background: linear-gradient(135deg, #5c53dc 0%, #7068eb 68%, #8981f7 100%);
+        box-shadow: 0 14px 30px rgba(98, 89, 232, 0.23);
+
+        &:hover {
+            background: linear-gradient(135deg, #5249d5 0%, #6259e8 68%, #7a72ef 100%);
+            box-shadow: 0 18px 34px rgba(98, 89, 232, 0.3);
+        }
+    }
+
+    article p,
+    > p:not(.Subtitle) {
+        color: #6259e8;
+    }
+}
+
+.Forgot_Container {
+    background:
+        radial-gradient(circle at 8% 12%, rgba(98, 89, 232, 0.11), transparent 29%),
+        linear-gradient(135deg, #f7f7ff 0%, #f1f1fc 48%, #fafaff 100%);
+
+    .White_Section {
+        .Back_Link {
+            color: #6259e8;
+        }
+
+        .Login_Btn {
+            background: linear-gradient(135deg, #5c53dc 0%, #7068eb 68%, #8981f7 100%);
+            box-shadow: 0 14px 30px rgba(98, 89, 232, 0.23);
+
+            &:hover {
+                background: linear-gradient(135deg, #5249d5 0%, #6259e8 68%, #7a72ef 100%);
+                box-shadow: 0 18px 34px rgba(98, 89, 232, 0.3);
+            }
+        }
+    }
+}
+
 @media (max-width: 1100px) {
     :root {
         --sidebar-width: 224px;
@@ -1238,5 +1290,543 @@ button {
     *::after {
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
+    }
+}
+
+.Forgot_Container,
+.Newpassword_Container {
+    min-height: 100vh;
+    height: auto;
+    display: grid;
+    grid-template-columns: minmax(420px, 0.92fr) minmax(460px, 1.08fr);
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 8% 12%, rgba(98, 89, 232, 0.11), transparent 29%),
+        linear-gradient(135deg, #f7f7ff 0%, #f1f1fc 48%, #fafaff 100%);
+    color: var(--ink);
+}
+
+.Forgot_Container .Blue_Section,
+.Newpassword_Container .Newpassword_Blue {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(32px, 5vw, 72px);
+    background:
+        radial-gradient(ellipse at 18% 16%, rgba(198, 194, 255, 0.32), transparent 40%),
+        radial-gradient(ellipse at 83% 82%, rgba(114, 104, 247, 0.45), transparent 38%),
+        linear-gradient(145deg, #37317f 0%, #5149c9 52%, #756cf3 100%);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 28px;
+        pointer-events: none;
+    }
+
+    &::after {
+        content: 'Turn plain language into clear store insights, faster.';
+        width: min(100%, 620px);
+        position: relative;
+        z-index: 1;
+        display: block;
+        margin-top: auto;
+        font-size: clamp(38px, 5vw, 70px);
+        font-weight: 600;
+        line-height: 1.04;
+        text-wrap: balance;
+    }
+
+    > span {
+        width: fit-content;
+        height: auto;
+        position: relative;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.26);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        backdrop-filter: blur(14px);
+    }
+}
+
+.Newpassword_Container .Newpassword_White {
+    width: 100%;
+    min-height: 100vh;
+    height: auto;
+    justify-content: center;
+    padding: clamp(32px, 6vw, 80px);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(18px);
+    position: relative;
+    z-index: 1;
+
+    > span:first-child {
+        width: fit-content;
+        height: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 34px;
+        padding: 10px 14px;
+        border: 1px solid #e5e2fb;
+        border-radius: 999px;
+        background: #fff;
+        color: #6259e8;
+        font-size: 15px;
+        font-weight: 600;
+        box-shadow: 0 10px 28px rgba(35, 36, 67, 0.08);
+    }
+
+    h1 {
+        width: min(100%, 560px);
+        margin: 0 0 12px;
+        color: #26263b;
+        font-size: clamp(34px, 4.2vw, 52px);
+        font-weight: 680;
+        line-height: 1.06;
+        letter-spacing: -1.2px;
+    }
+
+    .Newpassword_Subtitle {
+        width: 100%;
+        max-width: 480px;
+        margin: 0 0 24px;
+        color: #85889c;
+        font-size: 14px;
+    }
+
+    label {
+        width: 100%;
+        max-width: 480px;
+        height: auto;
+        margin: 0 0 8px;
+        color: #45465b;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .Input_Container {
+        width: 100%;
+        max-width: 480px;
+        min-height: 54px;
+        height: auto;
+        align-items: center;
+        margin: 0 0 13px;
+        padding: 0 14px;
+        border: 1px solid #e5e5ee;
+        border-radius: 11px;
+        background: #fbfbfd;
+        box-shadow: none;
+
+        &:focus-within {
+            border-color: #817af0;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(98, 89, 232, 0.12);
+        }
+
+        input {
+            width: 100%;
+            height: 52px;
+            min-width: 0;
+            padding: 0;
+            color: #26263b;
+            font-size: 14px;
+        }
+
+        > p {
+            width: 34px;
+            min-width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            border-radius: 9px;
+            color: #85889c;
+            cursor: pointer;
+
+            &:hover {
+                background: #f0efff;
+                color: #6259e8;
+            }
+        }
+    }
+
+    > h2 {
+        width: 100%;
+        max-width: 480px;
+        margin: 0 0 18px;
+        color: #85889c;
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+
+    .Password_strength {
+        width: 100%;
+        max-width: 480px;
+        height: auto;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 0 0 24px;
+
+        > span {
+            width: auto;
+            height: 5px;
+            flex: 1 1 0;
+            border-radius: 999px;
+            background: #e7e7ef;
+        }
+
+        h3 {
+            width: auto;
+            height: auto;
+            padding: 0 0 0 4px;
+            color: #20a779;
+            font-size: 11px;
+            font-weight: 600;
+        }
+    }
+
+    .Login_Btn {
+        width: 100%;
+        max-width: 480px;
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 8px;
+        padding: 0 18px;
+        border: 0;
+        border-radius: 11px;
+        background: linear-gradient(135deg, #5c53dc 0%, #7068eb 68%, #8981f7 100%);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 650;
+        cursor: pointer;
+        box-shadow: 0 14px 30px rgba(98, 89, 232, 0.23);
+
+        &:hover {
+            background: linear-gradient(135deg, #5249d5 0%, #6259e8 68%, #7a72ef 100%);
+            box-shadow: 0 18px 34px rgba(98, 89, 232, 0.3);
+            transform: translateY(-1px);
+        }
+    }
+}
+
+.Newpassword_Container .Forgot_Pop {
+    position: fixed;
+    z-index: 40;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(29, 27, 66, 0.42);
+    backdrop-filter: blur(5px);
+
+    > div {
+        width: min(100%, 420px);
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+        padding: 30px 26px 24px;
+        border: 1px solid #eeedf5;
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 22px 56px rgba(35, 36, 67, 0.2);
+        text-align: center;
+
+        h3 {
+            color: #292a3e;
+            font-size: 23px;
+        }
+
+        p {
+            color: #77788c;
+            font-size: 14px;
+        }
+
+        .Login_Btn {
+            margin: 0;
+        }
+    }
+}
+
+.Logout_Container {
+    min-height: 100vh;
+    height: auto;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(98, 89, 232, 0.11), transparent 28%),
+        radial-gradient(circle at 85% 90%, rgba(98, 89, 232, 0.08), transparent 30%),
+        var(--canvas);
+
+    > article {
+        width: min(100%, 480px);
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: clamp(28px, 5vw, 48px);
+        border: 1px solid #eeedf5;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 24px 70px rgba(35, 36, 67, 0.11);
+        text-align: center;
+
+        .Logout_Brand {
+            width: auto;
+            height: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 34px;
+            color: #6259e8;
+            font-size: 14px;
+            font-weight: 650;
+        }
+
+        .Logout_Icon {
+            width: 58px;
+            height: 58px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 20px;
+            border-radius: 18px;
+            background: #f0efff;
+            color: #6259e8;
+            font-size: 26px;
+            font-weight: 700;
+            transform: rotate(45deg);
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            padding: 0;
+            color: #292a3e;
+            font-size: clamp(23px, 4vw, 29px);
+            font-weight: 680;
+            letter-spacing: -0.7px;
+        }
+
+        > p {
+            max-width: 340px;
+            margin: 0;
+            color: #85889c;
+            font-size: 13px;
+        }
+
+        .Logout_Action_Row {
+            width: 100%;
+            height: auto;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 10px;
+            margin-top: 30px;
+
+            button {
+                width: 100%;
+                min-height: 48px;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 13px;
+            }
+
+            .Blue_btn {
+                border: 0;
+                background: #6259e8;
+                color: #fff;
+                box-shadow: 0 8px 18px rgba(98, 89, 232, 0.2);
+
+                &:hover {
+                    background: #5249d5;
+                    transform: translateY(-1px);
+                }
+            }
+
+            .White_btn {
+                border: 1px solid #e5e5ee;
+                background: #fff;
+                color: #626377;
+
+                &:hover {
+                    border-color: #cbc9ef;
+                    background: #f8f7ff;
+                }
+            }
+        }
+    }
+}
+
+.Not_Found_Container {
+    min-height: 100vh;
+    height: auto;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 14% 16%, rgba(98, 89, 232, 0.12), transparent 29%),
+        radial-gradient(circle at 87% 86%, rgba(98, 89, 232, 0.1), transparent 31%),
+        var(--canvas);
+
+    .Content_container {
+        width: min(100%, 700px);
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: clamp(24px, 5vw, 50px);
+        text-align: center;
+
+        .Not_Found_Brand {
+            margin-bottom: 30px;
+            color: #6259e8;
+            font-size: 12px;
+            font-weight: 750;
+            letter-spacing: 2px;
+        }
+
+        .Not_Found_Code {
+            color: #e6e4fb;
+            font-size: clamp(110px, 23vw, 200px);
+            font-weight: 800;
+            letter-spacing: -0.09em;
+            line-height: 0.9;
+            text-shadow: 0 12px 35px rgba(98, 89, 232, 0.08);
+        }
+
+        h1 {
+            margin: 28px 0 10px;
+            padding: 0;
+            color: #292a3e;
+            font-size: clamp(25px, 4vw, 36px);
+            font-weight: 680;
+            letter-spacing: -1px;
+        }
+
+        p {
+            max-width: 440px;
+            margin: 0;
+            padding: 0;
+            color: #85889c;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .Not_Found_Actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+
+            button {
+                min-height: 46px;
+                padding: 0 18px;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 13px;
+            }
+
+            .Not_Found_Primary {
+                border: 1px solid #6259e8;
+                background: #6259e8;
+                color: #fff;
+                box-shadow: 0 8px 18px rgba(98, 89, 232, 0.2);
+
+                &:hover {
+                    background: #5249d5;
+                    transform: translateY(-1px);
+                }
+            }
+
+            .Not_Found_Secondary {
+                border: 1px solid #e5e5ee;
+                background: #fff;
+                color: #626377;
+
+                &:hover {
+                    border-color: #cbc9ef;
+                    background: #f8f7ff;
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 980px) {
+    .Forgot_Container,
+    .Newpassword_Container {
+        grid-template-columns: 1fr;
+    }
+
+    .Forgot_Container .Blue_Section,
+    .Newpassword_Container .Newpassword_Blue {
+        display: none;
+    }
+
+    .Newpassword_Container .Newpassword_White {
+        padding: clamp(26px, 7vw, 54px);
+    }
+}
+
+@media (max-width: 560px) {
+    .Newpassword_Container .Newpassword_White {
+        padding: 24px 18px;
+
+        > span:first-child {
+            margin-bottom: 28px;
+        }
+
+        h1 {
+            font-size: 36px;
+        }
+
+        .Password_strength {
+            gap: 5px;
+        }
+    }
+
+    .Logout_Container {
+        padding: 16px;
+
+        > article {
+            border-radius: 18px;
+        }
+    }
+
+    .Not_Found_Container .Content_container {
+        padding-inline: 6px;
+
+        .Not_Found_Actions {
+            width: 100%;
+            flex-direction: column;
+
+            button {
+                width: 100%;
+            }
+        }
     }
 }

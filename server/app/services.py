@@ -10,8 +10,8 @@ from django.utils.encoding import force_bytes, smart_str
 from django.db.models import Q
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.core.mail import send_mail
 from django.db import transaction
+from django.core.cache import cache
 
 from typing import Type
 from openai import OpenAI
@@ -20,6 +20,7 @@ from rest_framework.response import Response
 
 
 from utils.algorithms import TokenGenerator, auth_token
+from .data_cache import get_data_cache_version, make_data_cache_key
 from .search_index import SEARCH_DEFINITIONS, ensure_search_indices, get_elasticsearch_client
 
 from .serializers import (
@@ -70,24 +71,18 @@ class AuthService:
         self.Store = Store
         self.Notification = Notification
 
-    def get_base_url(self, request):
-        scheme = request.scheme
-        host = request.get_host()
-        return f"{scheme}://{host}"
-
     def send_activation_mail(self, request, email):
         user = get_object_or_404(self.User, email=email)
-        uidb64 = urlsafe_base64_encode(force_bytes(user.id))
-        token = TokenGenerator().make_token(user)
-        link = f"{self.get_base_url(request)}/auth/activate/{uidb64}/{token}/"
-        absolute_url = request.build_absolute_uri(link)
+        from .job_queue import enqueue_job
+        from .models import QueueJob
 
-        send_mail(
-            f"Welcome, {email}",
-            f"This is the link to verify your email. {absolute_url}",
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
+        enqueue_job(
+            QueueJob.Kind.EMAIL_ACTIVATION,
+            {
+                "user_id": user.pk,
+                "api_origin": request.build_absolute_uri("/").rstrip("/"),
+            },
+            user=user,
         )
 
     @transaction.atomic
@@ -187,6 +182,22 @@ class SearchService:
     def search_records(
         self, resource, user, query="", offset=0, limit=15, filters=None
     ):
+        cache_key = make_data_cache_key(
+            "search-records",
+            {
+                "resource": resource,
+                "user_id": user.pk,
+                "query": query,
+                "offset": offset,
+                "limit": limit,
+                "filters": filters or {},
+                "version": get_data_cache_version([resource]),
+            },
+        )
+        cached_result = cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+
         definition = SEARCH_DEFINITIONS[resource]
         client = get_elasticsearch_client()
         ensure_search_indices(client, [resource])
@@ -212,9 +223,23 @@ class SearchService:
         total = response["hits"]["total"]
         if isinstance(total, dict):
             total = total["value"]
-        return [hit["_id"] for hit in hits], total
+        result = ([hit["_id"] for hit in hits], total)
+        cache.set(cache_key, result, timeout=settings.CACHES["default"]["TIMEOUT"])
+        return result
 
     def elastic_search(self, search_query, user):
+        cache_key = make_data_cache_key(
+            "elastic-search",
+            {
+                "user_id": user.pk,
+                "query": search_query,
+                "version": get_data_cache_version(SEARCH_DEFINITIONS),
+            },
+        )
+        cached_result = cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+
         client = get_elasticsearch_client()
         ensure_search_indices(client)
         response = client.search(
@@ -237,11 +262,13 @@ class SearchService:
             {"resource": hit["_index"].removeprefix("audql-"), **hit["_source"]}
             for hit in hits
         ]
-        return {
+        result = {
             "status": "success",
             "data": result_data,
             "message": f"{len(result_data)} results found for query: {search_query}",
         }
+        cache.set(cache_key, result, timeout=settings.CACHES["default"]["TIMEOUT"])
+        return result
 
     def parse_openai_response(self, response_json):
         try:
@@ -381,7 +408,20 @@ Use filters only for fields that naturally belong to that resource.
         }
 
     def execute_query_plan(self, user, plan):
-        config = QUERY_RESOURCES[plan["resource"]]
+        resource = plan["resource"]
+        cache_key = make_data_cache_key(
+            "query-plan",
+            {
+                "user_id": user.pk,
+                "plan": plan,
+                "version": get_data_cache_version([resource]),
+            },
+        )
+        cached_result = cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+        config = QUERY_RESOURCES[resource]
         queryset = config["model"].objects.filter(**{config["owner_filter"]: user})
 
         search = plan.get("search")
@@ -403,7 +443,7 @@ Use filters only for fields that naturally belong to that resource.
         serializer = config["serializer"](rows, many=True)
         sql_preview = str(queryset.query)
 
-        return {
+        result = {
             "status": "success",
             "message": f"Found {len(rows)} {plan['resource']}.",
             "plan": plan,
@@ -411,6 +451,8 @@ Use filters only for fields that naturally belong to that resource.
             "total_count": total_count,
             "results": serializer.data,
         }
+        cache.set(cache_key, result, timeout=settings.CACHES["default"]["TIMEOUT"])
+        return result
 
     def generate_query_response(self, user, text):
         plan = self.build_query_plan(text)

@@ -18,6 +18,26 @@ Then open:
 - Frontend: http://localhost:4174
 - Backend: http://localhost:8000
 
+## Health checks
+
+The backend exposes two probes:
+
+- `GET /health/live/` confirms that Django is responding and does not depend on
+  external services.
+- `GET /health/` checks database connectivity, cache read/write access, and
+  Elasticsearch when search is enabled. It returns HTTP 503 if a required
+  check fails; the response names failing services without exposing connection
+  details.
+
+Compose uses the readiness endpoint for the backend container health status,
+and waits for it before starting the frontend. Check service health with:
+
+```bash
+docker compose ps
+curl -i http://localhost:8000/health/
+curl -i http://localhost:8000/health/live/
+```
+
 ## Environment
 
 The Compose file intentionally does not load `server/.env` automatically. That prevents `docker compose config` and similar commands from printing local secrets.
@@ -87,3 +107,29 @@ add these repository Actions secrets using each service's deploy hook URL:
 The Blueprint generates Django's `SECRET_KEY` and prompts for `OPENAI_API_KEY`
 during initial setup. Configure email-provider credentials and Elasticsearch
 if those features are needed.
+
+## Incident response
+
+The `Tests` workflow adds a failure summary to the workflow run and comments on
+the pull request when either frontend or backend checks fail. If a later run
+passes both checks, the workflow updates its PR comment to show recovery.
+Pull requests from forks may not permit write access for the GitHub token; the
+workflow run summary remains available in that case.
+
+The `Production incident monitor` workflow checks the production API readiness
+endpoint every five minutes. It probes up to five times, 15 seconds apart, and
+opens one tracked GitHub issue plus sends an SMS after three consecutive
+failures. While the incident remains open, duplicate alert texts are
+suppressed. When readiness recovers, the workflow closes the issue and sends a
+recovery SMS if an incident alert was sent.
+
+Configure these repository Actions secrets before enabling the monitor:
+
+- `PRODUCTION_HEALTHCHECK_URL`: the production API URL ending in `/health/`
+- `AFRICASTALKING_USERNAME`: your Africa's Talking production username
+- `AFRICASTALKING_API_KEY`: the API key from your Africa's Talking account
+- `INCIDENT_SMS_RECIPIENT`: the on-call phone number in E.164 format
+
+The workflow sends SMS directly from GitHub Actions to Africa's Talking. Keep
+the API key and recipient in Actions secrets; do not put them in workflow files
+or commit them. Scheduled workflows run from the repository's default branch.

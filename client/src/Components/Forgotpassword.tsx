@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../utils/api";
+import { notifyApiError } from "../utils/api-errors";
 
 export const ForgotPassword = () => {
   const [pop, setPop] = useState(false);
@@ -34,48 +35,51 @@ export const ForgotPassword = () => {
         toast.success('Password reset email sent successfully!');
         setPop(true);
       }
-    } catch (error: any) {
-      if (error.response && error.response.status === 404) {
-        toast.error('Email address not found. Please check and try again.');
-      } else {
-        toast.error('Failed to send reset email. Please try again later.');
-      }
+    } catch (error) {
+      notifyApiError(error, "Could not request a password reset. Please try again.");
     }
   };
 
-
   return (
     <div className="Forgot_Container">
-      <section className="Forgot_White">
+      <section className="White_Section">
         <span><PiDiamondsFourFill /> EchoCart</span>
-        <p onClick={() => nav('/auth/signin')}><FaArrowLeft /></p>
-        <h1>Forgot Your Password?</h1>
-        <h3>Send your email address to reset your password & create a new one</h3>
-        <label htmlFor="email">Email</label>
+
+        <button type="button" className="Back_Link" onClick={() => nav('/auth/signin')}>
+          <FaArrowLeft /> Back to sign in
+        </button>
+
+        <h1>Forgot password?</h1>
+        <p className="Subtitle">No stress — we'll send a secure reset link to your email.</p>
+
+        <label htmlFor="email">Email address</label>
         <div className="Input_Container" tabIndex={0}>
           <input
-            type="text"
+            id="email"
+            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Input your registered email"
+            placeholder="Enter your registered email"
           />
         </div>
-        <div className="Login_Btn" onClick={Reset}>Reset Password</div>
+
+        <div className="Bottom_Container">
+          <div className="Login_Btn" onClick={Reset}>Send reset link</div>
+        </div>
       </section>
-      <section className="Forgot_Blue">
-        <h1>Easiest Way To Manage Your Store</h1>
+
+      <section className="Blue_Section">
+        <span><PiDiamondsFourFill /> EchoCart</span>
       </section>
 
       {pop && (
         <section className="Forgot_Pop">
           <div>
-            <h3>Password Reset</h3>
+            <h3>Password reset sent</h3>
             <p>
-              We have sent an email to <h4>{email}</h4>
-              with instructions to reset your password. Please
-              check your inbox to get started.
+              We’ve sent a reset email to <strong>{email}</strong> with instructions to get back into your account.
             </p>
-            <span onClick={() => setPop(false)} className="Login_Btn">Go Back</span>
+            <span onClick={() => setPop(false)} className="Login_Btn">Go back</span>
           </div>
         </section>
       )}

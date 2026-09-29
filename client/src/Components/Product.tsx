@@ -8,6 +8,7 @@ import Sidebar from '../layouts/Sidebar';
 import { useNavigate } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
 import api from '../utils/api';
+import { notifyApiError } from '../utils/api-errors';
 import { ClipLoader } from 'react-spinners';
 
 const initialState = {
@@ -61,9 +62,8 @@ export const Product = () => {
         dispatch({ type: 'SET_LOADING', payload: false });
       })
       .catch(error => {
-        console.error("Error fetching data", error);
+        notifyApiError(error, "Could not load products. Please try again.");
         dispatch({ type: 'SET_LOADING', payload: false });
-        dispatch({ type: 'SET_TOTAL_PAGES', payload: 1 });
       });
   };
 
@@ -95,9 +95,7 @@ export const Product = () => {
       id: editingId,
       ...editValues
     })
-      .then(response => {
-
-        console.log(response)
+      .then(() => {
         const updatedData = data.map((item: any) =>
           item.id === editingId ? { ...item, ...editValues } : item
         );
@@ -105,7 +103,7 @@ export const Product = () => {
         dispatch({ type: 'SET_EDITING_ID', payload: null });
       })
       .catch(error => {
-        console.error("Error updating product", error);
+        notifyApiError(error, "Could not update this product. Please try again.");
       });
   };
 
@@ -114,7 +112,7 @@ export const Product = () => {
       await api.delete(`/product/delete/${id}/`);
       dispatch({ type: 'SET_DATA', payload: data.filter((item: any) => item.id !== id) });
     } catch (error) {
-      console.error("Error deleting product", error);
+      notifyApiError(error, "Could not delete this product. Please try again.");
     }
   };
 

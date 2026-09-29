@@ -1,6 +1,4 @@
-import csv
 import json
-from io import StringIO
 import logging
 
 
@@ -12,7 +10,6 @@ from django.utils.encoding import smart_str
 from django.utils.http import urlsafe_base64_decode
 from django.core.files.storage import default_storage
 from django.http import HttpResponse
-from django.core.mail import send_mail
 
 
 from rest_framework import viewsets, status
@@ -20,10 +17,12 @@ from rest_framework.response import Response
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework.decorators import action, parser_classes
 from rest_framework import serializers
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 
-from .models import Customer, Order, Product, Store, User
+from .models import Customer, Order, Product, QueueJob, Store, User
 from .permissions import ServerAccessPolicy
 from .serializers import (
     AdminSerializer,
@@ -50,6 +49,7 @@ from .services import (
     SettingsService,
     StoreService,
 )
+from .job_queue import enqueue_job
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_spectacular.utils import extend_schema
@@ -71,13 +71,6 @@ def decode_uidb64(uidb64):
         return User._meta.pk.to_python(user_id)
     except (DjangoValidationError, TypeError, ValueError) as exc:
         raise serializers.ValidationError({"uidb64": "Invalid user identifier."}) from exc
-
-
-def csv_safe_cell(value):
-    value = str(value)
-    if value.lstrip(" \t\r\n").startswith(("=", "+", "-", "@")):
-        return f"'{value}"
-    return value
 
 
 def parse_positive_int(value, default, field_name):
@@ -258,14 +251,15 @@ class AuthViewSet(viewsets.GenericViewSet):
         serializer = EmailSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"]
-        if self.User.objects.filter(email=email).exists():
-            absolute_url = self.auth_service.request_reset_password_user(request, email)
-            send_mail(
-                f"Click on link to reset password, {email}",
-                f"This is the link to reset password. {absolute_url}",
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
+        user = self.User.objects.filter(email=email).first()
+        if user is not None:
+            enqueue_job(
+                QueueJob.Kind.EMAIL_PASSWORD_RESET,
+                {
+                    "user_id": user.pk,
+                    "api_origin": request.build_absolute_uri("/").rstrip("/"),
+                },
+                user=user,
             )
         return Response(
             {
@@ -356,28 +350,22 @@ class SearchViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
 
         audio_file = serializer.validated_data["file"]
-        file_path = None
+        file_path = default_storage.save(
+            self.search_service.create_audio_upload_name(), audio_file
+        )
         try:
-            file_path = default_storage.save(
-                self.search_service.create_audio_upload_name(), audio_file
+            job = enqueue_job(
+                QueueJob.Kind.QUERY_AUDIO,
+                {"user_id": request.user.pk, "storage_path": file_path},
+                user=request.user,
             )
-            with default_storage.open(file_path, "rb") as webm_file:
-                query_response = self.search_service.generate_query_response_from_audio(
-                    request.user, webm_file
-                )
-
-            logger.info("Processed uploaded audio for user %s", request.user.pk)
-            return Response(data=query_response, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            logger.error(f"Error processing audio file: {str(e)}")
-            return Response(
-                {"detail": "Error processing file."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-        finally:
-            if file_path is not None:
-                default_storage.delete(file_path)
+        except Exception:
+            default_storage.delete(file_path)
+            raise
+        return Response(
+            {"job_id": str(job.pk), "status": job.status},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     @extend_schema(request=QueryPlanSerializer, responses={status.HTTP_200_OK: None})
     @action(detail=False, methods=["post"], url_path="generate")
@@ -385,23 +373,18 @@ class SearchViewSet(viewsets.GenericViewSet):
         serializer = QueryPlanSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        try:
-            query_response = self.search_service.generate_query_response(
-                request.user,
-                serializer.validated_data["prompt"],
-            )
-            return Response(data=query_response, status=status.HTTP_200_OK)
-        except ValueError as exc:
-            return Response(
-                {"status": "error", "message": str(exc)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except Exception as exc:
-            logger.error(f"Error generating query plan: {str(exc)}")
-            return Response(
-                {"status": "error", "message": "Unable to generate query."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        job = enqueue_job(
+            QueueJob.Kind.QUERY_GENERATE,
+            {
+                "user_id": request.user.pk,
+                "prompt": serializer.validated_data["prompt"],
+            },
+            user=request.user,
+        )
+        return Response(
+            {"job_id": str(job.pk), "status": job.status},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     @extend_schema(responses={201: None})
     @action(detail=False, methods=["put"], url_path="upload/update")
@@ -694,50 +677,80 @@ class OrderViewSet(viewsets.GenericViewSet):
     @extend_schema(responses={200: None})
     @action(detail=False, methods=["get"], url_path="download")
     def download_orders(self, request):
-        orders = Order.objects.filter(user=request.user)
-
-        buffer = StringIO()
-        writer = csv.writer(buffer)
-        writer.writerow(["Order ID", "Customer Name", "Status", "Date & Time", "Price"])
-
-        for order in orders:
-            writer.writerow(
-                [
-                    csv_safe_cell(order.id),
-                    csv_safe_cell(order.user.first_name),
-                    csv_safe_cell(order.status),
-                    csv_safe_cell(order.created),
-                    csv_safe_cell(order.subtotal),
-                ]
-            )
-
-        buffer.seek(0)
-        response = HttpResponse(buffer.getvalue(), content_type="text/csv")
-        response["Content-Disposition"] = 'attachment; filename="orders.csv"'
-        return response
+        job = enqueue_job(
+            QueueJob.Kind.ORDERS_EXPORT,
+            {"user_id": request.user.pk},
+            user=request.user,
+        )
+        return Response(
+            {"job_id": str(job.pk), "status": job.status},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     @extend_schema(responses={200: None})
     @action(detail=False, methods=["get"], url_path="download/(?P<order_id>[^/.]+)")
     def download_order(self, request, order_id):
-        order = get_object_or_404(Order, id=order_id, user=request.user)
-
-        buffer = StringIO()
-        writer = csv.writer(buffer)
-        writer.writerow(["Order ID", "Customer Name", "Status", "Date & Time", "Price"])
-
-        writer.writerow(
-            [
-                csv_safe_cell(order.id),
-                csv_safe_cell(order.user.first_name),
-                csv_safe_cell(order.status),
-                csv_safe_cell(order.created),
-                csv_safe_cell(order.subtotal),
-            ]
+        get_object_or_404(Order, id=order_id, user=request.user)
+        job = enqueue_job(
+            QueueJob.Kind.ORDERS_EXPORT,
+            {"user_id": request.user.pk, "order_id": order_id},
+            user=request.user,
+        )
+        return Response(
+            {"job_id": str(job.pk), "status": job.status},
+            status=status.HTTP_202_ACCEPTED,
         )
 
-        buffer.seek(0)
-        response = HttpResponse(buffer.getvalue(), content_type="text/csv")
-        response["Content-Disposition"] = f'attachment; filename="order_{order.id}.csv"'
+
+class QueueJobView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get_job(self, job_id, user):
+        return get_object_or_404(QueueJob, pk=job_id, user=user)
+
+
+class QueueJobStatusView(QueueJobView):
+    def get(self, request, job_id):
+        job = self.get_job(job_id, request.user)
+        response_data = {
+            "job_id": str(job.pk),
+            "kind": job.kind,
+            "status": job.status,
+        }
+        if job.status == QueueJob.Status.SUCCEEDED:
+            response_data["result"] = job.result
+        elif job.status == QueueJob.Status.FAILED:
+            response_data["error"] = job.error or "The background task failed."
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class QueueJobDownloadView(QueueJobView):
+    def get(self, request, job_id):
+        job = self.get_job(job_id, request.user)
+        if job.kind != QueueJob.Kind.ORDERS_EXPORT:
+            return Response(
+                {"detail": "This job does not contain an order export."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if job.status == QueueJob.Status.FAILED:
+            return Response(
+                {"detail": job.error or "The background task failed."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if job.status != QueueJob.Status.SUCCEEDED or not isinstance(job.result, dict):
+            return Response(
+                {"detail": "The export is not ready yet."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        content = job.result.get("content")
+        filename = job.result.get("filename")
+        if not isinstance(content, str) or not isinstance(filename, str):
+            return Response(
+                {"detail": "This job does not contain a downloadable export."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        response = HttpResponse(content, content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
 

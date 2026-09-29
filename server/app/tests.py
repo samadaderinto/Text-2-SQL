@@ -5,6 +5,7 @@ from pathlib import Path
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.test import TestCase, override_settings
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
@@ -12,12 +13,14 @@ from kink import di
 from unittest.mock import Mock, patch
 
 from utils.algorithms import TokenGenerator, auth_token
+from .data_cache import invalidate_data_cache
 from .models import (
     Cart,
     Customer,
     Notification,
     Order,
     Product,
+    QueueJob,
     Store,
     User,
     generate_order_id,
@@ -134,17 +137,24 @@ class AuthenticationApiTests(TestCase):
         self.client = APIClient()
 
     def test_signup_creates_account_and_login_requires_activation(self):
-        signup_response = self.client.post(
-            "/auth/signup/",
-            {"email": "new-store@example.com", "password": "ValidPass1!"},
-            format="json",
-        )
+        with patch("app.job_queue.publish_job"):
+            signup_response = self.client.post(
+                "/auth/signup/",
+                {"email": "new-store@example.com", "password": "ValidPass1!"},
+                format="json",
+            )
 
         self.assertEqual(signup_response.status_code, 201)
         user = User.objects.get(email="new-store@example.com")
         self.assertFalse(user.is_active)
         self.assertTrue(Store.objects.filter(user=user).exists())
         self.assertTrue(Notification.objects.filter(user=user).exists())
+        self.assertTrue(
+            QueueJob.objects.filter(
+                user=user,
+                kind=QueueJob.Kind.EMAIL_ACTIVATION,
+            ).exists()
+        )
 
         invalid_login_response = self.client.post(
             "/auth/login/",
@@ -484,30 +494,43 @@ class OrderApiTests(TestCase):
             {"status": "paid"},
         )
 
-        download_response = self.client.get(f"/orders/download/{self.order.id}/")
-        self.assertEqual(download_response.status_code, 200)
-        self.assertEqual(download_response["Content-Type"], "text/csv")
-        self.assertIn(self.order.id, download_response.content.decode())
-
-        all_orders_response = self.client.get("/orders/download/")
-        self.assertEqual(all_orders_response.status_code, 200)
-        self.assertIn("Order ID", all_orders_response.content.decode())
+        with patch("app.job_queue.publish_job"):
+            download_response = self.client.get(f"/orders/download/{self.order.id}/")
+            all_orders_response = self.client.get("/orders/download/")
+        self.assertEqual(download_response.status_code, 202)
+        self.assertEqual(all_orders_response.status_code, 202)
+        self.assertEqual(
+            QueueJob.objects.get(pk=download_response.data["job_id"]).payload["order_id"],
+            self.order.id,
+        )
+        self.assertEqual(
+            QueueJob.objects.get(pk=all_orders_response.data["job_id"]).kind,
+            QueueJob.Kind.ORDERS_EXPORT,
+        )
 
         delete_response = self.client.delete(f"/orders/delete/{created_order.id}/")
         self.assertEqual(delete_response.status_code, 205)
         self.assertFalse(Order.objects.filter(pk=created_order.id).exists())
 
     def test_order_csv_escapes_formula_cells(self):
+        from .job_queue import _process_job
+
         self.owner.first_name = "=HYPERLINK(\"https://example.test\")"
         self.owner.save(update_fields=["first_name"])
 
-        response = self.client.get(f"/orders/download/{self.order.id}/")
-        csv_data = response.content.decode()
+        csv_data = _process_job(
+            QueueJob(
+                kind=QueueJob.Kind.ORDERS_EXPORT,
+                payload={"user_id": self.owner.pk, "order_id": self.order.pk},
+            )
+        )["content"]
 
         self.assertIn("'=HYPERLINK", csv_data)
         self.assertNotIn(',"=HYPERLINK', csv_data)
 
     def test_order_csv_escapes_formula_order_identifiers(self):
+        from .job_queue import _process_job
+
         order = Order.objects.create(
             id="=1+1",
             user=self.owner,
@@ -517,10 +540,14 @@ class OrderApiTests(TestCase):
             total="12.50",
         )
 
-        response = self.client.get(f"/orders/download/{order.id}/")
+        csv_data = _process_job(
+            QueueJob(
+                kind=QueueJob.Kind.ORDERS_EXPORT,
+                payload={"user_id": self.owner.pk, "order_id": order.pk},
+            )
+        )["content"]
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("'=1+1", response.content.decode())
+        self.assertIn("'=1+1", csv_data)
 
     def test_order_creation_rejects_another_users_cart(self):
         other_cart = Cart.objects.create(user=self.other_user)
@@ -643,7 +670,9 @@ class AuthEndpointTests(TestCase):
         self.assertTrue(response.data["refresh"])
 
     def test_reset_password_request_and_reset_update_password(self):
-        with self.settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"):
+        with self.settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"), patch(
+            "app.job_queue.publish_job"
+        ):
             request_response = self.client.post(
                 "/auth/reset-password/request/",
                 {"email": self.user.email},
@@ -670,9 +699,9 @@ class AuthEndpointTests(TestCase):
         self.assertTrue(self.user.check_password("NewStrongPass1!"))
 
     def test_reset_password_request_does_not_disclose_unknown_accounts(self):
-        from django.core import mail
-
-        with self.settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"):
+        with self.settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"), patch(
+            "app.job_queue.publish_job"
+        ):
             known_response = self.client.post(
                 "/auth/reset-password/request/",
                 {"email": self.user.email},
@@ -687,7 +716,13 @@ class AuthEndpointTests(TestCase):
         self.assertEqual(known_response.status_code, 200)
         self.assertEqual(unknown_response.status_code, 200)
         self.assertEqual(known_response.data, unknown_response.data)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(
+            QueueJob.objects.filter(
+                kind=QueueJob.Kind.EMAIL_PASSWORD_RESET,
+                user=self.user,
+            ).count(),
+            1,
+        )
 
     def test_reset_password_rejects_weak_password_and_malformed_identifier(self):
         weak_response = self.client.post(
@@ -740,38 +775,38 @@ class QueryApiTests(TestCase):
 
     def test_generate_query_endpoint_executes_normalized_plan(self):
         self.client.force_authenticate(user=self.user)
-        service = di[SearchService]
-        service_response = {
-            "status": "success",
-            "message": "Found 0 products.",
-            "results": [],
-        }
-
-        with patch.object(
-            service, "generate_query_response", return_value=service_response
-        ):
+        with patch("app.job_queue.publish_job"):
             response = self.client.post(
                 "/query/generate/", {"prompt": "list products"}, format="json"
             )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, service_response)
+        self.assertEqual(response.status_code, 202)
+        job = QueueJob.objects.get(pk=response.data["job_id"])
+        self.assertEqual(job.kind, QueueJob.Kind.QUERY_GENERATE)
+        self.assertEqual(job.payload["prompt"], "list products")
+        self.assertEqual(job.user, self.user)
 
-    def test_generate_query_rejects_invalid_plan(self):
+    def test_generate_query_validation_is_reported_by_job_worker(self):
+        from .job_queue import process_job
+
         self.client.force_authenticate(user=self.user)
-        service = di[SearchService]
+        with patch("app.job_queue.publish_job"):
+            response = self.client.post(
+                "/query/generate/", {"prompt": "list products"}, format="json"
+            )
 
-        with patch.object(
-            service,
-            "generate_query_response",
+        job = QueueJob.objects.get(pk=response.data["job_id"])
+        with patch(
+            "app.job_queue.SearchService.generate_query_response",
             side_effect=ValueError("Unsupported query resource."),
         ):
-            response = self.client.post(
-                "/query/generate/", {"prompt": "list products"}, format="json"
-            )
+            processed_job = process_job(job.pk)
 
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["status"], "error")
+        self.assertEqual(processed_job.status, QueueJob.Status.QUEUED)
+        self.assertEqual(
+            processed_job.error,
+            "The background task failed. Please try again.",
+        )
 
     def test_generate_query_requires_authentication(self):
         response = self.client.post(
@@ -817,23 +852,11 @@ class QueryApiTests(TestCase):
                 self.assertEqual(response.status_code, 400)
                 self.assertEqual(response.data["status"], "error")
 
-    def test_audio_upload_uses_and_cleans_storage_backend_file(self):
+    def test_audio_upload_queues_file_for_worker_processing(self):
         self.client.force_authenticate(user=self.user)
-        service = di[SearchService]
-        response_payload = {"transcript": "list products", "results": []}
         with tempfile.TemporaryDirectory() as media_root:
             with self.settings(MEDIA_ROOT=media_root):
-                uploaded_audio = {}
-
-                def read_audio(user, audio_file):
-                    uploaded_audio["bytes"] = audio_file.read()
-                    return response_payload
-
-                with patch.object(
-                    service,
-                    "generate_query_response_from_audio",
-                    side_effect=read_audio,
-                ):
+                with patch("app.job_queue.publish_job"):
                     response = self.client.post(
                         "/query/upload/",
                         {
@@ -846,46 +869,47 @@ class QueryApiTests(TestCase):
                         format="multipart",
                     )
 
-                self.assertEqual(response.status_code, 200, response.data)
-                self.assertEqual(response.data, response_payload)
-                self.assertEqual(uploaded_audio["bytes"], b"test audio bytes")
-                self.assertEqual(
-                    [path for path in Path(media_root).rglob("*") if path.is_file()],
-                    [],
+                self.assertEqual(response.status_code, 202, response.data)
+                job = QueueJob.objects.get(pk=response.data["job_id"])
+                stored_file = Path(media_root) / job.payload["storage_path"]
+                self.assertEqual(stored_file.read_bytes(), b"test audio bytes")
+                self.assertTrue(stored_file.exists())
+
+    def test_audio_worker_cleans_file_when_processing_fails(self):
+        from .job_queue import _process_job
+
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                from django.core.files.storage import default_storage
+
+                file_path = default_storage.save(
+                    "uploads/audio/failed-test.webm",
+                    SimpleUploadedFile(
+                        "recording.webm",
+                        b"test audio bytes",
+                        content_type="audio/webm",
+                    ),
                 )
-
-    def test_audio_upload_cleans_file_when_processing_fails(self):
-        self.client.force_authenticate(user=self.user)
-        service = di[SearchService]
-        with tempfile.TemporaryDirectory() as media_root:
-            with self.settings(MEDIA_ROOT=media_root):
-                with patch.object(
-                    service,
-                    "generate_query_response_from_audio",
+                job = QueueJob(
+                    kind=QueueJob.Kind.QUERY_AUDIO,
+                    payload={"user_id": self.user.pk, "storage_path": file_path},
+                )
+                with patch(
+                    "app.job_queue.SearchService.generate_query_response_from_audio",
                     side_effect=ValueError("unreadable audio"),
-                ):
-                    response = self.client.post(
-                        "/query/upload/",
-                        {
-                            "file": SimpleUploadedFile(
-                                "recording.webm",
-                                b"test audio bytes",
-                                content_type="audio/webm",
-                            )
-                        },
-                        format="multipart",
-                    )
+                ), self.assertRaises(ValueError):
+                    _process_job(job)
 
-                self.assertEqual(response.status_code, 500)
                 self.assertEqual(
-                    [path for path in Path(media_root).rglob("*") if path.is_file()],
-                    [],
+                    default_storage.exists(file_path),
+                    False,
                 )
 
 
 class SearchServiceUnitTests(TestCase):
     def setUp(self):
         self.service = SearchService()
+        cache.clear()
 
     def test_normalize_query_plan_removes_unsafe_fields_and_bounds_limit(self):
         plan = self.service.normalize_query_plan(
@@ -969,6 +993,28 @@ class SearchServiceUnitTests(TestCase):
             [{"term": {"owner_id": "42"}}],
         )
 
+    def test_search_records_caches_results_per_user_until_data_changes(self):
+        client = Mock()
+        client.indices.exists.return_value = True
+        client.search.return_value = {
+            "hits": {"hits": [{"_id": "123"}], "total": {"value": 1}}
+        }
+        user = type("UserIdentity", (), {"pk": 42})()
+        other_user = type("UserIdentity", (), {"pk": 43})()
+
+        with patch("app.services.get_elasticsearch_client", return_value=client):
+            first_result = self.service.search_records("products", user, query="pen")
+            cached_result = self.service.search_records("products", user, query="pen")
+            self.service.search_records("products", other_user, query="pen")
+
+            self.assertEqual(first_result, cached_result)
+            self.assertEqual(client.search.call_count, 2)
+
+            invalidate_data_cache("products")
+            self.service.search_records("products", user, query="pen")
+
+        self.assertEqual(client.search.call_count, 3)
+
     def test_elastic_search_returns_only_user_owned_documents(self):
         client = Mock()
         client.indices.exists.return_value = True
@@ -1040,6 +1086,45 @@ class SearchServiceUnitTests(TestCase):
 
         self.assertEqual(result["total_count"], 1)
         self.assertEqual(result["results"][0]["id"], own_product.id)
+
+    def test_execute_query_plan_caches_and_invalidates_results(self):
+        store = Store.objects.create(
+            user=User.objects.create_user(
+                email="cache-owner@example.com", password="CachePass1!"
+            ),
+            name="Cache Owner",
+            bio="",
+        )
+        plan = {
+            "resource": "products",
+            "intent": "list",
+            "search": "",
+            "filters": {},
+            "sort": "-created",
+            "limit": 10,
+        }
+
+        with self.assertNumQueries(2):
+            first_result = self.service.execute_query_plan(store.user, plan)
+        with self.assertNumQueries(0):
+            cached_result = self.service.execute_query_plan(store.user, plan)
+
+        self.assertEqual(first_result, cached_result)
+
+        Product.objects.create(
+            store=store,
+            title="New item",
+            description="Added after initial retrieval",
+            price="1.00",
+            available=1,
+            category="books",
+            currency="USD",
+        )
+        invalidate_data_cache("products")
+
+        refreshed_result = self.service.execute_query_plan(store.user, plan)
+        self.assertEqual(refreshed_result["total_count"], 1)
+        self.assertEqual(refreshed_result["results"][0]["title"], "New item")
 
     def test_parse_openai_response(self):
         parsed = self.service.parse_openai_response(

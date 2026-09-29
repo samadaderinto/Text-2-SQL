@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/Sidebar";
 import api from "../utils/api";
+import { notifyApiError } from "../utils/api-errors";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from "react-router-dom";
@@ -85,14 +86,8 @@ export const NewCustomer = () => {
         })
 
 
-      } catch (error: any) {
-        if (error.response && error.response.status === 400 && error.response.data.email) {
-          toast.error('Email already exists. Please use a different email.', {
-            position: "top-right"
-          });
-        } else {
-          toast.error('Error creating customer. Please try again.');
-        }
+      } catch (error) {
+        notifyApiError(error, "Could not create the customer. Please try again.");
       }
     }
   };

@@ -51,6 +51,16 @@ ELASTICSEARCH_URL = os.getenv(
 )
 ELASTICSEARCH_ENABLED = os.getenv("ELASTICSEARCH_ENABLED", "true").lower() == "true"
 
+CACHES = {
+    "default": {
+        "BACKEND": os.getenv(
+            "CACHE_BACKEND", "django.core.cache.backends.locmem.LocMemCache"
+        ),
+        "LOCATION": os.getenv("CACHE_LOCATION", "audql-server-cache"),
+        "TIMEOUT": int(os.getenv("DATA_CACHE_TIMEOUT", "300")),
+    }
+}
+
 EMAIL_HOST = os.getenv("EMAIL_HOST", "")
 EMAIL_PORT = os.getenv("EMAIL_PORT", "")
 EMAIL_USE_TLS = False
@@ -63,6 +73,7 @@ EMAIL_BACKEND = os.getenv(
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or "webmaster@localhost"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "true"
+DEPLOY_ENV = os.getenv("DEPLOY_ENV", "local")
 
 
 ALLOWED_HOSTS = [
@@ -248,6 +259,37 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 15,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_RATES": {
+        "client_logs": os.getenv("CLIENT_LOG_RATE", "30/min"),
+    },
+    "EXCEPTION_HANDLER": "app.api_exceptions.api_exception_handler",
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {"()": "app.kafka_logging.JsonLogFormatter"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "json"},
+        "kafka": {"class": "app.kafka_logging.KafkaLogHandler", "formatter": "json"},
+    },
+    "root": {
+        "handlers": (
+            ["console", "kafka"]
+            if os.getenv("KAFKA_LOGGING_ENABLED", "false").lower() == "true"
+            else ["console"]
+        ),
+        "level": os.getenv("LOG_LEVEL", "INFO"),
+    },
+    "loggers": {
+        "django": {"handlers": [], "level": "INFO", "propagate": True},
+        "django.request": {"handlers": [], "level": "WARNING", "propagate": True},
+        "django.server": {"handlers": [], "level": "INFO", "propagate": True},
+        "django.security": {"handlers": [], "level": "WARNING", "propagate": True},
+        "kafka": {"handlers": [], "level": "WARNING", "propagate": False},
+    },
 }
 
 PASSWORD_HASHERS = [
@@ -298,4 +340,3 @@ SPECTACULAR_SETTINGS = {
 
 CopySTATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-

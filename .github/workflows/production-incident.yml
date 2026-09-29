@@ -1,0 +1,183 @@
+name: Production incident monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: production-incident-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    name: Check production readiness
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify production health check is configured
+        env:
+          PRODUCTION_HEALTHCHECK_URL: ${{ secrets.PRODUCTION_HEALTHCHECK_URL }}
+        run: |
+          if [ -z "$PRODUCTION_HEALTHCHECK_URL" ]; then
+            echo "::error::Set the PRODUCTION_HEALTHCHECK_URL Actions secret to the production API readiness URL."
+            exit 1
+          fi
+
+      - name: Probe readiness endpoint
+        id: probe
+        env:
+          PRODUCTION_HEALTHCHECK_URL: ${{ secrets.PRODUCTION_HEALTHCHECK_URL }}
+        run: |
+          consecutive_failures=0
+          max_attempts=5
+          healthy=true
+
+          for attempt in $(seq 1 "$max_attempts"); do
+            if curl --location --fail --silent --output /dev/null --max-time 15 "$PRODUCTION_HEALTHCHECK_URL"; then
+              consecutive_failures=0
+              echo "Readiness probe $attempt succeeded."
+            else
+              consecutive_failures=$((consecutive_failures + 1))
+              echo "Readiness probe $attempt failed ($consecutive_failures consecutive failure(s))."
+            fi
+
+            if [ "$consecutive_failures" -ge 3 ]; then
+              healthy=false
+              break
+            fi
+
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              sleep 15
+            fi
+          done
+
+          echo "healthy=$healthy" >> "$GITHUB_OUTPUT"
+          echo "consecutive_failures=$consecutive_failures" >> "$GITHUB_OUTPUT"
+
+      - name: Create or resolve production incident and notify
+        if: always() && steps.probe.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          HEALTHY: ${{ steps.probe.outputs.healthy }}
+          CONSECUTIVE_FAILURES: ${{ steps.probe.outputs.consecutive_failures }}
+          AFRICASTALKING_USERNAME: ${{ secrets.AFRICASTALKING_USERNAME }}
+          AFRICASTALKING_API_KEY: ${{ secrets.AFRICASTALKING_API_KEY }}
+          INCIDENT_SMS_RECIPIENT: ${{ secrets.INCIDENT_SMS_RECIPIENT }}
+        with:
+          script: |
+            const title = 'Production incident: API readiness';
+            const marker = '<!-- audql-production-readiness-incident -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const healthy = process.env.HEALTHY === 'true';
+
+            const listOpenIncidents = async () => {
+              const { data } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                per_page: 100,
+              });
+              return data.find((issue) =>
+                !issue.pull_request &&
+                issue.title === title &&
+                issue.body?.includes(marker)
+              );
+            };
+
+            const sendSms = async (message) => {
+              const username = process.env.AFRICASTALKING_USERNAME;
+              const apiKey = process.env.AFRICASTALKING_API_KEY;
+              const recipient = process.env.INCIDENT_SMS_RECIPIENT;
+              if (!username || !apiKey || !recipient) {
+                throw new Error('Set AFRICASTALKING_USERNAME, AFRICASTALKING_API_KEY, and INCIDENT_SMS_RECIPIENT Actions secrets.');
+              }
+              if (!/^\+[1-9]\d{6,14}$/.test(recipient)) {
+                throw new Error('INCIDENT_SMS_RECIPIENT must be an E.164 phone number.');
+              }
+
+              const form = new URLSearchParams({ username, to: recipient, message });
+              const response = await fetch('https://api.africastalking.com/version1/messaging', {
+                method: 'POST',
+                headers: {
+                  apiKey,
+                  Accept: 'application/json',
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: form,
+                signal: AbortSignal.timeout(15000),
+              });
+              if (!response.ok) {
+                throw new Error(`Africa's Talking rejected the SMS request (HTTP ${response.status}).`);
+              }
+              const payload = await response.json();
+              const recipients = payload?.SMSMessageData?.Recipients;
+              if (!Array.isArray(recipients) || !recipients.some((item) => [100, 101, 102].includes(Number(item.statusCode)))) {
+                throw new Error('Africa’s Talking did not confirm SMS acceptance.');
+              }
+            };
+
+            const existing = await listOpenIncidents();
+
+            if (!healthy) {
+              const failureCount = process.env.CONSECUTIVE_FAILURES;
+              const incidentBody = [
+                marker,
+                'The production API readiness endpoint failed three consecutive probes.',
+                '',
+                `Consecutive failures: ${failureCount}`,
+                `Detection run: ${runUrl}`,
+                '',
+                'SMS delivery: pending',
+              ].join('\n');
+              const incident = existing ?? (await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body: incidentBody,
+              })).data;
+
+              if (incident.body?.includes('SMS delivery: sent')) {
+                core.info('An open incident already has an SMS alert; suppressing duplicate notification.');
+                return;
+              }
+
+              await sendSms(`EchoCart production incident: API readiness has failed ${failureCount} consecutive checks. Investigate the production service. ${runUrl}`);
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: incident.number,
+                body: incidentBody.replace('SMS delivery: pending', 'SMS delivery: sent'),
+              });
+              core.info(`Incident #${incident.number} recorded and SMS alert accepted.`);
+              return;
+            }
+
+            if (!existing) {
+              core.info('Production readiness is healthy; there is no open incident to resolve.');
+              return;
+            }
+
+            const wasAlerted = existing.body?.includes('SMS delivery: sent');
+            const recoveryBody = [
+              existing.body ?? marker,
+              '',
+              `Readiness recovered. Recovery check: ${runUrl}`,
+              'Incident status: resolved',
+            ].join('\n');
+
+            if (wasAlerted) {
+              await sendSms(`EchoCart production recovery: API readiness is healthy again. Incident #${existing.number} is resolved.`);
+            }
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: existing.number,
+              body: recoveryBody,
+              state: 'closed',
+            });
+            core.info(`Incident #${existing.number} resolved.`);

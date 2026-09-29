@@ -1,0 +1,130 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Searchable, filterable frontend and backend application logs.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 24, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "auto", "wideLayout": true},
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "expr": "sum(count_over_time({service=~\"$service\", environment=~\"$environment\", level=~\"$level\"}[$__interval]))",
+          "legendFormat": "matching log events",
+          "refId": "A"
+        }
+      ],
+      "title": "Log volume",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 5, "w": 24, "x": 0, "y": 5},
+      "id": 3,
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "auto", "wideLayout": true},
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "expr": "sum(count_over_time({service=~\"$service\", environment=~\"$environment\", level=\"error\"}[$__interval]))",
+          "legendFormat": "errors",
+          "refId": "A"
+        }
+      ],
+      "title": "Errors over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 14, "w": 24, "x": 0, "y": 10},
+      "id": 2,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": true,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "expr": "{service=~\"$service\", environment=~\"$environment\", level=~\"$level\"} | json | line_format \"{{.timestamp}} {{.message}} {{.route}} {{.status_code}} {{.exception}}\"",
+          "refId": "A"
+        }
+      ],
+      "title": "Application logs — newest first",
+      "type": "logs"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 41,
+  "tags": ["audql", "logs", "errors"],
+  "templating": {
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {"selected": true, "text": "All", "value": "$__all"},
+        "datasource": {"type": "loki", "uid": "loki"},
+        "definition": "label_values(service)",
+        "includeAll": true,
+        "label": "Service",
+        "name": "service",
+        "query": {"label": "service", "refId": "LokiVariableQueryEditor-VariableQuery"},
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {"selected": true, "text": "All", "value": "$__all"},
+        "datasource": {"type": "loki", "uid": "loki"},
+        "definition": "label_values(environment)",
+        "includeAll": true,
+        "label": "Environment",
+        "name": "environment",
+        "query": {"label": "environment", "refId": "LokiVariableQueryEditor-VariableQuery"},
+        "refresh": 2,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {"selected": true, "text": "All", "value": "$__all"},
+        "datasource": {"type": "loki", "uid": "loki"},
+        "definition": "label_values(level)",
+        "includeAll": true,
+        "label": "Severity",
+        "name": "level",
+        "query": {"label": "level", "refId": "LokiVariableQueryEditor-VariableQuery"},
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "AudQL application logs",
+  "uid": "audql-application-logs",
+  "version": 1
+}

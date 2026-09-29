@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from "../utils/api";
+import { notifyApiError } from "../utils/api-errors";
 
 export const NewPassword = () => {
   const { uidb64, token } = useParams();
@@ -116,11 +117,19 @@ export const NewPassword = () => {
         toast.success('Password reset successfully!');
         setPop(true);
       }
-    } catch (error: any) {
-      if (error.response?.status === 401) {
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof error.response === "object" &&
+        error.response !== null &&
+        "status" in error.response &&
+        error.response.status === 401
+      ) {
         toast.error('This reset link is invalid or expired. Please request a new one.');
       } else {
-        toast.error('Failed to reset password. Please try again later.');
+        notifyApiError(error, "Could not reset your password. Please try again.");
       }
     }
   };
@@ -129,7 +138,8 @@ export const NewPassword = () => {
     <div className="Newpassword_Container">
       <section className="Newpassword_White">
         <span><PiDiamondsFourFill /> EchoCart</span>
-        <h1>Create New Password</h1>
+        <h1>Create a new password</h1>
+        <p className="Newpassword_Subtitle">Choose a strong password you haven’t used before.</p>
         <label htmlFor="passwordValue">Password</label>
         <div className="Input_Container" tabIndex={0}>
           <input
@@ -169,7 +179,7 @@ export const NewPassword = () => {
         <div onClick={Reset} className="Login_Btn">Create Password</div>
       </section>
       <section className="Newpassword_Blue">
-        <h1>Easiest Way To Manage Your Store</h1>
+        <span><PiDiamondsFourFill /> EchoCart</span>
       </section>
       {
         pop && (

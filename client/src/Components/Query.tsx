@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Header } from "../layouts/Header";
 import { useLocation } from 'react-router-dom';
 import Sidebar from '../layouts/Sidebar';
+import { toast } from 'react-toastify';
 
 type QueryPlan = {
   intent?: string;
@@ -39,10 +40,10 @@ const Query = () => {
         if (Array.isArray(parsedData)) {
           setDataArray(parsedData);
         } else {
-          console.error('Parsed data is not an array');
+          toast.error('Query results are in an unexpected format.');
         }
-      } catch (error) {
-        console.error('Error parsing JSON string:', error);
+      } catch {
+        toast.error('Could not read the query results.');
       }
     } else if (Array.isArray(data)) {
       setDataArray(data);

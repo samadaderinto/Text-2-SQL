@@ -3,6 +3,7 @@ import Sidebar from '../layouts/Sidebar';
 import { useNavigate } from "react-router-dom";
 import { Header } from "../layouts/Header";
 import api from "../utils/api";
+import { notifyApiError } from "../utils/api-errors";
 
 export const Settings = () => {
   const [active, setActive] = useState('General');
@@ -25,7 +26,7 @@ export const Settings = () => {
       updateData(response.data);
 
     } catch (error) {
-      console.error(`Error fetching data from ${url}:`, error);
+      notifyApiError(error, "Could not load settings. Please try again.");
     }
   }, []);
 
@@ -96,7 +97,7 @@ export const Settings = () => {
     try {
       await api.put(endpoints[active], dataMap[active]);
     } catch (error) {
-      console.error('Error updating settings:', error);
+      notifyApiError(error, "Could not save settings. Please try again.");
     }
   };
 

@@ -4,6 +4,8 @@ import { useContext } from "react";
 import { AuthContext } from "../contexts/auth-context";
 import { decryptJWT } from "../utils/hooks";
 import { secretKey } from "../utils/constants";
+import { notifyApiError } from "../utils/api-errors";
+import { PiDiamondsFourFill } from "react-icons/pi";
 
 export const Logout = () => {
   const { setIsSignedIn } = useContext(AuthContext);
@@ -20,27 +22,33 @@ export const Logout = () => {
           refresh: decryptedRefreshToken,
         });
 
-        if (response.status === 205) {
-          localStorage.removeItem('access');
-          localStorage.removeItem('refresh');
-          setIsSignedIn(false);
-          nav('/auth/signin/');
+        if (response.status !== 205) {
+          throw new Error("The server did not confirm logout.");
         }
-      } catch (error: any) {
-        console.log("Error during logout:", error);
+      } catch (error) {
+        notifyApiError(
+          error,
+          "Could not revoke the server session. You will be signed out on this device.",
+        );
       }
-    } else {
-      console.error('No refresh token found');
     }
+
+    localStorage.removeItem('access');
+    localStorage.removeItem('refresh');
+    setIsSignedIn(false);
+    nav('/auth/signin/', { replace: true });
   };
 
   return (
     <div className="Logout_Container">
       <article>
-        <h1>Log Out?</h1>
-        <div>
-          <span onClick={handleLogout} className="Blue_btn">Yes</span>
-          <span onClick={() => nav(-1)} className="White_btn">No</span>
+        <span className="Logout_Brand"><PiDiamondsFourFill /> EchoCart</span>
+        <div className="Logout_Icon" aria-hidden="true">↗</div>
+        <h1>Sign out of EchoCart?</h1>
+        <p>You can sign back in at any time to continue managing your store.</p>
+        <div className="Logout_Action_Row">
+          <button type="button" onClick={handleLogout} className="Blue_btn">Sign out</button>
+          <button type="button" onClick={() => nav(-1)} className="White_btn">Stay signed in</button>
         </div>
       </article>
     </div>

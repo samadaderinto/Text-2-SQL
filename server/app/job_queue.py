@@ -1,0 +1,212 @@
+import json
+import logging
+import os
+from datetime import timedelta
+from functools import lru_cache
+
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.mail import send_mail
+from django.db import connection, transaction
+from django.utils import timezone
+from kafka import KafkaProducer
+
+from .models import Customer, Order, Product, QueueJob, User
+from .search_index import delete_instance, index_instance
+from .services import SearchService
+
+
+logger = logging.getLogger(__name__)
+MAX_JOB_ATTEMPTS = 3
+STALE_JOB_MINUTES = 15
+
+
+@lru_cache(maxsize=1)
+def get_job_producer():
+    servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+    return KafkaProducer(
+        bootstrap_servers=[server.strip() for server in servers.split(",") if server.strip()],
+        value_serializer=lambda value: json.dumps(value).encode("utf-8"),
+        acks="all",
+        retries=3,
+        max_block_ms=1000,
+        request_timeout_ms=3000,
+    )
+
+
+def publish_job(job):
+    try:
+        get_job_producer().send(
+            os.getenv("KAFKA_JOB_TOPIC", "audql.jobs"),
+            {"job_id": str(job.pk)},
+        )
+    except Exception:
+        logger.exception("Could not notify Kafka about queued job %s", job.pk)
+
+
+def enqueue_job(kind, payload, user=None):
+    if kind not in QueueJob.Kind.values:
+        raise ValueError(f"Unsupported queue job kind: {kind}")
+    job = QueueJob.objects.create(kind=kind, payload=payload, user=user)
+    if connection.in_atomic_block:
+        transaction.on_commit(lambda: publish_job(job))
+    else:
+        publish_job(job)
+    return job
+
+
+def _csv_cell(value):
+    value = str(value)
+    if value.lstrip(" \t\r\n").startswith(("=", "+", "-", "@")):
+        return f"'{value}"
+    return value
+
+
+def _process_job(job):
+    payload = job.payload
+
+    if job.kind in (QueueJob.Kind.SEARCH_INDEX, QueueJob.Kind.SEARCH_DELETE):
+        models = {
+            "products": Product,
+            "customers": Customer,
+            "orders": Order,
+        }
+        model = models[payload["resource"]]
+        instance = model.objects.filter(pk=payload["record_id"]).first()
+        if job.kind == QueueJob.Kind.SEARCH_INDEX:
+            if instance is not None:
+                index_instance(instance)
+        elif instance is None:
+            delete_instance(model(pk=payload["record_id"]))
+        else:
+            delete_instance(instance)
+        return {"indexed": instance is not None}
+
+    if job.kind == QueueJob.Kind.QUERY_GENERATE:
+        user = User.objects.get(pk=payload["user_id"])
+        return SearchService().generate_query_response(user, payload["prompt"])
+
+    if job.kind == QueueJob.Kind.QUERY_AUDIO:
+        try:
+            user = User.objects.get(pk=payload["user_id"])
+            with default_storage.open(payload["storage_path"], "rb") as audio_file:
+                return SearchService().generate_query_response_from_audio(user, audio_file)
+        finally:
+            if default_storage.exists(payload["storage_path"]):
+                default_storage.delete(payload["storage_path"])
+
+    if job.kind in (
+        QueueJob.Kind.EMAIL_ACTIVATION,
+        QueueJob.Kind.EMAIL_PASSWORD_RESET,
+    ):
+        user = User.objects.get(pk=payload["user_id"])
+        from django.contrib.auth.tokens import PasswordResetTokenGenerator
+        from django.utils.encoding import force_bytes
+        from django.utils.http import urlsafe_base64_encode
+        from utils.algorithms import TokenGenerator
+
+        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        api_origin = payload["api_origin"].rstrip("/")
+        if job.kind == QueueJob.Kind.EMAIL_ACTIVATION:
+            token = TokenGenerator().make_token(user)
+            subject = f"Welcome, {user.email}"
+            body = (
+                "This is the link to verify your email. "
+                f"{api_origin}/auth/activate/{uidb64}/{token}/"
+            )
+        else:
+            token = PasswordResetTokenGenerator().make_token(user)
+            subject = f"Click on link to reset password, {user.email}"
+            body = (
+                "This is the link to reset password. "
+                f"{api_origin}/auth/reset-password/verify/{uidb64}/{token}/"
+            )
+        send_mail(
+            subject,
+            body,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+        return {"sent": True}
+
+    if job.kind == QueueJob.Kind.ORDERS_EXPORT:
+        import csv
+        from io import StringIO
+
+        orders = Order.objects.filter(user_id=payload["user_id"]).select_related("user")
+        order_id = payload.get("order_id")
+        if order_id:
+            orders = orders.filter(pk=order_id)
+        buffer = StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(["Order ID", "Customer Name", "Status", "Date & Time", "Price"])
+        for order in orders:
+            writer.writerow(
+                [
+                    _csv_cell(order.pk),
+                    _csv_cell(order.user.first_name),
+                    _csv_cell(order.status),
+                    _csv_cell(order.created),
+                    _csv_cell(order.subtotal),
+                ]
+            )
+        return {
+            "filename": f"order_{order_id}.csv" if order_id else "orders.csv",
+            "content": buffer.getvalue(),
+        }
+
+    raise ValueError(f"Unsupported queue job kind: {job.kind}")
+
+
+def process_job(job_id):
+    now = timezone.now()
+    stale_before = now - timedelta(minutes=STALE_JOB_MINUTES)
+    with transaction.atomic():
+        job = QueueJob.objects.select_for_update().get(pk=job_id)
+        if job.status in (QueueJob.Status.SUCCEEDED, QueueJob.Status.FAILED):
+            return job
+        if (
+            job.status == QueueJob.Status.RUNNING
+            and job.started_at
+            and job.started_at > stale_before
+        ):
+            return job
+        if job.available_at > now:
+            return job
+        job.status = QueueJob.Status.RUNNING
+        job.started_at = now
+        job.attempts += 1
+        job.error = ""
+        job.save(update_fields=["status", "started_at", "attempts", "error", "updated_at"])
+
+    try:
+        result = _process_job(job)
+    except Exception as exc:
+        logger.exception("Queue job %s (%s) failed", job.pk, job.kind)
+        job.refresh_from_db()
+        job.error = "The background task failed. Please try again."
+        job.started_at = None
+        if job.attempts >= MAX_JOB_ATTEMPTS:
+            job.status = QueueJob.Status.FAILED
+        else:
+            job.status = QueueJob.Status.QUEUED
+            job.available_at = timezone.now() + timedelta(seconds=2 ** job.attempts)
+        job.save(
+            update_fields=[
+                "status",
+                "error",
+                "started_at",
+                "available_at",
+                "updated_at",
+            ]
+        )
+        return job
+
+    job.refresh_from_db()
+    job.result = result
+    job.error = ""
+    job.status = QueueJob.Status.SUCCEEDED
+    job.started_at = None
+    job.save(update_fields=["result", "error", "status", "started_at", "updated_at"])
+    return job

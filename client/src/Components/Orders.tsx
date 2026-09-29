@@ -6,7 +6,9 @@ import ReactPaginate from 'react-paginate';
 import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/Sidebar";
 import api from "../utils/api";
+import { notifyApiError } from "../utils/api-errors";
 import { Oval } from 'react-loader-spinner'; // Example from react-loader-spinner
+import { waitForQueueJob } from '../utils/queue-jobs';
 
 export const Orders = () => {
   const itemsPerPage = 15;
@@ -36,7 +38,7 @@ export const Orders = () => {
         isLoading: false,
       }));
     } catch (error) {
-      console.error("Error fetching data:", error);
+      notifyApiError(error, "Could not load orders. Please try again.");
       setState((prevState) => ({ ...prevState, isLoading: false }));
     }
   };
@@ -51,17 +53,21 @@ export const Orders = () => {
   const handleDownload = async (order_id = "") => {
     try {
       const end_point = order_id ? `/orders/download/${order_id}/` : "/orders/download/";
-      const response = await api.get(end_point, { responseType: 'blob' });
+      const queued = await api.get(end_point);
+      await waitForQueueJob(queued.data.job_id);
+      const response = await api.get(`/jobs/${queued.data.job_id}/download/`, {
+        responseType: 'blob',
+      });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'orders.csv');
+      link.setAttribute('download', order_id ? `order_${order_id}.csv` : 'orders.csv');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading file:", error);
+      notifyApiError(error, "Could not download the order file. Please try again.");
     }
   };
 
@@ -76,7 +82,7 @@ export const Orders = () => {
         }));
       }
     } catch (error) {
-      console.error("Error deleting order:", error);
+      notifyApiError(error, "Could not delete this order. Please try again.");
     }
   };
 

@@ -12,6 +12,7 @@ import { Field } from '../types/header';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ClipLoader } from 'react-spinners';
+import { waitForQueueJob } from '../utils/queue-jobs';
 
 export const Header = () => {
   const [state, setState] = useState({
@@ -96,8 +97,11 @@ export const Header = () => {
     if (state.searchQuery.trim()) {
       try {
         setState(prevState => ({ ...prevState, loading: true }));
-        const response = await api.post(`/query/generate/`, { prompt: state.searchQuery });
-        nav('/query', { state: { queryResponse: response.data, header: 'Generated Query' } });
+        const queued = await api.post(`/query/generate/`, { prompt: state.searchQuery });
+        const completed = await waitForQueueJob(queued.data.job_id);
+        nav('/query', {
+          state: { queryResponse: completed.result, header: 'Generated Query' },
+        });
       } catch (error) {
         toast.error('Unable to generate a query. Please try again.');
       } finally {
@@ -169,12 +173,15 @@ export const Header = () => {
       formData.append('file', new File([state.audioBlob], 'audio.webm', { type: 'audio/webm' }));
       setState(prevState => ({ ...prevState, loading: true }));
       try {
-        const response = await api.post(`/query/upload/`, formData, {
+        const queued = await api.post(`/query/upload/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-        nav('/query', { state: { queryResponse: response.data, header: 'Voice Query Results' } });
+        const completed = await waitForQueueJob(queued.data.job_id);
+        nav('/query', {
+          state: { queryResponse: completed.result, header: 'Voice Query Results' },
+        });
 
       } catch (error: any) {
         if (error.response && error.response.status === 500) {

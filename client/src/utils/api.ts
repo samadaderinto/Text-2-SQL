@@ -1,6 +1,7 @@
 import axios from "axios";
 import { decryptJWT, encryptJWT } from "./hooks";
 import { secretKey } from "./constants";
+import { reportClientError } from "./error-reporting";
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const API_BASE_URL = configuredApiBaseUrl.includes("://")
@@ -28,6 +29,16 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    if (axios.isAxiosError(error) && error.response?.status && error.response.status >= 500) {
+      reportClientError({
+        level: "error",
+        event_type: "api_error",
+        message: `API request failed with status ${error.response.status}`,
+        method: error.config?.method,
+        route: error.config?.url,
+        status_code: error.response.status,
+      });
+    }
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;

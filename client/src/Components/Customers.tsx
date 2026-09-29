@@ -9,6 +9,7 @@ import { Header } from "../layouts/Header";
 import Sidebar from '../layouts/Sidebar';
 import { CustomerProps } from "../types/customers";
 import api from "../utils/api";
+import { notifyApiError } from "../utils/api-errors";
 import { ClipLoader } from "react-spinners";
 
 export const Customers = () => {
@@ -27,7 +28,7 @@ export const Customers = () => {
       setData(response.data.customers ?? []);
       setTotalItems(response.data.count ?? 0);
     } catch (error) {
-      console.error("Error fetching data", error);
+      notifyApiError(error, "Could not load customers. Please try again.");
     } finally {
       setLoading(false);
     }

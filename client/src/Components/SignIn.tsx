@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import api from '../utils/api';
+import { notifyApiError } from '../utils/api-errors';
 import { encryptJWT } from '../utils/hooks';
 import { secretKey } from '../utils/constants';
 
@@ -61,14 +62,8 @@ export const SignIn = () => {
 
       toast.success('Sign in successful! Redirecting to dashboard...');
       nav('/dashboard');
-    } catch (error: any) {
-      console.log(error);
-
-      if (error.response?.status === 403) {
-        toast.error('Please verify your account before logging in.');
-      } else {
-        toast.error('Invalid user information. Please try again.');
-      }
+    } catch (error) {
+      notifyApiError(error, "Could not sign in. Please try again.");
     }
   };
 

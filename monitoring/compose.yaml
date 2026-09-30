@@ -56,6 +56,8 @@ services:
         condition: service_started
       mysql-exporter:
         condition: service_started
+      redis-exporter:
+        condition: service_started
       elasticsearch-exporter:
         condition: service_started
       cadvisor:
@@ -81,6 +83,13 @@ services:
       - DATA_SOURCE_NAME="$${MYSQL_USER}:$${MYSQL_PASSWORD}@(database:3306)/" /bin/mysqld_exporter
     ports:
       - "127.0.0.1:9104:9104"
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.67.0
+    command:
+      - --redis.addr=redis://redis:6379
+    ports:
+      - "127.0.0.1:9121:9121"
 
   elasticsearch-exporter:
     image: quay.io/prometheuscommunity/elasticsearch-exporter:v1.9.0

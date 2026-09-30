@@ -59,6 +59,7 @@ Observability tools:
 - Blackbox exporter: HTTP probes for frontend and backend health endpoints.
 - Kafka exporter: Redpanda/Kafka metrics and consumer lag.
 - MySQL exporter: database availability and runtime metrics.
+- Redis exporter: cache availability and runtime metrics.
 - Elasticsearch exporter: cluster, node, and index metrics.
 - cAdvisor: container CPU and memory metrics.
 
@@ -95,8 +96,8 @@ transactions commit.
 - Frontend uncaught errors, unhandled rejections, and server-side API failures
   are sent to `/logs/client/`.
 - Vector consumes log events from Kafka and writes them to Loki.
-- Prometheus scrapes Django, Kafka exporter, MySQL exporter, Elasticsearch
-  exporter, cAdvisor, blackbox probes, and itself.
+- Prometheus scrapes Django, Kafka exporter, MySQL exporter, Redis exporter,
+  Elasticsearch exporter, cAdvisor, blackbox probes, and itself.
 - Grafana provisions Prometheus and Loki datasources plus AudQL dashboards.
 
 ## Configuration principles
@@ -142,6 +143,7 @@ Monitoring stack:
 | `3100` | `loki` | log query API |
 | `9308` | `kafka-exporter` | Kafka metrics |
 | `9104` | `mysql-exporter` | MySQL metrics |
+| `9121` | `redis-exporter` | Redis metrics |
 | `9114` | `elasticsearch-exporter` | Elasticsearch metrics |
 | `8080` | `cadvisor` | container metrics |
 | `9115` | `blackbox-exporter` | HTTP probe metrics |

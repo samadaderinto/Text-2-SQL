@@ -32,6 +32,7 @@ Monitoring is defined separately in
 | `vector` | Collects Kafka app logs and Docker container logs | Internal |
 | `kafka-exporter` | Kafka/Redpanda metrics | `9308` |
 | `mysql-exporter` | MySQL metrics | `9104` |
+| `redis-exporter` | Redis metrics | `9121` |
 | `elasticsearch-exporter` | Elasticsearch metrics | `9114` |
 | `cadvisor` | Docker container resource metrics | `8080` |
 | `blackbox-exporter` | HTTP health probes | `9115` |

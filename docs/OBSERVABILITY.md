@@ -24,6 +24,7 @@ docker compose -f monitoring/compose.yaml up -d
 | `vector` | Collects Kafka app logs and Docker container logs | Internal |
 | `kafka-exporter` | Kafka/Redpanda metrics | `9308` |
 | `mysql-exporter` | MySQL metrics | `9104` |
+| `redis-exporter` | Redis metrics | `9121` |
 | `elasticsearch-exporter` | Elasticsearch metrics | `9114` |
 | `cadvisor` | Docker container resource metrics | `8080` |
 | `blackbox-exporter` | HTTP health probes | `9115` |
@@ -38,7 +39,7 @@ Default local Grafana credentials are `admin` / `change-me-local`.
 | `worker` | Container logs |
 | `client` | Health probe and container logs |
 | `database` | MySQL exporter metrics and container logs |
-| `redis` | Container logs and app readiness/cache behavior |
+| `redis` | Redis exporter metrics, container logs, and app readiness/cache behavior |
 | `elasticsearch` | Elasticsearch exporter metrics and container logs |
 | `kafka` | Kafka exporter metrics and container logs |
 
@@ -53,6 +54,7 @@ Default local Grafana credentials are `admin` / `change-me-local`.
 | Blackbox exporter | `blackbox-exporter` | `observability/blackbox.yml` | Probes HTTP endpoints and emits uptime/duration metrics. |
 | Kafka exporter | `kafka-exporter` | Compose command flags | Emits Kafka topic, partition, broker, and consumer lag metrics. |
 | MySQL exporter | `mysql-exporter` | `DATA_SOURCE_NAME` env var | Emits MySQL availability and server status metrics. |
+| Redis exporter | `redis-exporter` | Compose command flags | Emits Redis availability, memory, keyspace, and command metrics. |
 | Elasticsearch exporter | `elasticsearch-exporter` | Compose command flags | Emits Elasticsearch cluster, node, and index metrics. |
 | cAdvisor | `cadvisor` | Compose volume mounts | Emits container CPU, memory, and runtime metrics. |
 
@@ -128,6 +130,7 @@ Prometheus scrapes:
 - HTTP blackbox probes for backend liveness, backend readiness, and frontend
 - Kafka metrics from `kafka-exporter:9308`
 - MySQL metrics from `mysql-exporter:9104`
+- Redis metrics from `redis-exporter:9121`
 - Elasticsearch metrics from `elasticsearch-exporter:9114`
 - container metrics from `cadvisor:8080`
 - Prometheus self-metrics
@@ -146,6 +149,7 @@ Current scrape jobs:
 | `audql-health` | `blackbox-exporter:9115` | Probes backend live, backend ready, and frontend root URLs. |
 | `kafka` | `kafka-exporter:9308` | Kafka and consumer group metrics. |
 | `mysql` | `mysql-exporter:9104` | MySQL metrics. |
+| `redis` | `redis-exporter:9121` | Redis metrics. |
 | `elasticsearch` | `elasticsearch-exporter:9114` | Elasticsearch cluster/index metrics. |
 | `containers` | `cadvisor:8080` | Docker container resource metrics. |
 | `prometheus` | `prometheus:9090` | Prometheus self-scrape. |

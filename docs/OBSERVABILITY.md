@@ -2,7 +2,7 @@
 
 AudQL monitoring is defined separately in
 [../monitoring/compose.yaml](../monitoring/compose.yaml). It attaches to the
-same Compose project/network as the app stack, so Prometheus, exporters, and
+same named Docker network as the app stack, so Prometheus, exporters, and
 Vector can reach `server`, `database`, `kafka`, and `elasticsearch` by service
 name. Update this document whenever observability services, labels, metrics,
 dashboards, or alerting behavior changes.
@@ -19,11 +19,12 @@ docker compose -f monitoring/compose.yaml up -d
 | Monitoring service | Purpose | Host port |
 | --- | --- | --- |
 | `grafana` | Dashboards | `3000` |
-| `prometheus` | Metrics and probes | `9090` |
+| `prometheus` | Metrics and probes | `9091` |
 | `loki` | Log storage | `3100` |
 | `vector` | Collects Kafka app logs and Docker container logs | Internal |
 | `kafka-exporter` | Kafka/Redpanda metrics | `9308` |
 | `mysql-exporter` | MySQL metrics | `9104` |
+| `redis-exporter` | Redis metrics | `9121` |
 | `elasticsearch-exporter` | Elasticsearch metrics | `9114` |
 | `cadvisor` | Docker container resource metrics | `8080` |
 | `blackbox-exporter` | HTTP health probes | `9115` |
@@ -38,7 +39,7 @@ Default local Grafana credentials are `admin` / `change-me-local`.
 | `worker` | Container logs |
 | `client` | Health probe and container logs |
 | `database` | MySQL exporter metrics and container logs |
-| `redis` | Container logs and app readiness/cache behavior |
+| `redis` | Redis exporter metrics, container logs, and app readiness/cache behavior |
 | `elasticsearch` | Elasticsearch exporter metrics and container logs |
 | `kafka` | Kafka exporter metrics and container logs |
 
@@ -53,6 +54,7 @@ Default local Grafana credentials are `admin` / `change-me-local`.
 | Blackbox exporter | `blackbox-exporter` | `observability/blackbox.yml` | Probes HTTP endpoints and emits uptime/duration metrics. |
 | Kafka exporter | `kafka-exporter` | Compose command flags | Emits Kafka topic, partition, broker, and consumer lag metrics. |
 | MySQL exporter | `mysql-exporter` | `DATA_SOURCE_NAME` env var | Emits MySQL availability and server status metrics. |
+| Redis exporter | `redis-exporter` | Compose command flags | Emits Redis availability, memory, keyspace, and command metrics. |
 | Elasticsearch exporter | `elasticsearch-exporter` | Compose command flags | Emits Elasticsearch cluster, node, and index metrics. |
 | cAdvisor | `cadvisor` | Compose volume mounts | Emits container CPU, memory, and runtime metrics. |
 
@@ -94,9 +96,10 @@ Vector writes application logs to Loki with JSON encoding and these labels:
 - `service`
 - `environment`
 - `level`
-- `event_type`
 
-Those labels are what power the Grafana log filters.
+Application events may contain an `event_type` field in their JSON body, but it
+is not used as a Loki label because older or third-party events may omit it.
+Those stable labels are what power the Grafana log filters.
 
 Vector reads Docker logs with:
 
@@ -124,10 +127,11 @@ Container log labels in Loki:
 
 Prometheus scrapes:
 
-- Django app metrics from `server:8000/metrics/`
+- Django app metrics from `text2sql-server:8000/metrics/`
 - HTTP blackbox probes for backend liveness, backend readiness, and frontend
 - Kafka metrics from `kafka-exporter:9308`
 - MySQL metrics from `mysql-exporter:9104`
+- Redis metrics from `redis-exporter:9121`
 - Elasticsearch metrics from `elasticsearch-exporter:9114`
 - container metrics from `cadvisor:8080`
 - Prometheus self-metrics
@@ -142,10 +146,11 @@ Current scrape jobs:
 
 | Job | Target | Notes |
 | --- | --- | --- |
-| `audql-server` | `server:8000/metrics/` | Django app metrics, scraped every 5 seconds. |
+| `audql-server` | `text2sql-server:8000/metrics/` | Django app metrics, scraped every 5 seconds. |
 | `audql-health` | `blackbox-exporter:9115` | Probes backend live, backend ready, and frontend root URLs. |
 | `kafka` | `kafka-exporter:9308` | Kafka and consumer group metrics. |
 | `mysql` | `mysql-exporter:9104` | MySQL metrics. |
+| `redis` | `redis-exporter:9121` | Redis metrics. |
 | `elasticsearch` | `elasticsearch-exporter:9114` | Elasticsearch cluster/index metrics. |
 | `containers` | `cadvisor:8080` | Docker container resource metrics. |
 | `prometheus` | `prometheus:9090` | Prometheus self-scrape. |
@@ -203,6 +208,8 @@ Dashboards are loaded into the `AudQL` folder by the dashboard provider in
 | `KAFKA_LOG_TOPIC` | `audql.logs` | backend/vector | Log topic name. |
 | `KAFKA_JOB_TOPIC` | `audql.jobs` | backend/worker | Background job topic. |
 | `KAFKA_JOB_GROUP_ID` | `audql-workers` | worker | Worker consumer group. |
+| `KAFKA_REQUEST_TIMEOUT_MS` | `15000` | worker | Kafka consumer request timeout; keep it above the session timeout. |
+| `KAFKA_API_VERSION_AUTO_TIMEOUT_MS` | `5000` | worker | Kafka API-version negotiation timeout. |
 | `CLIENT_LOG_RATE` | `30/min` | backend | Throttle rate for client log ingestion. |
 | `VITE_ERROR_REPORTING_ENABLED` | `true` | frontend | Sends browser and 5xx API errors to backend. |
 | `GF_SECURITY_ADMIN_USER` | `admin` | Grafana | Local admin username. |
@@ -219,7 +226,7 @@ docker compose config
 Check Prometheus targets:
 
 ```bash
-open http://localhost:9090/targets
+open http://localhost:9091/targets
 ```
 
 Check Grafana dashboards:
@@ -231,7 +238,7 @@ open http://localhost:3000
 Check that the backend exposes metrics:
 
 ```bash
-curl http://localhost:8000/metrics/
+curl http://localhost:8001/metrics/
 ```
 
 Check Loki labels through Grafana Explore, or query Loki directly:

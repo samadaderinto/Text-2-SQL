@@ -4,14 +4,13 @@ import os
 from datetime import timedelta
 from functools import lru_cache
 
-from django.conf import settings
 from django.core.files.storage import default_storage
-from django.core.mail import send_mail
 from django.db import connection, transaction
 from django.utils import timezone
 from kafka import KafkaProducer
 
 from .models import Customer, Order, Product, QueueJob, User
+from .notifications import send_user_notification
 from .search_index import delete_instance, index_instance
 from .services import SearchService
 
@@ -98,8 +97,18 @@ def _process_job(job):
     if job.kind in (
         QueueJob.Kind.EMAIL_ACTIVATION,
         QueueJob.Kind.EMAIL_PASSWORD_RESET,
+        QueueJob.Kind.NOTIFICATION_SEND,
     ):
         user = User.objects.get(pk=payload["user_id"])
+        if job.kind == QueueJob.Kind.NOTIFICATION_SEND:
+            return send_user_notification(
+                user_id=user.pk,
+                subject=payload["subject"],
+                body=payload["body"],
+                channels=payload.get("channels", ["email", "push"]),
+                data=payload.get("data"),
+            )
+
         from django.contrib.auth.tokens import PasswordResetTokenGenerator
         from django.utils.encoding import force_bytes
         from django.utils.http import urlsafe_base64_encode
@@ -121,14 +130,13 @@ def _process_job(job):
                 "This is the link to reset password. "
                 f"{api_origin}/auth/reset-password/verify/{uidb64}/{token}/"
             )
-        send_mail(
-            subject,
-            body,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
+        return send_user_notification(
+            user_id=user.pk,
+            subject=subject,
+            body=body,
+            channels=["email", "push"],
+            data={"kind": job.kind},
         )
-        return {"sent": True}
 
     if job.kind == QueueJob.Kind.ORDERS_EXPORT:
         import csv

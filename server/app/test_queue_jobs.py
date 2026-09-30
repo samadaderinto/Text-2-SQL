@@ -109,3 +109,50 @@ class QueueJobProcessingTests(TestCase):
 
         self.assertEqual(job.attempts, MAX_JOB_ATTEMPTS)
         self.assertEqual(job.error, "The background task failed. Please try again.")
+
+    def test_notification_send_job_delivers_via_fcm_and_email(self):
+        from app.models import Notification, NotificationDevice
+        from app.notifications import enqueue_user_notification
+
+        user = User.objects.create_user(
+            email="notif-user@example.com", password="ValidPass1!"
+        )
+        Notification.objects.create(
+            user=user,
+            email_notification=True,
+            push_notification=True,
+        )
+        NotificationDevice.objects.create(
+            user=user,
+            token="fcm-device-token-123",
+            platform="web",
+            is_active=True,
+        )
+
+        job = enqueue_user_notification(
+            user_id=user.pk,
+            subject="Order Shipped",
+            body="Your order #1001 has shipped!",
+            channels=["email", "push"],
+            data={"order_id": "1001"},
+        )
+        self.assertEqual(job.kind, QueueJob.Kind.NOTIFICATION_SEND)
+        self.assertEqual(job.status, QueueJob.Status.QUEUED)
+
+        with patch("app.notifications.send_mail", return_value=1) as mock_mail, patch(
+            "app.notifications.send_fcm_notification",
+            return_value={"sent": 1, "disabled_tokens": 0},
+        ) as mock_fcm:
+            processed = process_job(job.pk)
+
+        self.assertEqual(processed.status, QueueJob.Status.SUCCEEDED)
+        self.assertEqual(processed.result["email"], {"sent": 1})
+        self.assertEqual(processed.result["push"], {"sent": 1, "disabled_tokens": 0})
+        mock_mail.assert_called_once()
+        mock_fcm.assert_called_once_with(
+            tokens=["fcm-device-token-123"],
+            title="Order Shipped",
+            body="Your order #1001 has shipped!",
+            data={"order_id": "1001"},
+        )
+

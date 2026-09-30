@@ -30,6 +30,10 @@ class Command(BaseCommand):
             for server in os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092").split(",")
             if server.strip()
         ]
+        request_timeout_ms = int(os.getenv("KAFKA_REQUEST_TIMEOUT_MS", "15000"))
+        api_version_auto_timeout_ms = int(
+            os.getenv("KAFKA_API_VERSION_AUTO_TIMEOUT_MS", "5000")
+        )
         consumer = None
         next_connection_attempt = 0.0
 
@@ -45,8 +49,8 @@ class Command(BaseCommand):
                             group_id=group_id,
                             enable_auto_commit=True,
                             auto_offset_reset="latest",
-                            request_timeout_ms=3000,
-                            api_version_auto_timeout_ms=3000,
+                            request_timeout_ms=request_timeout_ms,
+                            api_version_auto_timeout_ms=api_version_auto_timeout_ms,
                         )
                     except KafkaError:
                         logger.exception("Could not connect queue worker to Kafka")

@@ -39,6 +39,12 @@ jobs:
         env:
           VITE_API_BASE_URL: http://localhost:8000
           VITE_ERROR_REPORTING_ENABLED: "false"
+          VITE_FIREBASE_API_KEY: ""
+          VITE_FIREBASE_AUTH_DOMAIN: ""
+          VITE_FIREBASE_PROJECT_ID: ""
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ""
+          VITE_FIREBASE_APP_ID: ""
+          VITE_FIREBASE_VAPID_KEY: ""
         run: npm run build
 
   backend:
@@ -67,6 +73,10 @@ jobs:
       OPENAI_API_KEY: ci-placeholder
       DATABASE_URL: postgresql://ci:ci-postgres-password@127.0.0.1:5432/text2sql
       EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
+      FCM_ENABLED: "false"
+      FCM_PROJECT_ID: ""
+      FCM_SERVICE_ACCOUNT_FILE: ""
+      FCM_SERVICE_ACCOUNT_JSON: ""
       ELASTICSEARCH_HOST: localhost
       ELASTICSEARCH_PORT: "9200"
     steps:

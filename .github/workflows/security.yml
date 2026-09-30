@@ -72,6 +72,10 @@ jobs:
       SECRET_KEY: ci-secret-key-for-checks-only
       OPENAI_API_KEY: ci-placeholder
       EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
+      FCM_ENABLED: "false"
+      FCM_PROJECT_ID: ""
+      FCM_SERVICE_ACCOUNT_FILE: ""
+      FCM_SERVICE_ACCOUNT_JSON: ""
       ELASTICSEARCH_HOST: localhost
       ELASTICSEARCH_PORT: "9200"
     steps:

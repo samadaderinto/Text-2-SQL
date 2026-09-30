@@ -76,7 +76,7 @@ Core Django settings:
 | `DEBUG` | `true` | Enables local debug behavior. Use `false` outside development. |
 | `SECRET_KEY` | `dev-only-secret-key-change-me` | Django signing key. Must be strong and private in real deployments. |
 | `OPENAI_API_KEY` | `dev-placeholder` | Used by query/audio flows that call OpenAI. |
-| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | Comma-separated Django host allowlist. |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1,text2sql-server,server` | Comma-separated Django host allowlist; `text2sql-server` is required for internal Compose probes. |
 | `FRONTEND_URL` | `http://localhost:4174` | Used for redirects, CORS, and CSRF trusted origins. |
 | `DEPLOY_ENV` | `local` | Environment label used in logs and dashboards. |
 
@@ -112,6 +112,8 @@ Search, queue, and logs:
 | `KAFKA_JOB_GROUP_ID` | `audql-workers` | Worker consumer group. |
 | `KAFKA_LOG_TOPIC` | `audql.logs` | Structured log topic consumed by Vector. |
 | `KAFKA_LOGGING_ENABLED` | `true` | Enables publishing backend logs to Kafka. |
+| `KAFKA_REQUEST_TIMEOUT_MS` | `15000` | Worker Kafka request timeout; must exceed the broker session timeout. |
+| `KAFKA_API_VERSION_AUTO_TIMEOUT_MS` | `5000` | Worker timeout for Kafka API-version negotiation. |
 | `CLIENT_LOG_RATE` | `30/min` in `.env.example` | DRF throttle scope for frontend log ingestion. |
 
 Email:
@@ -157,7 +159,7 @@ With Compose:
 
 ```bash
 docker compose -f compose.yaml up --build
-docker compose exec server python manage.py reindex_search --rebuild
+docker compose exec text2sql-server python manage.py reindex_search --rebuild
 ```
 
 ## Backend documentation checklist

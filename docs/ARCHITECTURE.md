@@ -8,7 +8,8 @@ boundaries, data flow, infrastructure, or major runtime behavior changes.
 The application runtime is defined in [../compose.yaml](../compose.yaml).
 
 - `client`: React + TypeScript + Vite app. It runs on port `4174` in local
-  Compose and talks to the backend through `VITE_API_BASE_URL`.
+  Compose and talks to the browser-visible backend origin through
+  `VITE_API_BASE_URL`.
 - `server`: Django + Django REST Framework API. It runs on port `8000`,
   applies migrations at startup in Compose, rebuilds search indexes, exposes
   OpenAPI docs, health checks, logs, and Prometheus metrics.
@@ -59,21 +60,24 @@ Observability tools:
 - Blackbox exporter: HTTP probes for frontend and backend health endpoints.
 - Kafka exporter: Redpanda/Kafka metrics and consumer lag.
 - MySQL exporter: database availability and runtime metrics.
+- Redis exporter: cache availability and runtime metrics.
 - Elasticsearch exporter: cluster, node, and index metrics.
 - cAdvisor: container CPU and memory metrics.
 
 ## Request flow
 
-1. The browser renders the React app and uses the Axios API client in
-   `client/src/utils/api.ts`.
-2. Authenticated requests include a decrypted JWT access token in the
+1. Compose publishes the `client` container at `http://localhost:4174` and the
+   `server` container at `http://localhost:8001`.
+2. The browser renders the React app and uses the Axios API client in
+   `client/src/utils/api.ts` to call the backend origin.
+3. Authenticated requests include a decrypted JWT access token in the
    `Authorization` header.
-3. Django routes API calls through DRF viewsets in `server/app/views.py`.
-4. Business logic lives in service classes in `server/app/services.py`.
-5. Persistent data is stored through Django models in `server/app/models.py`.
-6. Expensive or asynchronous work is queued through `server/app/job_queue.py`
+4. Django routes API calls through DRF viewsets in `server/app/views.py`.
+5. Business logic lives in service classes in `server/app/services.py`.
+6. Persistent data is stored through Django models in `server/app/models.py`.
+7. Expensive or asynchronous work is queued through `server/app/job_queue.py`
    and processed by `run_queue_worker`.
-7. The frontend polls `/jobs/<job_id>/` when an API action returns a queued job.
+8. The frontend polls `/jobs/<job_id>/` when an API action returns a queued job.
 
 ## Text-to-SQL flow
 
@@ -94,9 +98,11 @@ transactions commit.
 - Backend logs are structured JSON events and can also be published to Kafka.
 - Frontend uncaught errors, unhandled rejections, and server-side API failures
   are sent to `/logs/client/`.
-- Vector consumes log events from Kafka and writes them to Loki.
-- Prometheus scrapes Django, Kafka exporter, MySQL exporter, Elasticsearch
-  exporter, cAdvisor, blackbox probes, and itself.
+- Vector consumes log events from Kafka and writes them to Loki using stable
+  service, environment, and level labels; container logs are normalized before
+  storage as well.
+- Prometheus scrapes Django, Kafka exporter, MySQL exporter, Redis exporter,
+  Elasticsearch exporter, cAdvisor, blackbox probes, and itself.
 - Grafana provisions Prometheus and Loki datasources plus AudQL dashboards.
 
 ## Configuration principles
@@ -138,10 +144,11 @@ Monitoring stack:
 | Port | Service | Purpose |
 | --- | --- | --- |
 | `3000` | `grafana` | dashboards |
-| `9090` | `prometheus` | metrics UI/API |
+| `9091` | `prometheus` | metrics UI/API |
 | `3100` | `loki` | log query API |
 | `9308` | `kafka-exporter` | Kafka metrics |
 | `9104` | `mysql-exporter` | MySQL metrics |
+| `9121` | `redis-exporter` | Redis metrics |
 | `9114` | `elasticsearch-exporter` | Elasticsearch metrics |
 | `8080` | `cadvisor` | container metrics |
 | `9115` | `blackbox-exporter` | HTTP probe metrics |

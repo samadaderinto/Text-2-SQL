@@ -1,4 +1,4 @@
-from .models import Customer, Notification, Order, Product, Store, User
+from .models import Customer, Notification, NotificationDevice, Order, Product, Store, User
 
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
@@ -157,7 +157,14 @@ class AdminSerializer(serializers.Serializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ["email_notification", "sms_notification"]
+        fields = ["email_notification", "push_notification"]
+
+
+class NotificationDeviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationDevice
+        fields = ["id", "token", "platform", "is_active", "created", "updated"]
+        read_only_fields = ["id", "is_active", "created", "updated"]
 
 
 class SearchSerializer(serializers.Serializer):

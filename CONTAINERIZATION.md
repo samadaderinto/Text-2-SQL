@@ -9,7 +9,7 @@ The application stack is defined in [compose.yaml](compose.yaml).
 
 | App service | Purpose | Default host port |
 | --- | --- | --- |
-| `server` | Django development API, built from `server/Dockerfile` | `8000` |
+| `text2sql-server` | Django development API, built from `server/Dockerfile` | `8001` (container: `8000`) |
 | `worker` | Django queue worker for Kafka-backed jobs | Internal |
 | `client` | Vite/React dev server | `4174` |
 | `database` | MySQL 8.4 database | `3306` |
@@ -17,9 +17,9 @@ The application stack is defined in [compose.yaml](compose.yaml).
 | `elasticsearch` | Elasticsearch 9 search engine | `9200` |
 | `kafka` | Redpanda Kafka-compatible broker | `9092` |
 
-The API waits for MySQL, Redis, Elasticsearch, and Kafka to be healthy.
-Database, Redis, Elasticsearch, Kafka, and frontend dependencies use persistent
-volumes.
+The API waits for MySQL, Redis, Elasticsearch, and Kafka to be healthy. The
+frontend waits for the API readiness check before starting. Database, Redis,
+Elasticsearch, Kafka, and frontend dependencies use persistent volumes.
 
 Monitoring is defined separately in
 [monitoring/compose.yaml](monitoring/compose.yaml).
@@ -27,11 +27,12 @@ Monitoring is defined separately in
 | Monitoring service | Purpose | Host port |
 | --- | --- | --- |
 | `grafana` | Dashboards | `3000` |
-| `prometheus` | Metrics and probes | `9090` |
+| `prometheus` | Metrics and probes | `9091` |
 | `loki` | Log storage | `3100` |
 | `vector` | Collects Kafka app logs and Docker container logs | Internal |
 | `kafka-exporter` | Kafka/Redpanda metrics | `9308` |
 | `mysql-exporter` | MySQL metrics | `9104` |
+| `redis-exporter` | Redis metrics | `9121` |
 | `elasticsearch-exporter` | Elasticsearch metrics | `9114` |
 | `cadvisor` | Docker container resource metrics | `8080` |
 | `blackbox-exporter` | HTTP health probes | `9115` |
@@ -45,9 +46,10 @@ docker compose -f compose.yaml up --build
 Then open:
 
 - Frontend: http://localhost:4174
-- Backend: http://localhost:8000
+- Backend: http://localhost:8001
 
-To start monitoring as a separate stack attached to the same Compose project:
+To start monitoring as a separate stack attached to the same named Docker
+network (`text-2-sql-app-net`):
 
 ```bash
 docker compose -f monitoring/compose.yaml up
@@ -76,8 +78,8 @@ and waits for it before starting the frontend. Check service health with:
 
 ```bash
 docker compose ps
-curl -i http://localhost:8000/health/
-curl -i http://localhost:8000/health/live/
+curl -i http://localhost:8001/health/
+curl -i http://localhost:8001/health/live/
 ```
 
 ## Environment
@@ -124,7 +126,7 @@ test suite does not connect to or modify the Compose MySQL database.
 To rebuild search indices and repopulate them from the database:
 
 ```bash
-docker compose exec server python manage.py reindex_search --rebuild
+docker compose exec text2sql-server python manage.py reindex_search --rebuild
 ```
 
 The default app stack starts Elasticsearch. For deployments outside Compose,
@@ -140,7 +142,7 @@ The server image does not install `ffmpeg`. The current backend sends recorded W
   container applies migrations and collects static files before starting
   Gunicorn.
 - SQLite files and `.env` files are excluded from image build contexts.
-- The frontend talks to `http://localhost:8000` by default through `VITE_API_BASE_URL`.
+- The frontend talks to `http://localhost:8001` by default through `VITE_API_BASE_URL`.
 
 ## Render deployment
 
@@ -170,18 +172,11 @@ workflow run summary remains available in that case.
 
 The `Production incident monitor` workflow checks the production API readiness
 endpoint every five minutes. It probes up to five times, 15 seconds apart, and
-opens one tracked GitHub issue plus sends an SMS after three consecutive
-failures. While the incident remains open, duplicate alert texts are
-suppressed. When readiness recovers, the workflow closes the issue and sends a
-recovery SMS if an incident alert was sent.
+opens one tracked GitHub issue after three consecutive failures. When readiness
+recovers, the workflow closes the issue.
 
 Configure these repository Actions secrets before enabling the monitor:
 
 - `PRODUCTION_HEALTHCHECK_URL`: the production API URL ending in `/health/`
-- `AFRICASTALKING_USERNAME`: your Africa's Talking production username
-- `AFRICASTALKING_API_KEY`: the API key from your Africa's Talking account
-- `INCIDENT_SMS_RECIPIENT`: the on-call phone number in E.164 format
 
-The workflow sends SMS directly from GitHub Actions to Africa's Talking. Keep
-the API key and recipient in Actions secrets; do not put them in workflow files
-or commit them. Scheduled workflows run from the repository's default branch.
+Scheduled workflows run from the repository's default branch.

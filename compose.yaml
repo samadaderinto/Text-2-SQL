@@ -1,4 +1,4 @@
-name: text-2-sql
+name: text-2-sql-app
 
 services:
   database:
@@ -11,6 +11,8 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - app-net
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping --silent -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\""]
       interval: 5s
@@ -23,9 +25,11 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:6380:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - app-net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -33,7 +37,7 @@ services:
       retries: 20
       start_period: 5s
 
-  server:
+  text2sql-server:
     build:
       context: .
       dockerfile: server/Dockerfile
@@ -46,6 +50,7 @@ services:
              python manage.py reindex_search &&
              python manage.py runserver 0.0.0.0:8000"
     environment:
+      ALLOWED_HOSTS: localhost,127.0.0.1,text2sql-server,server
       MYSQL_HOST: database
       MYSQL_PORT: "3306"
       CACHE_LOCATION: redis://redis:6379/1
@@ -54,9 +59,11 @@ services:
       ELASTICSEARCH_PORT: "9200"
       ELASTICSEARCH_URL: http://elasticsearch:9200
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./server:/app
+    networks:
+      - app-net
     healthcheck:
       test:
         [
@@ -77,6 +84,24 @@ services:
       elasticsearch:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    env_file:
+      - ./client/.env
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "4174"]
+    ports:
+      - "4174:4174"
+    volumes:
+      - ./client:/app
+      - client_node_modules:/app/node_modules
+    networks:
+      - app-net
+    depends_on:
+      text2sql-server:
         condition: service_healthy
 
   worker:
@@ -100,26 +125,14 @@ services:
       ELASTICSEARCH_URL: http://elasticsearch:9200
     volumes:
       - ./server:/app
+    networks:
+      - app-net
     depends_on:
-      server:
+      text2sql-server:
         condition: service_healthy
       redis:
         condition: service_healthy
       kafka:
-        condition: service_healthy
-  client:
-    build:
-      context: ./client
-    env_file:
-      - ./client/.env
-    command: npm run dev -- --host 0.0.0.0 --port 4174
-    ports:
-      - "4174:4174"
-    volumes:
-      - ./client:/app
-      - client_node_modules:/app/node_modules
-    depends_on:
-      server:
         condition: service_healthy
 
   elasticsearch:
@@ -129,9 +142,11 @@ services:
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9201:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - app-net
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health >/dev/null"]
       interval: 10s
@@ -158,17 +173,25 @@ services:
       - --kafka-addr
       - internal://0.0.0.0:9092,external://0.0.0.0:19092
       - --advertise-kafka-addr
-      - internal://kafka:9092,external://localhost:9092
+      - internal://kafka:9092,external://localhost:9093
     ports:
-      - "127.0.0.1:9092:19092"
+      - "127.0.0.1:9093:19092"
+      - "127.0.0.1:9644:9644"
     volumes:
       - kafka_data:/var/lib/redpanda/data
+    networks:
+      - app-net
     healthcheck:
-      test: ["CMD", "rpk", "cluster", "health", "--brokers", "localhost:9092"]
+      test: ["CMD", "rpk", "cluster", "health"]
       interval: 10s
       timeout: 5s
       retries: 20
       start_period: 20s
+
+networks:
+  app-net:
+    name: text-2-sql-app-net
+    external: true
 
 volumes:
   client_node_modules:

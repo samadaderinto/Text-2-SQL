@@ -3,7 +3,7 @@ data_dir: /var/lib/vector
 sources:
   audql_logs:
     type: kafka
-    bootstrap_servers: kafka:9092
+    bootstrap_servers: "${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}"
     group_id: audql-vector-logs
     topics:
       - "${KAFKA_LOG_TOPIC:-audql.logs}"
@@ -14,17 +14,22 @@ sources:
   docker_logs:
     type: docker_logs
     docker_host: unix:///var/run/docker.sock
-    include_containers:
-      - text-2-sql-*
 
 transforms:
+  normalize_app_logs:
+    type: remap
+    inputs:
+      - audql_logs
+    source: |
+      .event_type = if exists(.event_type) { .event_type } else { "app_log" }
+
   normalize_docker_logs:
     type: remap
     inputs:
       - docker_logs
     source: |
       .source = "container"
-      .service = .container_name ?? "unknown"
+      .service = .container_name
       .environment = get_env_var("DEPLOY_ENV") ?? "local"
       .level = "info"
       .event_type = "container_log"
@@ -33,7 +38,7 @@ sinks:
   loki_app:
     type: loki
     inputs:
-      - audql_logs
+      - normalize_app_logs
     endpoint: http://loki:3100
     encoding:
       codec: json
@@ -41,7 +46,6 @@ sinks:
       service: "{{ service }}"
       environment: "{{ environment }}"
       level: "{{ level }}"
-      event_type: "{{ event_type }}"
     out_of_order_action: accept
 
   loki_containers:

@@ -99,7 +99,7 @@ class Command(BaseCommand):
             Notification.objects.create(
                 user=user,
                 email_notification=True,
-                sms_notification=user_index == 1,
+                push_notification=user_index != 2,
             )
             self.create_customers(user, user_index)
             self.create_queries(user)

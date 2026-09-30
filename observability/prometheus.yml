@@ -7,7 +7,7 @@ scrape_configs:
     scrape_interval: 5s
     metrics_path: /metrics/
     static_configs:
-      - targets: [server:8000]
+      - targets: ["text2sql-server:8000"]
 
   - job_name: audql-health
     metrics_path: /probe
@@ -15,8 +15,8 @@ scrape_configs:
       module: [http_2xx]
     static_configs:
       - targets:
-          - http://server:8000/health/live/
-          - http://server:8000/health/
+          - http://text2sql-server:8000/health/live/
+          - http://text2sql-server:8000/health/
           - http://client:4174/
     relabel_configs:
       - source_labels: [__address__]
@@ -28,20 +28,24 @@ scrape_configs:
 
   - job_name: kafka
     static_configs:
-      - targets: [kafka-exporter:9308]
+      - targets: ["kafka-exporter:9308"]
 
   - job_name: mysql
     static_configs:
-      - targets: [mysql-exporter:9104]
+      - targets: ["mysql-exporter:9104"]
+
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]
 
   - job_name: elasticsearch
     static_configs:
-      - targets: [elasticsearch-exporter:9114]
+      - targets: ["elasticsearch-exporter:9114"]
 
   - job_name: containers
     static_configs:
-      - targets: [cadvisor:8080]
+      - targets: ["cadvisor:8080"]
 
   - job_name: prometheus
     static_configs:
-      - targets: [prometheus:9090]
+      - targets: ["prometheus:9090"]

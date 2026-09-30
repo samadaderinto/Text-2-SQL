@@ -29,6 +29,10 @@ Existing setup notes are still available in [CONTAINERIZATION.md](CONTAINERIZATI
 docker compose -f compose.yaml up --build
 ```
 
+This starts the frontend and backend together. The browser-facing contract is
+`http://localhost:4174` -> `http://localhost:8001`; the frontend gets that API
+origin from `client/.env` / `VITE_API_BASE_URL`.
+
 Start monitoring separately when you want Grafana, Prometheus, Loki, Vector,
 and exporters:
 
@@ -39,10 +43,10 @@ docker compose -f monitoring/compose.yaml up
 Local URLs:
 
 - Frontend: <http://localhost:4174>
-- Backend: <http://localhost:8000>
-- API docs: <http://localhost:8000/docs/swagger/>
+- Backend: <http://localhost:8001>
+- API docs: <http://localhost:8001/docs/swagger/>
 - Grafana: <http://localhost:3000>
-- Prometheus: <http://localhost:9090>
+- Prometheus: <http://localhost:9091>
 
 Default local Grafana credentials are `admin` / `change-me-local`.
 

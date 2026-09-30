@@ -231,10 +231,25 @@ class Customer(DatesMixin):
 class Notification(DatesMixin):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     email_notification = models.BooleanField(default=True)
-    sms_notification = models.BooleanField(default=False)
+    push_notification = models.BooleanField(default=True)
 
     class Meta:
         db_table = "notification"
+        ordering = ["created"]
+
+
+class NotificationDevice(DatesMixin):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notification_devices",
+    )
+    token = models.CharField(max_length=500, unique=True)
+    platform = models.CharField(max_length=40, default="web")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "notification_device"
         ordering = ["created"]
 
 
@@ -255,6 +270,7 @@ class QueueJob(models.Model):
         QUERY_AUDIO = "query.audio", "Transcribe audio query"
         EMAIL_ACTIVATION = "email.activation", "Activation email"
         EMAIL_PASSWORD_RESET = "email.password_reset", "Password reset email"
+        NOTIFICATION_SEND = "notification.send", "Send notification"
         ORDERS_EXPORT = "orders.export", "Export orders"
 
     class Status(models.TextChoices):

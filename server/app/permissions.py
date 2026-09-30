@@ -34,6 +34,8 @@ class ServerAccessPolicy(AccessPolicy):
                 "retrieve_store",
                 "get_notification_info",
                 "update_notification_info",
+                "register_notification_device",
+                "unregister_notification_device",
                 "retrieve_order",
                 "update_order",
                 "create_order",

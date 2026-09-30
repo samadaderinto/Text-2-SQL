@@ -608,13 +608,21 @@ class SettingsApiTests(TestCase):
 
         notification_update_response = self.client.put(
             "/settings/notifications/update/",
-            {"email_notification": False, "sms_notification": True},
+            {"email_notification": False, "push_notification": True},
             format="json",
         )
         self.assertEqual(notification_update_response.status_code, 200)
         self.notification.refresh_from_db()
         self.assertFalse(self.notification.email_notification)
-        self.assertTrue(self.notification.sms_notification)
+        self.assertTrue(self.notification.push_notification)
+
+        device_response = self.client.post(
+            "/settings/notifications/devices/",
+            {"token": "demo-fcm-token", "platform": "web"},
+            format="json",
+        )
+        self.assertEqual(device_response.status_code, 201)
+        self.assertEqual(device_response.data["token"], "demo-fcm-token")
 
     def test_admin_settings_can_be_read_and_updated(self):
         get_response = self.client.get("/settings/admin/get/")

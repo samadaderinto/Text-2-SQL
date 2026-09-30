@@ -78,6 +78,11 @@ EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
 )
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or "webmaster@localhost"
+
+FCM_ENABLED = os.getenv("FCM_ENABLED", "false").lower() == "true"
+FCM_PROJECT_ID = os.getenv("FCM_PROJECT_ID", "")
+FCM_SERVICE_ACCOUNT_FILE = os.getenv("FCM_SERVICE_ACCOUNT_FILE", "")
+FCM_SERVICE_ACCOUNT_JSON = os.getenv("FCM_SERVICE_ACCOUNT_JSON", "")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "true"
 DEPLOY_ENV = os.getenv("DEPLOY_ENV", "local")
@@ -85,7 +90,7 @@ DEPLOY_ENV = os.getenv("DEPLOY_ENV", "local")
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,text2sql-server,server").split(",")
     if host.strip()
 ]
 def normalize_origin(value):

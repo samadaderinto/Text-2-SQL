@@ -22,7 +22,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 
-from .models import Customer, Order, Product, QueueJob, Store, User
+from .models import Customer, NotificationDevice, Order, Product, QueueJob, Store, User
 from .permissions import ServerAccessPolicy
 from .serializers import (
     AdminSerializer,
@@ -32,6 +32,7 @@ from .serializers import (
     LogOutSerializer,
     LoginSerializer,
     NotificationSerializer,
+    NotificationDeviceSerializer,
     OrderSerializer,
     ProductSerializer,
     QueryPlanSerializer,
@@ -803,3 +804,29 @@ class SettingsViewSet(viewsets.GenericViewSet):
         data = JSONParser().parse(request)
         settings_data = self.settings_service.update_notification_info(request.user, data)
         return Response(status=200, data=settings_data)
+
+    @extend_schema(request=NotificationDeviceSerializer, responses={201: NotificationDeviceSerializer})
+    @action(detail=False, methods=["post"], url_path="notifications/devices")
+    def register_notification_device(self, request):
+        serializer = NotificationDeviceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        device, _ = NotificationDevice.objects.update_or_create(
+            token=serializer.validated_data["token"],
+            defaults={
+                "user": request.user,
+                "platform": serializer.validated_data.get("platform", "web"),
+                "is_active": True,
+            },
+        )
+        return Response(status=status.HTTP_201_CREATED, data=NotificationDeviceSerializer(device).data)
+
+    @extend_schema(request=NotificationDeviceSerializer, responses={204: None})
+    @action(detail=False, methods=["delete"], url_path="notifications/devices")
+    def unregister_notification_device(self, request):
+        serializer = NotificationDeviceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        NotificationDevice.objects.filter(
+            user=request.user,
+            token=serializer.validated_data["token"],
+        ).update(is_active=False)
+        return Response(status=status.HTTP_204_NO_CONTENT)

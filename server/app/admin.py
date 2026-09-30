@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import (
     Notification,
+    NotificationDevice,
     User,
     Store,
     Product,
@@ -20,4 +21,5 @@ admin.site.register(CartItem)
 admin.site.register(Order)
 admin.site.register(Customer)
 admin.site.register(Notification)
+admin.site.register(NotificationDevice)
 admin.site.register(Query)

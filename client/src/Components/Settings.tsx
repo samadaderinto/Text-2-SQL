@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Header } from "../layouts/Header";
 import api from "../utils/api";
 import { notifyApiError } from "../utils/api-errors";
+import { registerPushNotifications } from "../utils/push-notifications";
 
 export const Settings = () => {
   const [active, setActive] = useState('General');
@@ -15,7 +16,7 @@ export const Settings = () => {
     adminEmail: '',
     password: '',
     emailNotifications: false,
-    smsNotifications: false,
+    pushNotifications: false,
   });
 
   const nav = useNavigate();
@@ -52,11 +53,11 @@ export const Settings = () => {
       }));
     });
 
-    fetchData(`/settings/notifications/get/`, ({ email_notification, sms_notification }) => {
+    fetchData(`/settings/notifications/get/`, ({ email_notification, push_notification }) => {
       setFormData((prev) => ({
         ...prev,
         emailNotifications: email_notification,
-        smsNotifications: sms_notification,
+        pushNotifications: push_notification,
       }));
     });
   }, [fetchData]);
@@ -90,12 +91,15 @@ export const Settings = () => {
       },
       'Notifications': {
         email_notification: formData.emailNotifications,
-        sms_notification: formData.smsNotifications,
+        push_notification: formData.pushNotifications,
       },
     };
 
     try {
       await api.put(endpoints[active], dataMap[active]);
+      if (active === 'Notifications' && formData.pushNotifications) {
+        await registerPushNotifications();
+      }
     } catch (error) {
       notifyApiError(error, "Could not save settings. Please try again.");
     }
@@ -202,12 +206,12 @@ export const Settings = () => {
                 <p>Enable Email Notifications</p>
                 <input
                   type="checkbox"
-                  id="smsNotifications"
-                  name="smsNotifications"
-                  checked={formData.smsNotifications}
+                  id="pushNotifications"
+                  name="pushNotifications"
+                  checked={formData.pushNotifications}
                   onChange={handleInputChange}
                 />
-                <p>Enable SMS Notifications</p>
+                <p>Enable Push Notifications</p>
               </section>
             </>
           )}

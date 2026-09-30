@@ -1,4 +1,4 @@
-name: text-2-sql
+name: text-2-sql-monitoring
 
 services:
   loki:
@@ -9,15 +9,21 @@ services:
       - loki_data:/loki
     ports:
       - "127.0.0.1:3100:3100"
+    networks:
+      - text2sql-mon-net
+      - text2sql-app-net
 
   vector:
-    image: timberio/vector:0.49.0-alpine
+    image: timberio/vector:0.49.0-debian
     command: ["--config", "/etc/vector/vector.yaml"]
     env_file:
       - ../server/.env
     volumes:
       - ../observability/vector.yaml:/etc/vector/vector.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - text2sql-mon-net
+      - text2sql-app-net
     depends_on:
       loki:
         condition: service_started
@@ -34,6 +40,8 @@ services:
       - grafana_data:/var/lib/grafana
       - ../observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ../observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - text2sql-mon-net
     depends_on:
       loki:
         condition: service_started
@@ -47,14 +55,19 @@ services:
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=7d
     ports:
-      - "127.0.0.1:9090:9090"
+      - "127.0.0.1:9091:9090"
     volumes:
       - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
+    networks:
+      - text2sql-mon-net
+      - text2sql-app-net
     depends_on:
       kafka-exporter:
         condition: service_started
       mysql-exporter:
+        condition: service_started
+      redis-exporter:
         condition: service_started
       elasticsearch-exporter:
         condition: service_started
@@ -70,17 +83,36 @@ services:
       - --web.listen-address=0.0.0.0:9308
     ports:
       - "127.0.0.1:9308:9308"
+    networks:
+      - text2sql-mon-net
+      - text2sql-app-net
 
   mysql-exporter:
     image: prom/mysqld-exporter:v0.15.1
     env_file:
       - ../server/.env
-    command:
+    entrypoint:
       - sh
       - -c
-      - DATA_SOURCE_NAME="$${MYSQL_USER}:$${MYSQL_PASSWORD}@(database:3306)/" /bin/mysqld_exporter
+    command:
+      - |
+        printf '[client]\nuser=%s\npassword=%s\nhost=database\nport=3306\n' "$${MYSQL_USER}" "$${MYSQL_PASSWORD}" > /tmp/.my.cnf
+        exec /bin/mysqld_exporter --config.my-cnf=/tmp/.my.cnf --no-collect.slave_status
     ports:
       - "127.0.0.1:9104:9104"
+    networks:
+      - text2sql-mon-net
+      - text2sql-app-net
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.67.0
+    command:
+      - --redis.addr=redis://redis:6379
+    ports:
+      - "127.0.0.1:9121:9121"
+    networks:
+      - text2sql-mon-net
+      - text2sql-app-net
 
   elasticsearch-exporter:
     image: quay.io/prometheuscommunity/elasticsearch-exporter:v1.9.0
@@ -89,7 +121,10 @@ services:
       - --es.all
       - --es.indices
     ports:
-      - "127.0.0.1:9114:9114"
+      - "127.0.0.1:9116:9114"
+    networks:
+      - text2sql-mon-net
+      - text2sql-app-net
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.52.1
@@ -100,6 +135,8 @@ services:
       - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - text2sql-mon-net
 
   blackbox-exporter:
     image: prom/blackbox-exporter:v0.27.0
@@ -109,6 +146,19 @@ services:
       - "127.0.0.1:9115:9115"
     volumes:
       - ../observability/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    networks:
+      - text2sql-mon-net
+      - text2sql-app-net
+
+networks:
+  text2sql-mon-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.0.0/16
+  text2sql-app-net:
+    external: true
+    name: text-2-sql-app-net
 
 volumes:
   loki_data:

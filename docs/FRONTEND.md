@@ -16,6 +16,8 @@ or build/test behavior changes.
   screens.
 - `client/src/utils/api.ts`: Axios instance, JWT attachment, refresh handling,
   and API error reporting.
+- `client/src/utils/api-config.ts`: shared API-origin normalization used by
+  requests and client error reporting.
 - `client/src/utils/error-reporting.ts`: browser/client error capture.
 - `client/src/utils/queue-jobs.ts`: queued job polling helpers.
 - `client/src/styles/main.scss`: global stylesheet imports and shared toast
@@ -23,8 +25,9 @@ or build/test behavior changes.
 
 ## Runtime behavior
 
-The app reads `VITE_API_BASE_URL` and defaults to `http://localhost:8000`.
-Relative or hostname-only API values are normalized to HTTPS.
+The app reads `VITE_API_BASE_URL` and defaults to `http://localhost:8001`.
+Relative or hostname-only API values are normalized to HTTPS. The same resolved
+origin is used for normal API calls and client error reporting.
 
 Access and refresh tokens are stored encrypted in `localStorage`. The Axios
 request interceptor decrypts the access token and attaches it as a bearer token.
@@ -42,7 +45,7 @@ build values are supplied by CI/deployment secrets and provider env vars.
 
 | Variable | Default in Compose | Purpose |
 | --- | --- | --- |
-| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend API origin used by the Axios client. |
+| `VITE_API_BASE_URL` | `http://localhost:8001` | Backend API origin used by the Axios client. |
 | `VITE_ERROR_REPORTING_ENABLED` | `true` | Enables browser/client error reporting to `/logs/client/`. |
 
 The Vite dev server is started by Compose with:
@@ -51,7 +54,8 @@ The Vite dev server is started by Compose with:
 npm run dev -- --host 0.0.0.0 --port 4174
 ```
 
-The client Docker service bind-mounts `./client` into `/app` and uses the
+The client Docker service is published at `http://localhost:4174`, depends on a
+healthy backend, bind-mounts `./client` into `/app`, and uses the
 `client_node_modules` named volume for installed dependencies. That keeps
 container dependencies separate from the host checkout.
 

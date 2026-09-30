@@ -2,11 +2,7 @@ import axios from "axios";
 import { decryptJWT, encryptJWT } from "./hooks";
 import { secretKey } from "./constants";
 import { reportClientError } from "./error-reporting";
-
-const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-const API_BASE_URL = configuredApiBaseUrl.includes("://")
-  ? configuredApiBaseUrl
-  : `https://${configuredApiBaseUrl}`;
+import { API_BASE_URL } from "./api-config";
 
 const api = axios.create({ baseURL: API_BASE_URL });
 

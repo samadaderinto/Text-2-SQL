@@ -1,0 +1,116 @@
+name: text-2-sql
+
+services:
+  loki:
+    image: grafana/loki:3.5.3
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ../observability/loki-config.yaml:/etc/loki/config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "127.0.0.1:3100:3100"
+
+  vector:
+    image: timberio/vector:0.49.0-alpine
+    command: ["--config", "/etc/vector/vector.yaml"]
+    env_file:
+      - ../server/.env
+    volumes:
+      - ../observability/vector.yaml:/etc/vector/vector.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      loki:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    env_file:
+      - ../server/.env
+    environment:
+      GF_USERS_DEFAULT_THEME: dark
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      loki:
+        condition: service_started
+      prometheus:
+        condition: service_started
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ../observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      kafka-exporter:
+        condition: service_started
+      mysql-exporter:
+        condition: service_started
+      elasticsearch-exporter:
+        condition: service_started
+      cadvisor:
+        condition: service_started
+      blackbox-exporter:
+        condition: service_started
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    command:
+      - --kafka.server=kafka:9092
+      - --web.listen-address=0.0.0.0:9308
+    ports:
+      - "127.0.0.1:9308:9308"
+
+  mysql-exporter:
+    image: prom/mysqld-exporter:v0.15.1
+    env_file:
+      - ../server/.env
+    command:
+      - sh
+      - -c
+      - DATA_SOURCE_NAME="$${MYSQL_USER}:$${MYSQL_PASSWORD}@(database:3306)/" /bin/mysqld_exporter
+    ports:
+      - "127.0.0.1:9104:9104"
+
+  elasticsearch-exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:v1.9.0
+    command:
+      - --es.uri=http://elasticsearch:9200
+      - --es.all
+      - --es.indices
+    ports:
+      - "127.0.0.1:9114:9114"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.27.0
+    command:
+      - --config.file=/etc/blackbox_exporter/config.yml
+    ports:
+      - "127.0.0.1:9115:9115"
+    volumes:
+      - ../observability/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+
+volumes:
+  loki_data:
+  grafana_data:
+  prometheus_data:

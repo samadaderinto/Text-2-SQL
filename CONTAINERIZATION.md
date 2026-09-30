@@ -1,22 +1,64 @@
 # Containerized Development
 
-This repository has three application services:
+For the broader living system docs, see [README.md](README.md),
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and
+[docs/OBSERVABILITY.md](docs/OBSERVABILITY.md). Keep this file updated whenever
+Compose services, ports, startup behavior, or environment handling changes.
 
-- `client`: Vite/React dev server on port `4174`
-- `server`: Django dev server on port `8000`
-- `database`: persistent MySQL 8.4 database on port `3306`
-- `elasticsearch`: single-node Elasticsearch 9 search engine on port `9200`
+The application stack is defined in [compose.yaml](compose.yaml).
+
+| App service | Purpose | Default host port |
+| --- | --- | --- |
+| `server` | Django development API, built from `server/Dockerfile` | `8000` |
+| `worker` | Django queue worker for Kafka-backed jobs | Internal |
+| `client` | Vite/React dev server | `4174` |
+| `database` | MySQL 8.4 database | `3306` |
+| `redis` | Redis 7.4 shared Django cache | `6379` |
+| `elasticsearch` | Elasticsearch 9 search engine | `9200` |
+| `kafka` | Redpanda Kafka-compatible broker | `9092` |
+
+The API waits for MySQL, Redis, Elasticsearch, and Kafka to be healthy.
+Database, Redis, Elasticsearch, Kafka, and frontend dependencies use persistent
+volumes.
+
+Monitoring is defined separately in
+[monitoring/compose.yaml](monitoring/compose.yaml).
+
+| Monitoring service | Purpose | Host port |
+| --- | --- | --- |
+| `grafana` | Dashboards | `3000` |
+| `prometheus` | Metrics and probes | `9090` |
+| `loki` | Log storage | `3100` |
+| `vector` | Collects Kafka app logs and Docker container logs | Internal |
+| `kafka-exporter` | Kafka/Redpanda metrics | `9308` |
+| `mysql-exporter` | MySQL metrics | `9104` |
+| `elasticsearch-exporter` | Elasticsearch metrics | `9114` |
+| `cadvisor` | Docker container resource metrics | `8080` |
+| `blackbox-exporter` | HTTP health probes | `9115` |
 
 ## Run
 
 ```bash
-docker compose up --build
+docker compose -f compose.yaml up --build
 ```
 
 Then open:
 
 - Frontend: http://localhost:4174
 - Backend: http://localhost:8000
+
+To start monitoring as a separate stack attached to the same Compose project:
+
+```bash
+docker compose -f monitoring/compose.yaml up
+```
+
+To start both stacks detached from the repository root:
+
+```bash
+docker compose -f compose.yaml up --build -d
+docker compose -f monitoring/compose.yaml up -d
+```
 
 ## Health checks
 
@@ -40,19 +82,29 @@ curl -i http://localhost:8000/health/live/
 
 ## Environment
 
-The Compose file intentionally does not load `server/.env` automatically. That prevents `docker compose config` and similar commands from printing local secrets.
+Local environment values live in exactly two ignored files:
 
-For local development, export only the values you need before running Compose:
+- `server/.env`
+- `client/.env`
+
+Their committed templates are:
+
+- `server/.env.example`
+- `client/.env.example`
+
+For local development, copy the examples and edit the local files:
 
 ```bash
-export SECRET_KEY="change-me"
-export OPENAI_API_KEY="sk-..."
-export MYSQL_PASSWORD="change-this-database-password"
-export MYSQL_ROOT_PASSWORD="change-this-root-password"
-docker compose up --build
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+docker compose -f compose.yaml up --build
 ```
 
 Without `OPENAI_API_KEY`, the app will still boot, but voice-to-SQL requests that call OpenAI will fail.
+
+Do not create root-level env files or per-directory special Compose env files.
+Production values should come from GitHub Actions secrets and the deployment
+provider's secret/env-var store, not committed files.
 
 In Compose, Django waits for both MySQL and Elasticsearch health checks, applies
 migrations, then runs `reindex_search` before starting. Elasticsearch indexes

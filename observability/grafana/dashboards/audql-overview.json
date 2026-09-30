@@ -1,17 +1,155 @@
 {
-  "annotations": {"list": []},
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Operational overview for the AudQL local stack: Django, health probes, Kafka, MySQL, Elasticsearch, and container resources.",
   "editable": true,
+  "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "id": null,
+  "links": [],
   "panels": [
-    {"id": 1, "type": "stat", "title": "Request rate", "gridPos": {"h": 5, "w": 8, "x": 0, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(rate(audql_http_requests_total[5m]))", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}},
-    {"id": 2, "type": "stat", "title": "5xx rate", "gridPos": {"h": 5, "w": 8, "x": 8, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(rate(audql_http_errors_total{status_class=\"5xx\"}[5m]))", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.01}]}}, "overrides": []}},
-    {"id": 3, "type": "stat", "title": "Kafka under-replicated partitions", "gridPos": {"h": 5, "w": 8, "x": 16, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(kafka_topic_partition_under_replicated_partition)", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []}},
-    {"id": 4, "type": "timeseries", "title": "Request latency p95", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(audql_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}},
-    {"id": 5, "type": "timeseries", "title": "HTTP errors", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (status_class) (rate(audql_http_errors_total[5m]))", "legendFormat": "{{status_class}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}},
-    {"id": 6, "type": "timeseries", "title": "Kafka consumer lag", "gridPos": {"h": 8, "w": 24, "x": 0, "y": 13}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (group, topic) (kafka_consumergroup_lag_sum)", "legendFormat": "{{group}} / {{topic}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}}
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}, "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "center", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "value", "wideLayout": true},
+      "targets": [{"expr": "min(probe_success{job=\"audql-health\"})", "refId": "A"}],
+      "title": "Health probes passing",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "auto", "wideLayout": true},
+      "targets": [{"expr": "sum(rate(audql_http_requests_total[5m]))", "refId": "A"}],
+      "title": "Django request rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.01}, {"color": "red", "value": 0.05}]}, "unit": "percentunit"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"colorMode": "background", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "auto", "wideLayout": true},
+      "targets": [{"expr": "sum(rate(audql_http_errors_total{status_class=\"5xx\"}[5m])) / clamp_min(sum(rate(audql_http_requests_total[5m])), 1)", "refId": "A"}],
+      "title": "5xx error ratio",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "orange", "value": 25}, {"color": "red", "value": 100}]}, "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "options": {"colorMode": "background", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showPercentChange": false, "textMode": "auto", "wideLayout": true},
+      "targets": [{"expr": "sum(kafka_consumergroup_lag_sum)", "refId": "A"}],
+      "title": "Kafka consumer lag",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "id": 5,
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum by (le) (rate(audql_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95", "refId": "A"},
+        {"expr": "histogram_quantile(0.99, sum by (le) (rate(audql_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p99", "refId": "B"}
+      ],
+      "title": "Django latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "id": 6,
+      "targets": [{"expr": "sum by (status_class) (rate(audql_http_errors_total[5m]))", "legendFormat": "{{status_class}}", "refId": "A"}],
+      "title": "Django errors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 0, "y": 12},
+      "id": 7,
+      "targets": [{"expr": "probe_duration_seconds{job=\"audql-health\"}", "legendFormat": "{{instance}}", "refId": "A"}],
+      "title": "Probe duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 8, "y": 12},
+      "id": 8,
+      "targets": [
+        {"expr": "mysql_up", "legendFormat": "mysql up", "refId": "A"},
+        {"expr": "mysql_global_status_threads_connected", "legendFormat": "connections", "refId": "B"}
+      ],
+      "title": "MySQL",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 8, "x": 16, "y": 12},
+      "id": 9,
+      "targets": [
+        {"expr": "elasticsearch_cluster_health_status{color=\"green\"}", "legendFormat": "green", "refId": "A"},
+        {"expr": "elasticsearch_cluster_health_status{color=\"yellow\"}", "legendFormat": "yellow", "refId": "B"},
+        {"expr": "elasticsearch_cluster_health_status{color=\"red\"}", "legendFormat": "red", "refId": "C"}
+      ],
+      "title": "Elasticsearch health",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "percentunit"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 19},
+      "id": 10,
+      "targets": [{"expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\".*text-2-sql.*|.*server.*|.*client.*|.*database.*|.*kafka.*|.*elasticsearch.*|.*grafana.*|.*prometheus.*\"}[5m]))", "legendFormat": "{{name}}", "refId": "A"}],
+      "title": "Container CPU",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "bytes"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 19},
+      "id": 11,
+      "targets": [{"expr": "sum by (name) (container_memory_working_set_bytes{name=~\".*text-2-sql.*|.*server.*|.*client.*|.*database.*|.*kafka.*|.*elasticsearch.*|.*grafana.*|.*prometheus.*\"})", "legendFormat": "{{name}}", "refId": "A"}],
+      "title": "Container memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 27},
+      "id": 12,
+      "targets": [{"expr": "sum by (group, topic) (kafka_consumergroup_lag_sum)", "legendFormat": "{{group}} / {{topic}}", "refId": "A"}],
+      "title": "Kafka lag by consumer group",
+      "type": "timeseries"
+    }
   ],
-  "schemaVersion": 39,
-  "title": "AudQL Overview",
-  "uid": null,
-  "version": 1
+  "refresh": "10s",
+  "schemaVersion": 41,
+  "tags": ["audql", "overview", "monitoring"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "AudQL overview",
+  "uid": "audql-overview",
+  "version": 2
 }

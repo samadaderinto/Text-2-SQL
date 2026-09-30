@@ -26,6 +26,9 @@ jobs:
         env:
           RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
           RENDER_FRONTEND_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+          PRODUCTION_SECRET_KEY: ${{ secrets.PRODUCTION_SECRET_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PRODUCTION_CACHE_LOCATION: ${{ secrets.PRODUCTION_CACHE_LOCATION }}
         run: |
           test -n "$RENDER_BACKEND_DEPLOY_HOOK" || {
             echo "::error::Set the RENDER_BACKEND_DEPLOY_HOOK repository secret."
@@ -33,6 +36,18 @@ jobs:
           }
           test -n "$RENDER_FRONTEND_DEPLOY_HOOK" || {
             echo "::error::Set the RENDER_FRONTEND_DEPLOY_HOOK repository secret."
+            exit 1
+          }
+          test -n "$PRODUCTION_SECRET_KEY" || {
+            echo "::error::Set the PRODUCTION_SECRET_KEY repository secret and mirror it to the Render SECRET_KEY env var."
+            exit 1
+          }
+          test -n "$OPENAI_API_KEY" || {
+            echo "::error::Set the OPENAI_API_KEY repository secret and mirror it to the Render OPENAI_API_KEY env var."
+            exit 1
+          }
+          test -n "$PRODUCTION_CACHE_LOCATION" || {
+            echo "::error::Set the PRODUCTION_CACHE_LOCATION repository secret and mirror it to the Render CACHE_LOCATION env var."
             exit 1
           }
 

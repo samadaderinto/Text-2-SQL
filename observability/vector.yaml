@@ -11,8 +11,26 @@ sources:
       codec: json
     auto_offset_reset: earliest
 
+  docker_logs:
+    type: docker_logs
+    docker_host: unix:///var/run/docker.sock
+    include_containers:
+      - text-2-sql-*
+
+transforms:
+  normalize_docker_logs:
+    type: remap
+    inputs:
+      - docker_logs
+    source: |
+      .source = "container"
+      .service = .container_name ?? "unknown"
+      .environment = get_env_var("DEPLOY_ENV") ?? "local"
+      .level = "info"
+      .event_type = "container_log"
+
 sinks:
-  loki:
+  loki_app:
     type: loki
     inputs:
       - audql_logs
@@ -24,4 +42,19 @@ sinks:
       environment: "{{ environment }}"
       level: "{{ level }}"
       event_type: "{{ event_type }}"
+    out_of_order_action: accept
+
+  loki_containers:
+    type: loki
+    inputs:
+      - normalize_docker_logs
+    endpoint: http://loki:3100
+    encoding:
+      codec: json
+    labels:
+      source: "{{ source }}"
+      container: "{{ container_name }}"
+      image: "{{ image }}"
+      stream: "{{ stream }}"
+      environment: "{{ environment }}"
     out_of_order_action: accept

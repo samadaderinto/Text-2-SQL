@@ -9,6 +9,39 @@ scrape_configs:
     static_configs:
       - targets: [server:8000]
 
+  - job_name: audql-health
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://server:8000/health/live/
+          - http://server:8000/health/
+          - http://client:4174/
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
   - job_name: kafka
     static_configs:
       - targets: [kafka-exporter:9308]
+
+  - job_name: mysql
+    static_configs:
+      - targets: [mysql-exporter:9104]
+
+  - job_name: elasticsearch
+    static_configs:
+      - targets: [elasticsearch-exporter:9114]
+
+  - job_name: containers
+    static_configs:
+      - targets: [cadvisor:8080]
+
+  - job_name: prometheus
+    static_configs:
+      - targets: [prometheus:9090]

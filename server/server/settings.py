@@ -54,10 +54,17 @@ ELASTICSEARCH_ENABLED = os.getenv("ELASTICSEARCH_ENABLED", "true").lower() == "t
 CACHES = {
     "default": {
         "BACKEND": os.getenv(
-            "CACHE_BACKEND", "django.core.cache.backends.locmem.LocMemCache"
+            "CACHE_BACKEND", "django_redis.cache.RedisCache"
         ),
-        "LOCATION": os.getenv("CACHE_LOCATION", "audql-server-cache"),
+        "LOCATION": os.getenv("CACHE_LOCATION", "redis://redis:6379/1"),
         "TIMEOUT": int(os.getenv("DATA_CACHE_TIMEOUT", "300")),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "IGNORE_EXCEPTIONS": os.getenv(
+                "CACHE_IGNORE_EXCEPTIONS", "false"
+            ).lower() == "true",
+        },
+        "KEY_PREFIX": os.getenv("CACHE_KEY_PREFIX", "audql"),
     }
 }
 

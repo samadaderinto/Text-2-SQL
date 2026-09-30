@@ -1,5 +1,10 @@
 # React + TypeScript + Vite
 
+For current living frontend documentation, see
+[../docs/FRONTEND.md](../docs/FRONTEND.md). For API/service context, see
+[../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md). Keep those files updated
+whenever frontend behavior changes.
+
 ## Testing
 
 Run the frontend unit and component integration tests with:

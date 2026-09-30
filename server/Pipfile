@@ -30,6 +30,10 @@ mysqlclient = "*"
 django-elasticsearch-dsl = "*"
 elasticsearch = "*"
 invoke = "*"
+dj-database-url = "*"
+psycopg = {extras = ["binary"], version = "*"}
+whitenoise = "*"
+kafka-python = "*"
 
 [dev-packages]
 

@@ -95,15 +95,27 @@ export const Header = () => {
 
   const performSearch = async () => {
     if (state.searchQuery.trim()) {
+      const toastId = toast.loading('Building query...');
       try {
         setState(prevState => ({ ...prevState, loading: true }));
         const queued = await api.post(`/query/generate/`, { prompt: state.searchQuery });
         const completed = await waitForQueueJob(queued.data.job_id);
+        toast.update(toastId, {
+          render: 'Query ready',
+          type: 'success',
+          isLoading: false,
+          autoClose: 1800,
+        });
         nav('/query', {
           state: { queryResponse: completed.result, header: 'Generated Query' },
         });
       } catch (error) {
-        toast.error('Unable to generate a query. Please try again.');
+        toast.update(toastId, {
+          render: 'Unable to generate a query. Please try again.',
+          type: 'error',
+          isLoading: false,
+          autoClose: 3200,
+        });
       } finally {
         setState(prevState => ({ ...prevState, loading: false }));
       }
@@ -132,16 +144,16 @@ export const Header = () => {
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
             setState(prevState => ({ ...prevState, audioBlob }));
           } else {
-            toast.error("No audio chunks available.");
+            toast.error("I couldn't hear anything. Try recording again.");
           }
         };
         mediaRecorder.start();
         setState(prevState => ({ ...prevState, isRecording: true }));
       } catch (error) {
-        toast.error('Error accessing microphone.');
+        toast.error('Microphone access was blocked.');
       }
     } else {
-      toast.error('getUserMedia not supported on this browser.');
+      toast.error('Voice search is not supported in this browser.');
     }
   };
 
@@ -171,6 +183,7 @@ export const Header = () => {
     if (state.audioBlob) {
       const formData = new FormData();
       formData.append('file', new File([state.audioBlob], 'audio.webm', { type: 'audio/webm' }));
+      const toastId = toast.loading('Understanding audio...');
       setState(prevState => ({ ...prevState, loading: true }));
       try {
         const queued = await api.post(`/query/upload/`, formData, {
@@ -179,18 +192,24 @@ export const Header = () => {
           },
         });
         const completed = await waitForQueueJob(queued.data.job_id);
+        toast.update(toastId, {
+          render: 'Voice query ready',
+          type: 'success',
+          isLoading: false,
+          autoClose: 1800,
+        });
         nav('/query', {
           state: { queryResponse: completed.result, header: 'Voice Query Results' },
         });
 
       } catch (error: any) {
-        if (error.response && error.response.status === 500) {
-          toast.error('Unable to process your audio request. Please try again.');
-          console.log('Error occurred:', error);
-        } else {
-          toast.error('Unable to find what you\'re looking for. Please try again.');
-          console.log('Error occurred:', error);
-        }
+        toast.update(toastId, {
+          render: 'Unable to process the audio. Please try again.',
+          type: 'error',
+          isLoading: false,
+          autoClose: 3200,
+        });
+        console.log('Error occurred:', error);
       } finally {
         setState(prevState => ({ ...prevState, loading: false }));
       }

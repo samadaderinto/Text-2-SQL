@@ -25,12 +25,14 @@ from drf_spectacular.views import (
 )
 from app.observability import client_log
 from app.health import liveness_check, readiness_check
+from app.metrics import metrics
 from app.views import QueueJobDownloadView, QueueJobStatusView
 
 
 urlpatterns = [
     path("health/", readiness_check, name="health"),
     path("health/live/", liveness_check, name="health-live"),
+    path("metrics/", metrics, name="metrics"),
     path("logs/client/", client_log, name="client-log"),
     path("jobs/<uuid:job_id>/", QueueJobStatusView.as_view(), name="queue-job-status"),
     path(

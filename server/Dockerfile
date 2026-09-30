@@ -7,9 +7,9 @@ WORKDIR /app
 
 COPY server/requirements.txt ./
 RUN apk add --no-cache mariadb-connector-c \
-    && apk add --no-cache --virtual .build-deps build-base mariadb-connector-c-dev pkgconf \
-    && pip install --no-cache-dir -r requirements.txt \
-    && apk del .build-deps
+    && apk add --no-cache --virtual .build-deps build-base mariadb-connector-c-dev pkgconf
+RUN pip install --no-cache-dir --retries 5 --timeout 60 -r requirements.txt
+RUN apk del .build-deps
 
 COPY server/ .
 

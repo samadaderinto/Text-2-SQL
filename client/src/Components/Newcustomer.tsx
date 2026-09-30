@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/Sidebar";
 import api from "../utils/api";
-import { notifyApiError } from "../utils/api-errors";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { getApiErrorMessage } from "../utils/api-errors";
+import { toast } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
 
 export const NewCustomer = () => {
@@ -74,20 +73,28 @@ export const NewCustomer = () => {
       formData.append('email', formState.email);
       formData.append('phone_number', formState.phone);
 
+      const toastId = toast.loading('Adding customer...');
       try {
         await api.post(`/customers/create/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
+        toast.update(toastId, {
+          render: 'Customer added',
+          type: 'success',
+          isLoading: false,
+          autoClose: 2200,
+        });
         nav('/customers')
-        toast.success('Customer created successfully!', {
-          position: "top-right",
-        })
-
 
       } catch (error) {
-        notifyApiError(error, "Could not create the customer. Please try again.");
+        toast.update(toastId, {
+          render: getApiErrorMessage(error, "Could not create the customer. Please try again."),
+          type: 'error',
+          isLoading: false,
+          autoClose: 3200,
+        });
       }
     }
   };
@@ -154,7 +161,6 @@ export const NewCustomer = () => {
           </div>
         </section>
       </div>
-      <ToastContainer />
     </>
   )
 }

@@ -24,7 +24,9 @@ services:
       context: .
       dockerfile: server/Dockerfile
     command: >
-      sh -c "python manage.py migrate &&
+      sh -c "(python -c 'import dj_database_url' ||
+             python -m pip install 'dj-database-url>=2.2,<3.0') &&
+             python manage.py migrate &&
              python manage.py reindex_search &&
              python manage.py runserver 0.0.0.0:8000"
     environment:
@@ -76,7 +78,10 @@ services:
     build:
       context: .
       dockerfile: server/Dockerfile
-    command: python manage.py run_queue_worker
+    command: >
+      sh -c "(python -c 'import dj_database_url' ||
+             python -m pip install 'dj-database-url>=2.2,<3.0') &&
+             python manage.py run_queue_worker"
     restart: unless-stopped
     environment:
       DEBUG: "true"
@@ -202,6 +207,36 @@ services:
     depends_on:
       loki:
         condition: service_started
+      prometheus:
+        condition: service_started
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      server:
+        condition: service_healthy
+      kafka-exporter:
+        condition: service_started
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    command:
+      - --kafka.server=kafka:9092
+      - --web.listen-address=0.0.0.0:9308
+    ports:
+      - "127.0.0.1:9308:9308"
+    depends_on:
+      kafka:
+        condition: service_healthy
 
 volumes:
   client_node_modules:
@@ -210,3 +245,4 @@ volumes:
   kafka_data:
   loki_data:
   grafana_data:
+  prometheus_data:

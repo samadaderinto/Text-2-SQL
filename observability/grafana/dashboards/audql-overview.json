@@ -1,0 +1,17 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {"id": 1, "type": "stat", "title": "Request rate", "gridPos": {"h": 5, "w": 8, "x": 0, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(rate(audql_http_requests_total[5m]))", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}},
+    {"id": 2, "type": "stat", "title": "5xx rate", "gridPos": {"h": 5, "w": 8, "x": 8, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(rate(audql_http_errors_total{status_class=\"5xx\"}[5m]))", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.01}]}}, "overrides": []}},
+    {"id": 3, "type": "stat", "title": "Kafka under-replicated partitions", "gridPos": {"h": 5, "w": 8, "x": 16, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(kafka_topic_partition_under_replicated_partition)", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}}, "overrides": []}},
+    {"id": 4, "type": "timeseries", "title": "Request latency p95", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(audql_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}},
+    {"id": 5, "type": "timeseries", "title": "HTTP errors", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (status_class) (rate(audql_http_errors_total[5m]))", "legendFormat": "{{status_class}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}},
+    {"id": 6, "type": "timeseries", "title": "Kafka consumer lag", "gridPos": {"h": 8, "w": 24, "x": 0, "y": 13}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (group, topic) (kafka_consumergroup_lag_sum)", "legendFormat": "{{group}} / {{topic}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}}
+  ],
+  "schemaVersion": 39,
+  "title": "AudQL Overview",
+  "uid": null,
+  "version": 1
+}

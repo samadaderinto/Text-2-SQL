@@ -44,11 +44,11 @@ def _load_fcm_credentials():
 
 
 def send_fcm_notification(*, tokens, title, body, data=None):
-    if not getattr(settings, "FCM_ENABLED", False):
-        return {"sent": 0, "skipped": "fcm_disabled"}
-
     if not tokens:
         return {"sent": 0}
+
+    if not getattr(settings, "FCM_ENABLED", False):
+        raise RuntimeError("FCM is disabled but active notification devices exist.")
 
     from google.auth.transport.requests import AuthorizedSession
 
@@ -83,41 +83,29 @@ def send_fcm_notification(*, tokens, title, body, data=None):
     return {"sent": sent, "disabled_tokens": len(failed_tokens)}
 
 
-def send_user_notification(*, user_id, subject, body, channels=None, data=None):
+def send_user_notification(*, user_id, subject, body, data=None):
     user = User.objects.get(pk=user_id)
     preferences = Notification.objects.filter(user=user).first()
-    channels = set(channels or ["email", "push"])
-    result = {"email": None, "push": None}
+    if preferences is not None and not preferences.push_notification:
+        return {"push": {"sent": 0, "skipped": "user_preference"}}
 
-    if "email" in channels and (
-        preferences is None or preferences.email_notification
-    ):
-        result["email"] = send_email_notification(
-            subject=subject,
-            body=body,
-            recipients=[user.email],
+    tokens = list(
+        NotificationDevice.objects.filter(user=user, is_active=True).values_list(
+            "token", flat=True
         )
+    )
+    result = send_fcm_notification(
+        tokens=tokens,
+        title=subject,
+        body=body,
+        data=data,
+    )
 
-    if "push" in channels and (
-        preferences is None or preferences.push_notification
-    ):
-        tokens = list(
-            NotificationDevice.objects.filter(user=user, is_active=True).values_list(
-                "token", flat=True
-            )
-        )
-        result["push"] = send_fcm_notification(
-            tokens=tokens,
-            title=subject,
-            body=body,
-            data=data,
-        )
-
-    logger.info("Notification sent for user %s through %s", user_id, sorted(channels))
-    return result
+    logger.info("Push notification sent for user %s", user_id)
+    return {"push": result}
 
 
-def enqueue_user_notification(*, user_id, subject, body, channels=None, data=None):
+def enqueue_user_notification(*, user_id, subject, body, data=None):
     from .job_queue import enqueue_job
     from .models import QueueJob
 
@@ -128,9 +116,7 @@ def enqueue_user_notification(*, user_id, subject, body, channels=None, data=Non
             "user_id": user.pk,
             "subject": subject,
             "body": body,
-            "channels": list(channels) if channels else ["email", "push"],
             "data": data or {},
         },
         user=user,
     )
-

@@ -157,7 +157,7 @@ class AdminSerializer(serializers.Serializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ["email_notification", "push_notification"]
+        fields = ["push_notification"]
 
 
 class NotificationDeviceSerializer(serializers.ModelSerializer):

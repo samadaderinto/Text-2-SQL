@@ -98,7 +98,6 @@ class Command(BaseCommand):
         for user_index, user in enumerate(users):
             Notification.objects.create(
                 user=user,
-                email_notification=True,
                 push_notification=user_index != 2,
             )
             self.create_customers(user, user_index)

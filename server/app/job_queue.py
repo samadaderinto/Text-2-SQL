@@ -10,7 +10,7 @@ from django.utils import timezone
 from kafka import KafkaProducer
 
 from .models import Customer, Order, Product, QueueJob, User
-from .notifications import send_user_notification
+from .notifications import send_email_notification, send_user_notification
 from .search_index import delete_instance, index_instance
 from .services import SearchService
 
@@ -105,7 +105,6 @@ def _process_job(job):
                 user_id=user.pk,
                 subject=payload["subject"],
                 body=payload["body"],
-                channels=payload.get("channels", ["email", "push"]),
                 data=payload.get("data"),
             )
 
@@ -130,12 +129,10 @@ def _process_job(job):
                 "This is the link to reset password. "
                 f"{api_origin}/auth/reset-password/verify/{uidb64}/{token}/"
             )
-        return send_user_notification(
-            user_id=user.pk,
+        return send_email_notification(
             subject=subject,
             body=body,
-            channels=["email", "push"],
-            data={"kind": job.kind},
+            recipients=[user.email],
         )
 
     if job.kind == QueueJob.Kind.ORDERS_EXPORT:

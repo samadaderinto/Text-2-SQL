@@ -114,6 +114,13 @@ services:
       - text2sql-mon-net
       - text2sql-app-net
 
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.67.0
+    command:
+      - --redis.addr=redis://redis:6379
+    ports:
+      - "127.0.0.1:9121:9121"
+
   elasticsearch-exporter:
     image: quay.io/prometheuscommunity/elasticsearch-exporter:v1.9.0
     command:

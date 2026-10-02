@@ -87,24 +87,6 @@ services:
       kafka:
         condition: service_healthy
 
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    env_file:
-      - ./client/.env
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "4174"]
-    ports:
-      - "4174:4174"
-    volumes:
-      - ./client:/app
-      - client_node_modules:/app/node_modules
-    networks:
-      - app-net
-    depends_on:
-      text2sql-server:
-        condition: service_healthy
-
   worker:
     build:
       context: .
@@ -195,7 +177,6 @@ networks:
     external: true
 
 volumes:
-  client_node_modules:
   elasticsearch_data:
   mysql_data:
   redis_data:

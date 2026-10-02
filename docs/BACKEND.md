@@ -123,10 +123,13 @@ Email:
 | Variable | Local default | Purpose |
 | --- | --- | --- |
 | `EMAIL_BACKEND` | `django.core.mail.backends.console.EmailBackend` | Prints email locally instead of sending. |
-| `EMAIL_HOST` | empty/example | SMTP host for real delivery. |
-| `EMAIL_PORT` | empty/`465` example | SMTP port. |
-| `EMAIL_HOST_USER` | empty/example | SMTP username and default from address. |
-| `EMAIL_HOST_PASSWORD` | empty/example | SMTP password. |
+| `EMAIL_HOST` | `smtp.resend.com` | Resend SMTP endpoint; used by the production SMTP backend. |
+| `EMAIL_PORT` | `465` | SMTP port. Port 465 uses implicit SSL. |
+| `EMAIL_USE_TLS` | `false` | Enables STARTTLS when using a STARTTLS port. |
+| `EMAIL_USE_SSL` | `true` | Enables implicit SSL for port 465. |
+| `EMAIL_HOST_USER` | `resend` | Resend's required SMTP username. |
+| `EMAIL_HOST_PASSWORD` | empty | Resend API key; keep it private. |
+| `DEFAULT_FROM_EMAIL` | `notifications@example.com` | Sender address; production must use an address on a verified Resend domain. |
 
 Firebase Cloud Messaging (FCM):
 
@@ -140,8 +143,11 @@ Firebase Cloud Messaging (FCM):
 The browser Firebase configuration is set through `VITE_FIREBASE_*` variables;
 those values initialize the Firebase web SDK and do not replace the private
 server service-account credentials. Push delivery uses FCM. Email delivery
-uses Django's configured email backend; local development defaults to the
-console backend. The application has no SMS notification provider.
+uses Resend over SMTP through Django's configured email backend; local
+development defaults to the console backend. Configure the Resend API key and
+verified sender address on both the Render API and worker services. Email and
+push notification preferences are independently respected. The application
+has no SMS notification provider.
 
 ## Background jobs
 

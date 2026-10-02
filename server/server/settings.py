@@ -69,15 +69,15 @@ CACHES = {
 }
 
 EMAIL_HOST = os.getenv("EMAIL_HOST", "")
-EMAIL_PORT = os.getenv("EMAIL_PORT", "")
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = True
+EMAIL_PORT = int(os.getenv("EMAIL_PORT") or "465")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "false").lower() == "true"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "true").lower() == "true"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
 )
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or "webmaster@localhost"
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "webmaster@localhost")
 
 FCM_ENABLED = os.getenv("FCM_ENABLED", "false").lower() == "true"
 FCM_PROJECT_ID = os.getenv("FCM_PROJECT_ID", "")

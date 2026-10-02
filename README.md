@@ -11,8 +11,8 @@ jobs. Local observability is provided by Prometheus, Loki, Vector, and Grafana.
 - Text and audio query workflows, including asynchronous query processing.
 - Product, customer, and order management, search, and order export.
 - Queued email delivery and Firebase Cloud Messaging (FCM) push notifications.
-  FCM is used for push delivery; email is delivered through Django's email
-  backend. The application does not send SMS.
+  FCM is used for push delivery; queued email uses Resend's SMTP service via
+  Django's email backend. The application does not send SMS.
 - Browser/API error reporting, backend metrics, health checks, and local
   dashboards.
 

@@ -106,6 +106,7 @@ def _process_job(job):
                 subject=payload["subject"],
                 body=payload["body"],
                 data=payload.get("data"),
+                channels=payload.get("channels", ["push"]),
             )
 
         from django.contrib.auth.tokens import PasswordResetTokenGenerator

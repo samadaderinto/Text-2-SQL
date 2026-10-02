@@ -44,14 +44,20 @@ services:
       - key: DATA_CACHE_TIMEOUT
         value: "300"
       - key: EMAIL_BACKEND
-        sync: false
+        value: django.core.mail.backends.smtp.EmailBackend
       - key: EMAIL_HOST
-        sync: false
+        value: smtp.resend.com
       - key: EMAIL_PORT
-        sync: false
+        value: "465"
+      - key: EMAIL_USE_TLS
+        value: "false"
+      - key: EMAIL_USE_SSL
+        value: "true"
       - key: EMAIL_HOST_USER
-        sync: false
+        value: resend
       - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
         sync: false
       - key: FCM_ENABLED
         sync: false
@@ -97,14 +103,20 @@ services:
       - key: DATA_CACHE_TIMEOUT
         value: "300"
       - key: EMAIL_BACKEND
-        sync: false
+        value: django.core.mail.backends.smtp.EmailBackend
       - key: EMAIL_HOST
-        sync: false
+        value: smtp.resend.com
       - key: EMAIL_PORT
-        sync: false
+        value: "465"
+      - key: EMAIL_USE_TLS
+        value: "false"
+      - key: EMAIL_USE_SSL
+        value: "true"
       - key: EMAIL_HOST_USER
-        sync: false
+        value: resend
       - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
         sync: false
       - key: FCM_ENABLED
         sync: false

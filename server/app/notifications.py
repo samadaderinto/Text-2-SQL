@@ -10,6 +10,7 @@ from .models import Notification, NotificationDevice, User
 
 logger = logging.getLogger(__name__)
 FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging"
+SUPPORTED_NOTIFICATION_CHANNELS = {"email", "push"}
 
 
 def send_email_notification(*, subject, body, recipients):
@@ -83,31 +84,60 @@ def send_fcm_notification(*, tokens, title, body, data=None):
     return {"sent": sent, "disabled_tokens": len(failed_tokens)}
 
 
-def send_user_notification(*, user_id, subject, body, data=None):
+def _notification_channels(channels):
+    selected_channels = ("email", "push") if channels is None else tuple(channels)
+    unsupported_channels = set(selected_channels) - SUPPORTED_NOTIFICATION_CHANNELS
+    if unsupported_channels:
+        raise ValueError(
+            f"Unsupported notification channels: {', '.join(sorted(unsupported_channels))}"
+        )
+    return selected_channels
+
+
+def send_user_notification(*, user_id, subject, body, data=None, channels=None):
     user = User.objects.get(pk=user_id)
     preferences = Notification.objects.filter(user=user).first()
-    if preferences is not None and not preferences.push_notification:
-        return {"push": {"sent": 0, "skipped": "user_preference"}}
+    selected_channels = _notification_channels(channels)
 
-    tokens = list(
-        NotificationDevice.objects.filter(user=user, is_active=True).values_list(
-            "token", flat=True
-        )
-    )
-    result = send_fcm_notification(
-        tokens=tokens,
-        title=subject,
-        body=body,
-        data=data,
-    )
+    result = {}
+    if "email" in selected_channels:
+        if preferences is not None and not preferences.email_notification:
+            result["email"] = {"sent": 0, "skipped": "user_preference"}
+        else:
+            result["email"] = send_email_notification(
+                subject=subject,
+                body=body,
+                recipients=[user.email],
+            )
 
-    logger.info("Push notification sent for user %s", user_id)
-    return {"push": result}
+    if "push" in selected_channels:
+        if preferences is not None and not preferences.push_notification:
+            result["push"] = {"sent": 0, "skipped": "user_preference"}
+        else:
+            tokens = list(
+                NotificationDevice.objects.filter(user=user, is_active=True).values_list(
+                    "token", flat=True
+                )
+            )
+            result["push"] = send_fcm_notification(
+                tokens=tokens,
+                title=subject,
+                body=body,
+                data=data,
+            )
+
+    if result.get("push", {}).get("sent"):
+        logger.info("Push notification sent for user %s", user_id)
+    if result.get("email", {}).get("sent"):
+        logger.info("Email notification sent for user %s", user_id)
+    return result
 
 
-def enqueue_user_notification(*, user_id, subject, body, data=None):
+def enqueue_user_notification(*, user_id, subject, body, data=None, channels=None):
     from .job_queue import enqueue_job
     from .models import QueueJob
+
+    selected_channels = _notification_channels(channels)
 
     user = User.objects.get(pk=user_id)
     return enqueue_job(
@@ -117,6 +147,7 @@ def enqueue_user_notification(*, user_id, subject, body, data=None):
             "subject": subject,
             "body": body,
             "data": data or {},
+            "channels": list(selected_channels),
         },
         user=user,
     )

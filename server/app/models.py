@@ -230,6 +230,7 @@ class Customer(DatesMixin):
 
 class Notification(DatesMixin):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    email_notification = models.BooleanField(default=True)
     push_notification = models.BooleanField(default=True)
 
     class Meta:

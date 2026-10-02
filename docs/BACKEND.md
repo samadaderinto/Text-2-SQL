@@ -66,8 +66,10 @@ Django `LocMemCache` so the unit suite does not require Redis.
 ## Configuration
 
 Local backend config lives in `server/.env`; the committed template is
-`server/.env.example`. Do not add production env files. Production values are
-provided through GitHub Actions secrets and the deployment provider.
+`server/.env.example`. Do not add production env files. Render runtime values
+are configured in the Render service environment (the `sync: false` entries in
+`render.yaml`). GitHub Actions secrets are used only by workflows that require
+them, such as deploy hooks and deployment verification.
 
 Core Django settings:
 
@@ -126,15 +128,43 @@ Email:
 | `EMAIL_HOST_USER` | empty/example | SMTP username and default from address. |
 | `EMAIL_HOST_PASSWORD` | empty/example | SMTP password. |
 
+Firebase Cloud Messaging (FCM):
+
+| Variable | Local default | Purpose |
+| --- | --- | --- |
+| `FCM_ENABLED` | `false` | Enables server-side FCM push delivery. |
+| `FCM_PROJECT_ID` | empty | Firebase project used by the FCM HTTP API. |
+| `FCM_SERVICE_ACCOUNT_FILE` | empty | Path to the server-side service-account JSON file, if using a file. |
+| `FCM_SERVICE_ACCOUNT_JSON` | empty | Server-side service-account JSON, if supplied inline instead of as a file. |
+
+The browser Firebase configuration is set through `VITE_FIREBASE_*` variables;
+those values initialize the Firebase web SDK and do not replace the private
+server service-account credentials. Push delivery uses FCM. Email delivery
+uses Django's configured email backend; local development defaults to the
+console backend. The application has no SMS notification provider.
+
 ## Background jobs
 
-The API stores job records in the database and publishes work to Kafka. The
-worker consumes jobs and updates their status. Clients poll job status by ID.
+The API stores job records in the database and publishes work notifications to
+Kafka. The worker consumes notifications, claims and processes the durable job
+records, then updates their status. A database recovery scan retries eligible
+queued or stale jobs if a broker notification was missed or a worker stopped.
+Clients poll job status by ID.
 
 Current job categories include query generation, audio transcription,
 email delivery, order exports, and search-index updates. If a new job kind is
 added, update this section, serializers, worker handling, tests, and any
 frontend polling behavior.
+
+Important operational constraints:
+
+- Run the worker as well as the API in deployments that accept queued work.
+- Job state is durable in the relational database; Kafka is the dispatch
+  channel, not the only record that work exists.
+- Audio files must remain available to the worker. Multi-instance deployments
+  need shared media storage.
+- Job status and downloadable export endpoints require authentication and
+  enforce job ownership.
 
 ## Metrics and health
 
@@ -158,9 +188,14 @@ pytest
 With Compose:
 
 ```bash
+docker network create text-2-sql-app-net
 docker compose -f compose.yaml up --build
 docker compose exec text2sql-server python manage.py reindex_search --rebuild
 ```
+
+The named network is external and must be created once before starting either
+the application or monitoring Compose stack. The backend's Compose command
+applies migrations and initializes the search index on startup.
 
 ## Backend documentation checklist
 

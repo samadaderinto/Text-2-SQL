@@ -114,7 +114,6 @@ jobs:
           from pathlib import Path
 
           allowlisted = {
-              "CONTAINERIZATION.md",
               "compose.yaml",
           }
           skipped_suffixes = {

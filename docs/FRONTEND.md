@@ -41,12 +41,27 @@ through the queue helpers rather than duplicating polling logic in components.
 
 Local frontend config lives in `client/.env`; the committed template is
 `client/.env.example`. Do not add production env files. Production frontend
-build values are supplied by CI/deployment secrets and provider env vars.
+build values are configured in the Render static-site environment. GitHub
+Actions secrets are used only for workflow operations, not as a
+general-purpose runtime environment.
 
 | Variable | Default in Compose | Purpose |
 | --- | --- | --- |
 | `VITE_API_BASE_URL` | `http://localhost:8001` | Backend API origin used by the Axios client. |
 | `VITE_ERROR_REPORTING_ENABLED` | `true` | Enables browser/client error reporting to `/logs/client/`. |
+| `VITE_FIREBASE_API_KEY` | empty | Firebase web app configuration. |
+| `VITE_FIREBASE_AUTH_DOMAIN` | empty | Firebase web app configuration. |
+| `VITE_FIREBASE_PROJECT_ID` | empty | Firebase project used by the web SDK. |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | empty | Firebase Cloud Messaging sender. |
+| `VITE_FIREBASE_APP_ID` | empty | Firebase web app identifier. |
+| `VITE_FIREBASE_VAPID_KEY` | empty | Web Push VAPID key used to register the browser for FCM. |
+
+Firebase web configuration values are bundled into the browser build and must
+not contain private service-account credentials. The browser registers a
+device token through the authenticated API; server-side FCM credentials are
+configured separately in the backend environment. Browser push requires a
+supported browser, notification permission, and a secure origin (localhost is
+treated as secure for development).
 
 The Vite dev server is started by Compose with:
 
@@ -90,6 +105,9 @@ npm run build
 ```
 
 The test suite uses Vitest, jsdom, and React Testing Library.
+The Compose frontend is available at <http://localhost:4174>; when running Vite
+directly, configure `VITE_API_BASE_URL` to the address reachable from the
+browser, usually `http://localhost:8001`.
 
 ## Frontend documentation checklist
 

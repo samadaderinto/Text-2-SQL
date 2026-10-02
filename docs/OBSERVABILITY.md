@@ -7,6 +7,17 @@ Vector can reach `server`, `database`, `kafka`, and `elasticsearch` by service
 name. Update this document whenever observability services, labels, metrics,
 dashboards, or alerting behavior changes.
 
+Before starting either Compose file for the first time, create the external
+network once from the repository root:
+
+```bash
+docker network create text-2-sql-app-net
+```
+
+Monitoring is optional and can be omitted when you only need the application.
+The exporter stack can use significant laptop resources; stop it when not
+needed with `docker compose -f monitoring/compose.yaml down`.
+
 Start the app stack first, then monitoring:
 
 ```bash

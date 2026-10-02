@@ -47,6 +47,7 @@ services:
       sh -c "(python -c 'import dj_database_url' ||
              python -m pip install 'dj-database-url>=2.2,<3.0') &&
              python manage.py migrate &&
+             (python manage.py create_prod_admin || true) &&
              python manage.py reindex_search &&
              python manage.py runserver 0.0.0.0:8000"
     environment:

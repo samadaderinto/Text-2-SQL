@@ -12,6 +12,12 @@ services:
     networks:
       - text2sql-mon-net
       - text2sql-app-net
+    healthcheck:
+      test: ["CMD", "/busybox/wget", "-q", "--spider", "http://127.0.0.1:3100/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
 
   vector:
     image: timberio/vector:0.49.0-debian
@@ -26,7 +32,7 @@ services:
       - text2sql-app-net
     depends_on:
       loki:
-        condition: service_started
+        condition: service_healthy
 
   grafana:
     image: grafana/grafana:12.1.1
@@ -53,7 +59,7 @@ services:
       - text2sql-mon-net
     depends_on:
       loki:
-        condition: service_started
+        condition: service_healthy
       prometheus:
         condition: service_started
 

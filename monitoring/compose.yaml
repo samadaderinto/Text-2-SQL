@@ -32,6 +32,15 @@ services:
     image: grafana/grafana:12.1.1
     env_file:
       - ../server/.env
+    entrypoint: ["/bin/sh", "-euc"]
+    command:
+      - |
+        export GF_SECURITY_ADMIN_USER="$${ADMIN_EMAIL:-$${GF_SECURITY_ADMIN_USER:-}}"
+        export GF_SECURITY_ADMIN_PASSWORD="$${ADMIN_PASSWORD:-$${GF_SECURITY_ADMIN_PASSWORD:-}}"
+        export GF_SECURITY_ADMIN_EMAIL="$${ADMIN_EMAIL:-$${GF_SECURITY_ADMIN_EMAIL:-}}"
+        test -n "$${GF_SECURITY_ADMIN_USER}" || { echo "ADMIN_EMAIL is required" >&2; exit 1; }
+        test -n "$${GF_SECURITY_ADMIN_PASSWORD}" || { echo "ADMIN_PASSWORD is required" >&2; exit 1; }
+        exec /run.sh
     environment:
       GF_USERS_DEFAULT_THEME: dark
     ports:

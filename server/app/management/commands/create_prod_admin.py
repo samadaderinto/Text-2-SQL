@@ -28,6 +28,8 @@ ENV_EMAIL = "ADMIN_EMAIL"
 ENV_PASSWORD = "ADMIN_PASSWORD"
 ENV_FIRST_NAME = "ADMIN_FIRST_NAME"
 ENV_LAST_NAME = "ADMIN_LAST_NAME"
+LEGACY_EMAIL = "GF_SECURITY_ADMIN_USER"
+LEGACY_PASSWORD = "GF_SECURITY_ADMIN_PASSWORD"
 
 
 def _env(name: str, default: str = "") -> str:
@@ -58,8 +60,12 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        email = (options.get("email") or _env(ENV_EMAIL)).lower()
-        password = options.get("password") or _env(ENV_PASSWORD)
+        email = (
+            options.get("email") or _env(ENV_EMAIL) or _env(LEGACY_EMAIL)
+        ).lower()
+        password = (
+            options.get("password") or _env(ENV_PASSWORD) or _env(LEGACY_PASSWORD)
+        )
         first_name = _env(ENV_FIRST_NAME, "Admin")
         last_name = _env(ENV_LAST_NAME, "")
 
@@ -89,7 +95,7 @@ class Command(BaseCommand):
 
         logger.info(
             "prod_admin_ensured",
-            extra={"email": email, "created": created},
+            extra={"email": email, "admin_created": created},
         )
 
     # ── helpers ──────────────────────────────────────────────────────────
@@ -97,7 +103,12 @@ class Command(BaseCommand):
     def _check(self, email: str):
         if not email:
             raise CommandError(f"Set ${ENV_EMAIL} to use --check.")
-        exists = User.objects.filter(email=email, is_staff=True).exists()
+        exists = User.objects.filter(
+            email=email,
+            is_active=True,
+            is_staff=True,
+            is_superuser=True,
+        ).exists()
         if exists:
             self.stdout.write(self.style.SUCCESS(f"Admin exists: {email}"))
         else:

@@ -169,6 +169,34 @@ services:
       - key: VITE_FIREBASE_VAPID_KEY
         sync: false
 
+  - type: web
+    name: text-2-sql-grafana
+    runtime: docker
+    plan: starter
+    branch: main
+    dockerfilePath: ./monitoring/grafana.Dockerfile
+    dockerContext: .
+    autoDeploy: false
+    healthCheckPath: /api/health
+    envVars:
+      - key: GF_SECURITY_ADMIN_USER
+        fromService:
+          type: web
+          name: text-2-sql-api
+          envVarKey: ADMIN_EMAIL
+      - key: GF_SECURITY_ADMIN_EMAIL
+        fromService:
+          type: web
+          name: text-2-sql-api
+          envVarKey: ADMIN_EMAIL
+      - key: GF_SECURITY_ADMIN_PASSWORD
+        fromService:
+          type: web
+          name: text-2-sql-api
+          envVarKey: ADMIN_PASSWORD
+      - key: GF_USERS_DEFAULT_THEME
+        value: dark
+
 databases:
   - name: text-2-sql-postgres
     plan: free

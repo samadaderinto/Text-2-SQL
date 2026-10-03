@@ -40,7 +40,8 @@ docker compose -f monitoring/compose.yaml up -d
 | `cadvisor` | Docker container resource metrics | `8080` |
 | `blackbox-exporter` | HTTP health probes | `9115` |
 
-Default local Grafana credentials are `admin` / `change-me-local`.
+Grafana uses the same `ADMIN_EMAIL` / `ADMIN_PASSWORD` credentials as the
+Django admin. The defaults in `server/.env.example` are development-only.
 
 ## App services observed
 
@@ -223,8 +224,10 @@ Dashboards are loaded into the `AudQL` folder by the dashboard provider in
 | `KAFKA_API_VERSION_AUTO_TIMEOUT_MS` | `5000` | worker | Kafka API-version negotiation timeout. |
 | `CLIENT_LOG_RATE` | `30/min` | backend | Throttle rate for client log ingestion. |
 | `VITE_ERROR_REPORTING_ENABLED` | `true` | frontend | Sends browser and 5xx API errors to backend. |
-| `GF_SECURITY_ADMIN_USER` | `admin` | Grafana | Local admin username. |
-| `GF_SECURITY_ADMIN_PASSWORD` | `change-me-local` | Grafana | Local admin password. |
+| `ADMIN_EMAIL` | `admin@example.com` | Django/Grafana | Django admin email and Grafana admin username/email. |
+| `ADMIN_PASSWORD` | `change-me-local` | Django/Grafana | Shared Django and Grafana admin password. |
+| `ADMIN_FIRST_NAME` | `Admin` | Django | Provisioned Django admin first name. |
+| `ADMIN_LAST_NAME` | empty | Django | Provisioned Django admin last name. |
 
 ## Local troubleshooting
 
@@ -264,4 +267,7 @@ The local observability stack is not hardened for public exposure. Do not expose
 Grafana, Loki, Prometheus, Kafka, or exporter ports to the public internet
 without authentication, authorization, TLS, and network controls.
 
-Change `GF_SECURITY_ADMIN_PASSWORD` before using this with non-development data.
+Change `ADMIN_PASSWORD` before using this with non-development data. Grafana
+reads the shared credentials when its database is first created; if you change
+the local admin username or password later, recreate the development-only
+`grafana_data` volume to apply both values together.

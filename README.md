@@ -111,6 +111,7 @@ readiness.
 | <http://localhost:8001/docs/swagger/> | OpenAPI / Swagger |
 | <http://localhost:8001/health/> | Backend readiness |
 | <http://localhost:8001/health/live/> | Backend liveness |
+| <http://localhost:8001/admin/> | Django admin (shared admin credentials) |
 
 The browser-facing API origin is configured by `VITE_API_BASE_URL` in
 `client/.env`. Compose stores MySQL, Redis, Elasticsearch, and Kafka data in
@@ -160,6 +161,13 @@ services can join its Docker network:
 ```bash
 docker compose -f monitoring/compose.yaml up
 ```
+
+Sign in to Grafana at <http://localhost:3000> with the same `ADMIN_EMAIL` and
+`ADMIN_PASSWORD` configured for Django. The Render Blueprint also defines a
+Grafana service whose initial admin login is sourced directly from the API
+service's production variables. Its dashboards are provisioned from this
+repository on each deploy; the service intentionally does not persist ad-hoc
+UI changes, so credential changes take effect on the next deployment.
 
 See [Observability](docs/OBSERVABILITY.md) for service ports, Grafana
 dashboards, log queries, and troubleshooting.

@@ -998,3 +998,7 @@ textarea:focus-visible,
     align-items: center;
     height: 100px;
 }
+
+// Keep the shared visual system last so its responsive, authenticated-app
+// styles consistently win over the legacy page-level styles above.
+@import 'revamp';

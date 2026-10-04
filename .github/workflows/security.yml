@@ -115,6 +115,8 @@ jobs:
 
           allowlisted = {
               "compose.yaml",
+              "client/compose.yaml",
+              "monitoring/compose.yaml",
           }
           skipped_suffixes = {
               ".lock",

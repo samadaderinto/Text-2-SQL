@@ -195,13 +195,20 @@ With Compose:
 
 ```bash
 docker network create text-2-sql-app-net
-docker compose -f compose.yaml up --build
+docker compose -f compose.yaml up --build -d
 docker compose exec text2sql-server python manage.py reindex_search --rebuild
 ```
 
-The named network is external and must be created once before starting either
-the application or monitoring Compose stack. The backend's Compose command
-applies migrations and initializes the search index on startup.
+The named network is external and must be created once before starting the
+backend, frontend (`client/compose.yaml`), or monitoring Compose stack. The
+backend's Compose command applies migrations and initializes the search index
+on startup.
+
+To build the backend container image without starting:
+
+```bash
+docker compose -f compose.yaml build
+```
 
 ## Backend documentation checklist
 

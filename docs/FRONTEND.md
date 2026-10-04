@@ -63,15 +63,35 @@ configured separately in the backend environment. Browser push requires a
 supported browser, notification permission, and a secure origin (localhost is
 treated as secure for development).
 
-The Vite dev server is started by Compose with:
+The frontend has its own dedicated Docker Compose stack defined in
+`client/compose.yaml` (stack name `text-2-sql-frontend`). The Vite dev server is
+started inside the container with:
 
 ```bash
 npm run dev -- --host 0.0.0.0 --port 4174
 ```
 
-The client Docker service is published at `http://localhost:4174`, depends on a
-healthy backend, bind-mounts `./client` into `/app`, and uses the
-`client_node_modules` named volume for installed dependencies. That keeps
+To build and run the frontend stack with Docker Compose:
+
+```bash
+docker compose -f client/compose.yaml up --build -d
+```
+
+or from within the `client/` directory:
+
+```bash
+docker compose up --build -d
+```
+
+To build the frontend Docker image without running:
+
+```bash
+docker compose -f client/compose.yaml build
+```
+
+The client Docker service is published at `http://localhost:4174`, bind-mounts
+`./client` into `/app`, uses the `client_node_modules` named volume for installed
+dependencies, and attaches to the shared `text-2-sql-app-net` network. That keeps
 container dependencies separate from the host checkout.
 
 ## UI and feedback
@@ -96,12 +116,30 @@ authentication headers, or secrets in client log payloads.
 
 ## Local commands
 
+Using Node / npm:
+
 ```bash
 cd client
 npm install
 npm run dev
 npm test
 npm run build
+```
+
+Using Docker Compose:
+
+```bash
+# Start frontend container (from repository root)
+docker compose -f client/compose.yaml up
+
+# Build and start frontend container in detached mode
+docker compose -f client/compose.yaml up --build -d
+
+# Build frontend container image only
+docker compose -f client/compose.yaml build
+
+# Stop frontend container
+docker compose -f client/compose.yaml down
 ```
 
 The test suite uses Vitest, jsdom, and React Testing Library.

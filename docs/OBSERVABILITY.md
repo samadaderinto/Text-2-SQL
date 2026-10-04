@@ -18,10 +18,11 @@ Monitoring is optional and can be omitted when you only need the application.
 The exporter stack can use significant laptop resources; stop it when not
 needed with `docker compose -f monitoring/compose.yaml down`.
 
-Start the app stack first, then monitoring:
+Start the app and frontend stacks first, then monitoring:
 
 ```bash
 docker compose -f compose.yaml up --build -d
+docker compose -f client/compose.yaml up --build -d
 docker compose -f monitoring/compose.yaml up -d
 ```
 
@@ -40,8 +41,10 @@ docker compose -f monitoring/compose.yaml up -d
 | `cadvisor` | Docker container resource metrics | `8080` |
 | `blackbox-exporter` | HTTP health probes | `9115` |
 
-Grafana uses the same `ADMIN_EMAIL` / `ADMIN_PASSWORD` credentials as the
-Django admin. The defaults in `server/.env.example` are development-only.
+Grafana in local Compose enables anonymous admin access by default (automatically
+logged in as Admin when opening http://localhost:3000). On startup, the container
+also automatically synchronizes the admin password in `grafana.db` to match the
+`ADMIN_PASSWORD` and `ADMIN_EMAIL` configured in `server/.env` for explicit logins.
 
 ## App services observed
 

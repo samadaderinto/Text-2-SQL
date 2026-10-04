@@ -46,8 +46,14 @@ services:
         export GF_SECURITY_ADMIN_EMAIL="$${ADMIN_EMAIL:-$${GF_SECURITY_ADMIN_EMAIL:-}}"
         test -n "$${GF_SECURITY_ADMIN_USER}" || { echo "ADMIN_EMAIL is required" >&2; exit 1; }
         test -n "$${GF_SECURITY_ADMIN_PASSWORD}" || { echo "ADMIN_PASSWORD is required" >&2; exit 1; }
+        if [ -f /var/lib/grafana/grafana.db ]; then
+          grafana cli --homepath /usr/share/grafana admin reset-admin-password "$${GF_SECURITY_ADMIN_PASSWORD}" >/dev/null 2>&1 || true
+        fi
         exec /run.sh
     environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
       GF_USERS_DEFAULT_THEME: dark
     ports:
       - "127.0.0.1:3000:3000"

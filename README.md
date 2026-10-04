@@ -36,9 +36,11 @@ Browser -> React/Vite -> Django REST API -> relational database
                               `-- /metrics/ and /health/ -> monitoring stack
 ```
 
-The root `compose.yaml` defines the application stack. The separate
-`monitoring/compose.yaml` defines local dashboards and exporters. Compose uses
-MySQL locally, while the Render deployment manifest provisions PostgreSQL.
+The root `compose.yaml` defines the backend application and data stack (`text-2-sql-app`).
+The dedicated `client/compose.yaml` defines the frontend stack (`text-2-sql-frontend`),
+and `monitoring/compose.yaml` defines local dashboards and exporters (`text-2-sql-monitoring`).
+All stacks communicate over the shared external Docker network `text-2-sql-app-net`.
+Compose uses MySQL locally, while the Render deployment manifest provisions PostgreSQL.
 Database-specific differences are handled by Django; tests use isolated
 SQLite settings.
 
@@ -46,11 +48,14 @@ SQLite settings.
 
 | Path | Responsibility |
 | --- | --- |
+| `client/compose.yaml` | Dedicated frontend Docker Compose stack. |
 | `client/src/components/` | Main signed-in screens and account forms. |
 | `client/src/contexts/` | Authentication and store state shared between screens. |
 | `client/src/utils/api.ts` | API requests, JWT refresh, and API error handling. |
 | `client/src/utils/queue-jobs.ts` | Shared client-side polling for asynchronous jobs. |
 | `client/src/utils/push-notifications.ts` | Browser Firebase Messaging setup and device registration. |
+| `compose.yaml` | Backend API and core infrastructure Docker Compose stack. |
+| `monitoring/compose.yaml` | Observability and exporter Docker Compose stack. |
 | `server/server/` | Django settings, root URL configuration, and WSGI/ASGI entry points. |
 | `server/app/views.py` | HTTP endpoints and DRF viewsets. |
 | `server/app/services.py` | Domain workflows and external service integration. |
@@ -89,20 +94,45 @@ cp client/.env.example client/.env
 
 Edit those files for local values. They are ignored by Git; do not create a
 root-level or production environment file. Without a real `OPENAI_API_KEY`, the
-app starts, but query or audio workflows that call OpenAI will fail. The
-Compose files use a pre-existing external Docker network; create it once before
-starting the first stack:
+app starts, but query or audio workflows that call OpenAI will fail.
+
+The Compose files use a pre-existing external Docker network; create it once before
+starting the stacks:
 
 ```bash
 docker network create text-2-sql-app-net
-docker compose -f compose.yaml up --build
 ```
 
-Compose runs the React/Vite frontend, Django API, Kafka-backed worker, MySQL,
-Redis cache, Elasticsearch, and Redpanda (Kafka-compatible broker). The backend
-waits for its dependencies, applies database migrations, and initializes the
-search index before serving requests; the frontend waits for backend
-readiness.
+To bring up both the backend and frontend stacks together:
+
+```bash
+docker compose -f compose.yaml up --build -d
+docker compose -f client/compose.yaml up --build -d
+```
+
+To bring up individual stacks:
+
+```bash
+# Bring up backend API and data stack only
+docker compose -f compose.yaml up --build -d
+
+# Bring up frontend stack only
+docker compose -f client/compose.yaml up
+# Or build and start in background:
+docker compose -f client/compose.yaml up --build -d
+```
+
+The backend stack runs the Django API, Kafka-backed worker, MySQL, Redis cache,
+Elasticsearch, and Redpanda (Kafka-compatible broker). The backend waits for its
+dependencies, applies database migrations, and initializes the search index before
+serving requests. The frontend stack builds and runs the React/Vite development server.
+
+To build the container images for both stacks without starting them:
+
+```bash
+docker compose -f compose.yaml build
+docker compose -f client/compose.yaml build
+```
 
 | Local URL | Service |
 | --- | --- |
@@ -122,18 +152,21 @@ non-development data.
 To inspect service health or rebuild search indices:
 
 ```bash
-docker compose ps
+docker compose -f compose.yaml ps
+docker compose -f client/compose.yaml ps
 docker compose exec text2sql-server python manage.py reindex_search --rebuild
 ```
 
-To stop the application stack without removing its persistent named volumes:
+To stop the application stacks without removing their persistent named volumes:
 
 ```bash
+docker compose -f client/compose.yaml down
 docker compose -f compose.yaml down
 ```
 
-Run backend tests with an isolated in-memory SQLite database; tests do not
-connect to or modify the Compose database:
+### Standalone backend development and tests
+
+Run backend tests with an isolated in-memory SQLite database (no Compose services required):
 
 ```bash
 cd server
@@ -141,17 +174,44 @@ python -m pip install -r requirements-test.txt
 pytest
 ```
 
-For frontend tests and a production build:
+To run the Django server directly on the host:
+
+```bash
+cd server
+python manage.py runserver 0.0.0.0:8001
+```
+
+### Standalone frontend development and build
+
+Run the Vite development server directly on the host:
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Run frontend unit and integration tests (Vitest, jsdom, React Testing Library):
 
 ```bash
 cd client
 npm test
+```
+
+Create a production build of the frontend:
+
+```bash
+cd client
 npm run build
 ```
 
-The backend test suite uses its test settings and does not need the application
-containers. Frontend `npm test` runs Vitest; `npm run build` runs the
-TypeScript project build and Vite production build.
+`npm run build` runs `tsc -b` for TypeScript project checking and Vite for production asset bundling into `client/dist/`. To build the frontend container image directly with Docker:
+
+```bash
+docker compose -f client/compose.yaml build
+# or:
+docker build -t text2sql-frontend -f client/Dockerfile client
+```
 
 ## Monitoring
 
@@ -218,8 +278,7 @@ workflow files under `.github/workflows/` for exact behavior.
   systems, not sources of truth.
 - Use resource ownership checks for store data; search and list results must
   remain scoped to the authenticated owner.
-- Keep application and monitoring Compose stacks separate so the app can run
-  without the dashboards.
+- Keep backend application, frontend, and monitoring Compose stacks separate so each stack can be built, developed, and maintained independently.
 - Keep local settings in the two package-level `.env` files and provide
   production runtime configuration through Render. CI/deploy workflow secrets
   remain scoped to the workflow that consumes them.

@@ -7,7 +7,10 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "4174"]
+    command: >
+      sh -c "(node -e 'require(\"rollup\")' 2>/dev/null ||
+             npm install --no-save @rollup/rollup-linux-arm64-musl @rollup/rollup-linux-x64-musl @rollup/rollup-linux-arm64-gnu @rollup/rollup-linux-x64-gnu) &&
+             exec npm run dev -- --host 0.0.0.0 --port 4174"
     ports:
       - "4174:4174"
     volumes:

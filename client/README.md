@@ -8,12 +8,38 @@ and deployment.
 ## Local development
 
 From the repository root, create `client/.env` from `client/.env.example` and
-set the API origin if it is not `http://localhost:8001`. Then run:
+set the API origin if it is not `http://localhost:8001`.
+
+### Using Node / npm
 
 ```bash
 cd client
 npm install
 npm run dev
+```
+
+### Using Docker Compose
+
+Ensure the shared network exists (`docker network create text-2-sql-app-net`),
+then build and start the frontend container:
+
+```bash
+# From repository root (start container)
+docker compose -f client/compose.yaml up
+
+# Or build and start in detached mode
+docker compose -f client/compose.yaml up --build -d
+
+# Or from client/ directory
+docker compose up
+# Or:
+docker compose up --build -d
+```
+
+To build the image without starting:
+
+```bash
+docker compose -f client/compose.yaml build
 ```
 
 ## Checks

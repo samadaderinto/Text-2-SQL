@@ -7,8 +7,9 @@ import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/Sidebar";
 import api from "../utils/api";
 import { notifyApiError } from "../utils/api-errors";
-import { Oval } from 'react-loader-spinner'; // Example from react-loader-spinner
+import { LoadingState } from './LoadingState';
 import { waitForQueueJob } from '../utils/queue-jobs';
+import { EmptyState } from './EmptyState';
 
 export const Orders = () => {
   const itemsPerPage = 15;
@@ -102,26 +103,26 @@ export const Orders = () => {
       <div className="Order_Container">
         <Sidebar />
         <section className="Order_Header">
-          <h1>Orders</h1>
-          <span onClick={() => handleDownload()}>
+          <div><small className="Page_Eyebrow">SALES</small><h1>Orders</h1><p>Track purchases and fulfillment activity.</p></div>
+          <button type="button" onClick={() => handleDownload()}>
             <MdOutlineDownload className="Order_Download_Icon" />
-            Download List
-          </span>
+            Export orders
+          </button>
         </section>
         <section className="Order_List_Container">
           <ul>
-            <li onClick={() => handleFilterChange('')}>All Orders</li>
-            <li onClick={() => handleFilterChange('pending')}>Pending</li>
-            <li onClick={() => handleFilterChange('paid')}>Paid</li>
-            <li onClick={() => handleFilterChange('cancelled')}>Cancelled</li>
+            {['', 'pending', 'paid', 'cancelled'].map(status => (
+              <li key={status}><button type="button" className="Order_Filter_Button" aria-pressed={state.filter === status} onClick={() => handleFilterChange(status)}>{status ? status.charAt(0).toUpperCase() + status.slice(1) : 'All orders'}</button></li>
+            ))}
           </ul>
           <div className="Order_Search_Box">
             <HiMiniMagnifyingGlass />
             <input
               type="text"
+              aria-label="Search orders"
               value={state.input}
               onChange={(e) => setState((prevState) => ({ ...prevState, input: e.target.value }))}
-              placeholder="Search Orders"
+              placeholder="Search by order or customer"
             />
           </div>
 
@@ -141,22 +142,9 @@ export const Orders = () => {
 
           <div className="Order_List_Item">
             {state.isLoading ? (
-              <div className="spinner-container">
-                <Oval
-                  height={50}
-                  width={50}
-                  color="#4fa94d"
-                  wrapperStyle={{}}
-                  wrapperClass=""
-                  visible={true}
-                  ariaLabel='oval-loading'
-                  secondaryColor="#4fa94d"
-                  strokeWidth={2}
-                  strokeWidthSecondary={2}
-                />
-              </div>
+              <LoadingState label="Loading orders" />
             ) : state.data.length === 0 ? (
-              <div>No Items Found!</div>
+              <EmptyState title="No orders found" description="New orders and matching search results will appear here." />
             ) : (
               <>
                 {state.data.map((orderItem: any, index: number) => (
@@ -167,10 +155,10 @@ export const Orders = () => {
                     <p className={`Order_Status ${orderItem.status}`}>{orderItem.status}</p>
                     <p>{orderItem.created.substring(0, 10)}</p>
                     <p>{orderItem.subtotal}</p>
-                    <p className="Order_Icon_action">
-                      <MdOutlineDownload onClick={() => handleDownload(orderItem.id)} />
-                      <MdOutlineDelete onClick={() => handleDelete(orderItem.id)} />
-                    </p>
+                    <div className="Row_Actions">
+                      <button type="button" aria-label={`Download order ${orderItem.id}`} onClick={() => handleDownload(orderItem.id)}><MdOutlineDownload /></button>
+                      <button type="button" className="danger" aria-label={`Delete order ${orderItem.id}`} onClick={() => handleDelete(orderItem.id)}><MdOutlineDelete /></button>
+                    </div>
                   </article>
                 ))}
 

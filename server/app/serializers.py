@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 
 from phonenumber_field.serializerfields import PhoneNumberField
+from drf_spectacular.utils import extend_schema_field
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -127,7 +128,8 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {"user": {"read_only": True}}
 
-    def get_name(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_name(self, obj) -> str:
         return obj.user.first_name
 
 
@@ -172,4 +174,70 @@ class SearchSerializer(serializers.Serializer):
 
 
 class QueryPlanSerializer(serializers.Serializer):
-    prompt = serializers.CharField()
+    prompt = serializers.CharField(help_text="Natural language query prompt describing the requested data or operation")
+
+
+class JobAcceptedResponseSerializer(serializers.Serializer):
+    job_id = serializers.UUIDField(help_text="Unique identifier of the queued background task")
+    status = serializers.CharField(help_text="Current execution status of the job (e.g. pending, processing)")
+
+
+class QueueJobStatusResponseSerializer(serializers.Serializer):
+    job_id = serializers.UUIDField(help_text="Unique identifier of the queued background task")
+    kind = serializers.CharField(help_text="Job kind (e.g. query_audio, query_generate, orders_export, email_password_reset)")
+    status = serializers.ChoiceField(
+        choices=["pending", "processing", "succeeded", "failed"],
+        help_text="Current execution state",
+    )
+    result = serializers.JSONField(required=False, allow_null=True, help_text="Job output payload when succeeded")
+    error = serializers.CharField(required=False, allow_null=True, help_text="Error message if the job failed")
+
+
+class ProductSearchResponseSerializer(serializers.Serializer):
+    products = ProductSerializer(many=True, help_text="List of matching products")
+    count = serializers.IntegerField(help_text="Total count of matching products")
+    total_pages = serializers.IntegerField(help_text="Total number of pages available")
+    current_page = serializers.IntegerField(help_text="Current 1-based page index")
+
+
+class CustomerSearchResponseSerializer(serializers.Serializer):
+    customers = CustomerSerializer(many=True, help_text="List of matching customer records")
+    count = serializers.IntegerField(help_text="Total count of matching customers")
+    total_pages = serializers.IntegerField(help_text="Total number of pages available")
+    current_page = serializers.IntegerField(help_text="Current 1-based page index")
+
+
+class OrderSearchResponseSerializer(serializers.Serializer):
+    orders = OrderSerializer(many=True, help_text="List of matching orders")
+    count = serializers.IntegerField(help_text="Total count of matching orders")
+    total_pages = serializers.IntegerField(help_text="Total number of pages available")
+    current_page = serializers.IntegerField(help_text="Current 1-based page index")
+
+
+class TokenPairSerializer(serializers.Serializer):
+    access = serializers.CharField(help_text="JWT access token (1-day validity)")
+    refresh = serializers.CharField(help_text="JWT refresh token (7-day validity)")
+
+
+class LoginResponseSerializer(serializers.Serializer):
+    token = TokenPairSerializer(help_text="Issued JWT authentication tokens")
+    data = UserSerializer(help_text="Authenticated user profile details")
+
+
+class TokenRefreshResponseSerializer(serializers.Serializer):
+    access = serializers.CharField(help_text="Fresh JWT access token")
+    refresh = serializers.CharField(help_text="Current JWT refresh token")
+
+
+class MessageResponseSerializer(serializers.Serializer):
+    message = serializers.CharField(help_text="Informational or success status message")
+
+
+class ErrorResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField(help_text="Description of the error condition")
+
+
+class MutationConfirmationResponseSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["success", "error"], help_text="Result status of the mutation execution")
+    message = serializers.CharField(required=False, help_text="Status or explanation message")
+    data = serializers.JSONField(required=False, help_text="Affected or created records")

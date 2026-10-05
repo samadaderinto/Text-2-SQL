@@ -307,7 +307,7 @@ class SearchService:
             )
             return response
         except Exception:
-            logger.error("Error transcribing audio")
+            logger.exception("Error transcribing audio")
             return None
 
     def build_query_plan(self, text):

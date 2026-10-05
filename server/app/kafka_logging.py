@@ -1,3 +1,4 @@
+import atexit
 import json
 import logging
 import os
@@ -23,7 +24,7 @@ def get_kafka_producer():
     from kafka import KafkaProducer
 
     brokers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092").split(",")
-    return KafkaProducer(
+    producer = KafkaProducer(
         bootstrap_servers=[broker.strip() for broker in brokers if broker.strip()],
         value_serializer=lambda value: json.dumps(value).encode("utf-8"),
         acks=1,
@@ -32,6 +33,26 @@ def get_kafka_producer():
         request_timeout_ms=3000,
         linger_ms=25,
     )
+
+    cleanup_func = getattr(producer, "_cleanup_func", None)
+    if cleanup_func:
+        try:
+            atexit.unregister(cleanup_func)
+        except Exception:
+            pass
+
+    def _cleanup():
+        try:
+            producer.flush(timeout=2.0)
+        except Exception:
+            pass
+        try:
+            producer.close(timeout=2.0)
+        except Exception:
+            pass
+
+    atexit.register(_cleanup)
+    return producer
 
 
 class JsonLogFormatter(logging.Formatter):

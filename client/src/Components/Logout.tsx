@@ -6,6 +6,7 @@ import { decryptJWT } from "../utils/hooks";
 import { secretKey } from "../utils/constants";
 import { notifyApiError } from "../utils/api-errors";
 import { PiDiamondsFourFill } from "react-icons/pi";
+import { RiLogoutBoxLine } from "react-icons/ri";
 
 export const Logout = () => {
   const { setIsSignedIn } = useContext(AuthContext);
@@ -43,7 +44,9 @@ export const Logout = () => {
     <div className="Logout_Container">
       <article>
         <span className="Logout_Brand"><PiDiamondsFourFill /> EchoCart</span>
-        <div className="Logout_Icon" aria-hidden="true">↗</div>
+        <div className="Logout_Icon" aria-hidden="true">
+          <RiLogoutBoxLine />
+        </div>
         <h1>Sign out of EchoCart?</h1>
         <p>You can sign back in at any time to continue managing your store.</p>
         <div className="Logout_Action_Row">

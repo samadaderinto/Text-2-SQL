@@ -1,3 +1,4 @@
+import atexit
 import json
 import logging
 import os
@@ -23,7 +24,7 @@ STALE_JOB_MINUTES = 15
 @lru_cache(maxsize=1)
 def get_job_producer():
     servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-    return KafkaProducer(
+    producer = KafkaProducer(
         bootstrap_servers=[server.strip() for server in servers.split(",") if server.strip()],
         value_serializer=lambda value: json.dumps(value).encode("utf-8"),
         acks="all",
@@ -31,6 +32,26 @@ def get_job_producer():
         max_block_ms=1000,
         request_timeout_ms=3000,
     )
+
+    cleanup_func = getattr(producer, "_cleanup_func", None)
+    if cleanup_func:
+        try:
+            atexit.unregister(cleanup_func)
+        except Exception:
+            pass
+
+    def _cleanup():
+        try:
+            producer.flush(timeout=2.0)
+        except Exception:
+            pass
+        try:
+            producer.close(timeout=2.0)
+        except Exception:
+            pass
+
+    atexit.register(_cleanup)
+    return producer
 
 
 def publish_job(job):
@@ -86,13 +107,16 @@ def _process_job(job):
         return SearchService().generate_query_response(user, payload["prompt"])
 
     if job.kind == QueueJob.Kind.QUERY_AUDIO:
+        storage_path = payload.get("storage_path", "")
+        if not storage_path or not default_storage.exists(storage_path):
+            raise FileNotFoundError(f"Audio file not found in storage: {storage_path}")
         try:
             user = User.objects.get(pk=payload["user_id"])
-            with default_storage.open(payload["storage_path"], "rb") as audio_file:
+            with default_storage.open(storage_path, "rb") as audio_file:
                 return SearchService().generate_query_response_from_audio(user, audio_file)
         finally:
-            if default_storage.exists(payload["storage_path"]):
-                default_storage.delete(payload["storage_path"])
+            if default_storage.exists(storage_path):
+                default_storage.delete(storage_path)
 
     if job.kind in (
         QueueJob.Kind.EMAIL_ACTIVATION,
@@ -193,7 +217,14 @@ def process_job(job_id):
         job.refresh_from_db()
         job.error = "The background task failed. Please try again."
         job.started_at = None
-        if job.attempts >= MAX_JOB_ATTEMPTS:
+        is_unretryable = (
+            job.attempts >= MAX_JOB_ATTEMPTS
+            or (
+                job.kind == QueueJob.Kind.QUERY_AUDIO
+                and not default_storage.exists(job.payload.get("storage_path", ""))
+            )
+        )
+        if is_unretryable:
             job.status = QueueJob.Status.FAILED
         else:
             job.status = QueueJob.Status.QUEUED

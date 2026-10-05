@@ -272,9 +272,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 15,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    "DEFAULT_THROTTLE_RATES": {
-        "client_logs": os.getenv("CLIENT_LOG_RATE", "30/min"),
-    },
     "EXCEPTION_HANDLER": "app.api_exceptions.api_exception_handler",
 }
 
@@ -346,9 +343,77 @@ SIMPLE_JWT = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "AudQL API Documentation",
-    "DESCRIPTION": "This is the official documentation for the AudQL backend",
+    "DESCRIPTION": (
+        "# AudQL REST API Documentation\n\n"
+        "AudQL is an intelligent e-commerce platform that pairs a traditional store catalog "
+        "(products, orders, customers) with a conversational Voice-to-SQL and Text-to-SQL engine.\n\n"
+        "## Architecture & Endpoint Comparison Guide\n\n"
+        "### 1. Authentication (`/auth/`)\n"
+        "- **Sign up & Verification**: `POST /auth/signup/` registers merchants and triggers an email verification link. "
+        "Accounts must be verified via `GET /auth/activate/{uidb64}/{token}/` before logging in.\n"
+        "- **Session Tokens**: `POST /auth/login/` validates credentials and returns a short-lived JWT access token "
+        "(1 day) and a long-lived refresh token (7 days). Use `POST /auth/refresh-token/` to obtain fresh access tokens "
+        "without re-authenticating.\n"
+        "- **Termination**: `POST /auth/logout/` blacklists the refresh token to immediately invalidate the session.\n"
+        "- **Password Recovery**: `POST /auth/reset-password/request/` dispatches reset tokens; `GET /auth/reset-password/verify/.../` "
+        "validates token validity, and `POST /auth/reset-password/reset/` updates the password.\n\n"
+        "### 2. Conversational Query & Search (`/query/`)\n"
+        "- **Speech Input (`POST /query/upload/`)**: Accepts recorded audio (WAV, MP3, etc.), extracts speech, and enqueues "
+        "an asynchronous speech-to-SQL workflow (`202 Accepted`). Compare with `/query/generate/` which accepts text.\n"
+        "- **Text Input (`POST /query/generate/`)**: Accepts natural language text queries, analyzes schema context with LLMs, "
+        "and enqueues an asynchronous query planning job (`202 Accepted`).\n"
+        "- **Elasticsearch Direct Search (`GET|POST /query/search/`)**: Synchronous, fast fuzzy/keyword search across all owned "
+        "products, customers, and orders simultaneously. Use when instant keyword matching is required without LLM synthesis.\n"
+        "- **Staged Mutation Confirmation (`POST|PUT|DELETE /query/upload/...`)**: Safely commits create, update, or delete "
+        "operations generated from conversational sessions after explicit merchant review.\n\n"
+        "### 3. Store Resources (`/product/`, `/customers/`, `/orders/`)\n"
+        "- Dedicated REST endpoints for explicit CRUD operations on catalog products, customer profiles, and store orders.\n"
+        "- Each resource family provides scoped Elasticsearch search endpoints with pagination support.\n\n"
+        "### 4. Background Job Queue (`/jobs/`)\n"
+        "- Asynchronous operations (audio transcription, query plan generation, order CSV export) return a `job_id`.\n"
+        "- `GET /jobs/{job_id}/`: Polls task status (`pending`, `processing`, `succeeded`, `failed`) and returns JSON result or error.\n"
+        "- `GET /jobs/{job_id}/download/`: Directly streams the generated CSV file when an order export job succeeds.\n\n"
+        "### 5. Settings & Health (`/settings/`, `/health/`)\n"
+        "- Manage administrative accounts, store preferences, and Firebase Cloud Messaging (FCM) device push tokens.\n"
+        "- Monitor container status via `/health/live/` (liveness) and `/health/` (full service readiness).\n"
+    ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "TAGS": [
+        {
+            "name": "Authentication",
+            "description": "User registration, email verification, JWT login/refresh, and password recovery workflows.",
+        },
+        {
+            "name": "Natural Language & Speech Query",
+            "description": "Voice-to-SQL speech upload, Text-to-SQL prompt generation, Elasticsearch multi-entity search, and staged mutation confirmation.",
+        },
+        {
+            "name": "Products",
+            "description": "Catalog management for store products including creation with imagery, pagination, full-text search, updates, and deletion.",
+        },
+        {
+            "name": "Customers",
+            "description": "Customer profile management, listing, and search operations.",
+        },
+        {
+            "name": "Orders",
+            "description": "Store order processing, search/filtering, status updates, deletion, and asynchronous CSV report exports.",
+        },
+        {
+            "name": "Background Jobs",
+            "description": "Status polling and file artifact downloads for asynchronous background tasks.",
+        },
+        {
+            "name": "Settings & Notifications",
+            "description": "Store profiles, administrative account details, notification preferences, and FCM push device token registration.",
+        },
+        {
+            "name": "Observability",
+            "description": "System liveness and readiness health status probes.",
+        },
+    ],
 }
 
 CopySTATIC_URL = "/static/"

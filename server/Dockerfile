@@ -5,13 +5,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY server/requirements.txt ./
+COPY requirements.txt ./
 RUN apk add --no-cache mariadb-connector-c \
     && apk add --no-cache --virtual .build-deps build-base mariadb-connector-c-dev pkgconf
 RUN pip install --no-cache-dir --retries 5 --timeout 60 -r requirements.txt
 RUN apk del .build-deps
 
-COPY server/ .
+COPY . .
 
 EXPOSE 10000
 

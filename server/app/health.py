@@ -5,7 +5,9 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import connections
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 
 logger = logging.getLogger(__name__)
@@ -43,12 +45,40 @@ def _run_check(name, check):
     return {"status": "ok"}
 
 
-@require_GET
+@extend_schema(
+    summary="Application liveness probe",
+    description=(
+        "Kubernetes/container liveness probe. Immediately returns HTTP 200 with `status: ok` if the web process is running. "
+        "Does not inspect external dependencies. "
+        "Compare with `/health/` (readiness probe), which actively verifies database, cache, and Elasticsearch connectivity."
+    ),
+    responses={
+        200: OpenApiResponse(description="Application web server process is responsive"),
+    },
+    tags=["Observability"],
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
 def liveness_check(request):
     return JsonResponse({"status": "ok"})
 
 
-@require_GET
+@extend_schema(
+    summary="System readiness health check",
+    description=(
+        "Comprehensive infrastructure readiness check verifying connectivity to the database, Redis cache, "
+        "and Elasticsearch cluster (when enabled). "
+        "Returns HTTP 200 when all core systems are operational, or HTTP 503 Service Unavailable if any component fails. "
+        "Compare with `/health/live/`, which only tests application process liveness without evaluating dependencies."
+    ),
+    responses={
+        200: OpenApiResponse(description="All downstream services (database, cache, elasticsearch) are healthy"),
+        503: OpenApiResponse(description="One or more critical service dependencies failed health checks"),
+    },
+    tags=["Observability"],
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
 def readiness_check(request):
     check_functions = {
         "database": _check_database,

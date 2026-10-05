@@ -143,7 +143,7 @@ export const NewProduct = () => {
     <div className="Newproduct_Container">
       <Header />
       <Sidebar />
-      <h1>Create New Product</h1>
+      <header className="Form_Page_Header"><small className="Page_Eyebrow">CATALOG</small><h1>Create product</h1><p>Add an item to your store catalog.</p></header>
       <section className="Product_Form_Container">
         <div className="GenProduct_Container">
           <h3>General Product Information</h3>
@@ -197,8 +197,8 @@ export const NewProduct = () => {
               </article>
             </span>
             <div>
-              <span className="Cancel_Btn" onClick={() => nav("/product")}>Cancel</span>
-              <span className="Add_Btn" onClick={handleCreateProduct}>Add Product</span>
+              <button type="button" className="Cancel_Btn" onClick={() => nav("/product")}>Cancel</button>
+              <button type="button" className="Add_Btn" onClick={handleCreateProduct}>Add product</button>
             </div>
           </form>
         </div>

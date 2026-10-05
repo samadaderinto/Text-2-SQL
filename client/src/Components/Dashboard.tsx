@@ -20,7 +20,7 @@ import { Header } from "../layouts/Header";
 import Sidebar from "../layouts/Sidebar";
 import { OrderProps } from "../types/order";
 import api from "../utils/api";
-import { Oval } from "react-loader-spinner";
+import { LoadingState } from "./LoadingState";
 
 ChartJS.register(
   CategoryScale,
@@ -200,9 +200,7 @@ export const Dashboard = () => {
                 <Link to="/orders">All orders <span aria-hidden="true">↗</span></Link>
               </header>
               {loading ? (
-                <div className="Dashboard_Chart_State">
-                  <Oval height={34} width={34} color="#6259e8" ariaLabel="Loading orders" />
-                </div>
+                <LoadingState label="Loading order activity" compact />
               ) : error ? (
                 <p className="Dashboard_Chart_State Dashboard_Error">{error}</p>
               ) : orders.length === 0 ? (
@@ -242,9 +240,7 @@ export const Dashboard = () => {
                 <span className="Dashboard_Sample_Label">LATEST 5</span>
               </header>
               {loading ? (
-                <div className="Dashboard_Chart_State">
-                  <Oval height={34} width={34} color="#6259e8" ariaLabel="Loading order status" />
-                </div>
+                <LoadingState label="Loading order status" compact />
               ) : error ? (
                 <p className="Dashboard_Chart_State Dashboard_Error">{error}</p>
               ) : orders.length === 0 ? (
@@ -291,9 +287,7 @@ export const Dashboard = () => {
             </header>
 
             {loading ? (
-              <div className="Dashboard_Orders_State">
-                <Oval height={36} width={36} color="#6259e8" ariaLabel="Loading orders" />
-              </div>
+              <LoadingState label="Loading recent orders" />
             ) : error ? (
               <p className="Dashboard_Orders_State Dashboard_Error">{error}</p>
             ) : orders.length === 0 ? (

@@ -10,6 +10,16 @@
     --sidebar-width: 248px;
     --header-height: 76px;
     --shadow-card: 0 12px 34px rgba(35, 36, 67, 0.045), 0 2px 5px rgba(35, 36, 67, 0.025);
+    --primary: #6259e8;
+    --primary-hover: #5148d2;
+    --success: #22845f;
+    --success-soft: #eaf8f1;
+    --warning: #b87819;
+    --warning-soft: #fff5e7;
+    --danger: #bd4e58;
+    --danger-soft: #fff0f1;
+    --control-height: 42px;
+    --control-radius: 10px;
 }
 
 html,
@@ -218,6 +228,21 @@ button {
             }
         }
     }
+}
+
+.Header_Container .Header_Loading_Pulse {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #6259e8;
+    box-shadow: 0 0 0 0 rgba(98, 89, 232, 0.32);
+    animation: header-loading-pulse 1.2s ease-out infinite;
+}
+
+@keyframes header-loading-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(98, 89, 232, 0.32); }
+    70%, 100% { box-shadow: 0 0 0 8px rgba(98, 89, 232, 0); }
 }
 
 .Home_Sidebar {
@@ -432,6 +457,7 @@ button {
     padding: 0;
 
     .Dashboard_Metric {
+        width: 100%;
         min-height: 142px;
         display: flex;
         flex-direction: column;
@@ -554,7 +580,7 @@ button {
 
 .Dashboard_Revenue_Panel,
 .Dashboard_Status_Panel {
-    min-height: 318px;
+    min-height: 290px;
 }
 
 .Dashboard_Line_Chart {
@@ -562,7 +588,7 @@ button {
 }
 
 .Dashboard_Chart_State {
-    min-height: 205px;
+    min-height: 170px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1284,6 +1310,169 @@ button {
     }
 }
 
+/* Stable app primitives: deliberately last to prevent legacy descendant rules
+   from resizing feedback, controls, or utility components. */
+.Product_Container .Product_Table_Section .App_Loading_State,
+.Order_Container .Order_List_Container .App_Loading_State,
+.Customer_Container .Customer_List_Container .App_Loading_State,
+.Dashboard_container .App_Loading_State,
+.Product_Container .Product_Table_Section .App_Empty_State,
+.Order_Container .Order_List_Container .App_Empty_State,
+.Customer_Container .Customer_List_Container .App_Empty_State,
+.Query_Container .App_Empty_State {
+    width: 100%;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 28px;
+    border: 0;
+    background: transparent;
+    color: #85879a;
+    font-size: 11px;
+    text-align: center;
+}
+
+.Product_Container .Product_Table_Section .App_Loading_Mark,
+.Order_Container .Order_List_Container .App_Loading_Mark,
+.Customer_Container .Customer_List_Container .App_Loading_Mark,
+.Dashboard_container .App_Loading_Mark {
+    width: 46px;
+    height: 32px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    margin: 0 0 4px;
+    padding: 7px 9px;
+    border: 1px solid #e6e4fb;
+    border-radius: 11px;
+    background: linear-gradient(145deg, #fbfaff, #f3f1ff);
+    color: var(--primary);
+    box-shadow: 0 7px 18px rgba(98, 89, 232, 0.09);
+}
+
+.Product_Container .Product_Table_Section .App_Loading_State > small,
+.Order_Container .Order_List_Container .App_Loading_State > small,
+.Customer_Container .Customer_List_Container .App_Loading_State > small,
+.Dashboard_container .App_Loading_State > small {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #85879a;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 600;
+}
+
+.Product_Container .Add_Product .Page_Eyebrow,
+.Order_Container .Order_Header .Page_Eyebrow,
+.Customer_Container > article .Page_Eyebrow,
+.Query_Container .Query_Header .Page_Eyebrow,
+.Form_Page_Header .Page_Eyebrow {
+    width: auto;
+    height: auto;
+    display: block;
+    margin: 0 0 7px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #7772d4;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 1.2px;
+}
+
+.Dashboard_Error {
+    width: 100%;
+    min-height: 76px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 12px 0 !important;
+    padding: 14px 16px !important;
+    border: 1px solid #f2cfd3;
+    border-radius: 11px;
+    background: var(--danger-soft);
+    color: var(--danger) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+}
+
+.Blue_Btn,
+.Blue_btn,
+.Add_Btn,
+.Query_Container .Query_Header > .Query_Download_Btn,
+.Popup_submit,
+.Product_Container .Add_Product > button,
+.Order_Container .Order_Header > button,
+.Customer_Container > article > button {
+    min-width: 112px;
+    height: var(--control-height);
+    min-height: var(--control-height);
+    padding: 0 16px;
+    border: 1px solid var(--primary);
+    border-radius: var(--control-radius);
+    background: var(--primary);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1;
+    box-shadow: 0 7px 16px rgba(98, 89, 232, 0.18);
+}
+
+.White_Btn,
+.White_btn,
+.Cancel_Btn {
+    min-width: 112px;
+    height: var(--control-height);
+    min-height: var(--control-height);
+    padding: 0 16px;
+    border: 1px solid #dedee8;
+    border-radius: var(--control-radius);
+    background: #fff;
+    color: #626377;
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1;
+    box-shadow: none;
+}
+
+.Toastify__toast-container {
+    width: min(390px, calc(100vw - 28px));
+}
+
+.Toastify__toast.App_Toast,
+.Toastify__toast {
+    min-height: 58px;
+    padding: 12px 14px;
+    border: 1px solid #e5e5ee;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.98);
+    color: #414257;
+    box-shadow: 0 16px 45px rgba(35, 36, 67, 0.14);
+}
+
+.Toastify__toast--success { border-left: 3px solid var(--success); }
+.Toastify__toast--error { border-left: 3px solid var(--danger); }
+.Toastify__toast--warning { border-left: 3px solid var(--warning); }
+.Toastify__toast--info { border-left: 3px solid var(--primary); }
+.Toastify__toast-body { color: #4a4b60; font-size: 12px; font-weight: 550; }
+.Toastify__progress-bar { height: 2px; background: var(--primary); }
+
+input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--primary);
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -1600,25 +1789,40 @@ button {
             height: auto;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             margin: 0 0 34px;
             color: #6259e8;
             font-size: 14px;
             font-weight: 650;
+            line-height: 1;
+
+            svg {
+                display: block;
+                font-size: 16px;
+            }
         }
 
         .Logout_Icon {
             width: 58px;
             height: 58px;
-            display: grid;
-            place-items: center;
-            margin-bottom: 20px;
+            min-width: 58px;
+            min-height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
             border-radius: 18px;
             background: #f0efff;
             color: #6259e8;
             font-size: 26px;
-            font-weight: 700;
-            transform: rotate(45deg);
+            line-height: 1;
+
+            svg {
+                display: block;
+                width: 26px;
+                height: 26px;
+            }
         }
 
         h1 {
@@ -1828,5 +2032,1076 @@ button {
                 width: 100%;
             }
         }
+    }
+}
+
+/* Authenticated workspace polish */
+.App_Loading_State {
+    width: 100%;
+    min-height: 156px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #8b8d9f;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+
+    &.compact { min-height: 170px; }
+
+    > small {
+        color: #85879a;
+        font-size: 11px;
+        font-style: normal;
+        font-weight: 600;
+    }
+}
+
+.App_Loading_Mark {
+    width: 46px;
+    height: 32px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    padding: 7px 9px;
+    border: 1px solid #e6e4fb;
+    border-radius: 11px;
+    background: linear-gradient(145deg, #fbfaff, #f3f1ff);
+    box-shadow: 0 7px 18px rgba(98, 89, 232, 0.09);
+
+    i {
+        width: 4px;
+        height: 8px;
+        border-radius: 3px;
+        background: #7067eb;
+        animation: app-loading-bars 900ms ease-in-out infinite;
+    }
+
+    i:nth-child(2) { height: 15px; animation-delay: 120ms; }
+    i:nth-child(3) { height: 11px; animation-delay: 240ms; }
+}
+
+@keyframes app-loading-bars {
+    0%, 100% { opacity: 0.42; transform: scaleY(0.65); transform-origin: bottom; }
+    50% { opacity: 1; transform: scaleY(1); transform-origin: bottom; }
+}
+
+.Product_Container > .Add_Product,
+.Product_Container > .Product_Table_Section,
+.Order_Container > .Order_Header,
+.Order_Container > .Order_List_Container,
+.Customer_Container > article,
+.Customer_Container > .Customer_List_Container,
+.Query_Container > .Query_Header,
+.Query_Container > .Query_Item_Container,
+.Newproduct_Container > h1,
+.Newproduct_Container > .Product_Form_Container,
+.Newcustomer_Container > h1,
+.Newcustomer_Container > .Product_Form_Container {
+    max-width: 1360px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.Header_Container {
+    .Header_Icon_Button {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border: 1px solid transparent;
+        border-radius: 11px;
+        background: transparent;
+        color: #74768a;
+        cursor: pointer;
+        font-size: 21px;
+
+        &:hover {
+            border-color: #e8e7f1;
+            background: #f8f7fd;
+            color: var(--brand);
+        }
+    }
+
+    .RightHand_Container .Image_Container {
+        display: grid;
+        place-items: center;
+        border: 0;
+        background: linear-gradient(145deg, #746bf4, #554bd7);
+        color: #fff;
+        box-shadow: 0 0 0 3px #f0efff;
+
+        > span {
+            width: auto;
+            color: inherit;
+            font-size: 14px;
+            font-weight: 750;
+        }
+    }
+}
+
+.Home_Sidebar .Sidebar_Container button {
+    overflow: hidden;
+
+    &::after {
+        position: absolute;
+        inset: 9px auto 9px 0;
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: transparent;
+        content: "";
+    }
+
+    &.Active_List::after {
+        background: var(--brand);
+    }
+}
+
+.Settings_Container {
+    display: block;
+    height: auto;
+    min-height: 100vh;
+
+    .Settings_Page_Header {
+        max-width: 1040px;
+        margin: 0 auto 26px;
+
+        h1 {
+            margin: 0;
+            padding: 0;
+            font-size: clamp(28px, 3vw, 36px);
+            font-weight: 700;
+            letter-spacing: -1.1px;
+        }
+
+        p {
+            margin-top: 8px;
+            color: #85879a;
+            font-size: 13px;
+        }
+    }
+
+    .Settings_Eyebrow {
+        display: block;
+        margin-bottom: 8px;
+        color: #7772d4;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 1.25px;
+    }
+
+    .Settings_Layout {
+        width: 100%;
+        max-width: 1040px;
+        display: grid;
+        grid-template-columns: 210px minmax(0, 1fr);
+        align-items: start;
+        gap: 22px;
+        margin: 0 auto;
+    }
+
+    .Settings_Tabs {
+        width: 100%;
+        display: grid;
+        gap: 5px;
+        margin: 0;
+        padding: 8px;
+        border: 1px solid #ebeaf2;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: var(--shadow-card);
+
+        button {
+            width: 100%;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 0 12px;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: #74768a;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: left;
+
+            svg { font-size: 17px; }
+
+            &:hover { background: #f7f6ff; color: #544bd5; }
+
+            &.Active {
+                background: #f0efff;
+                color: #554bd7;
+                box-shadow: inset 3px 0 0 #6259e8;
+            }
+        }
+    }
+
+    form {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        display: block;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid #ebeaf2;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: var(--shadow-card);
+    }
+
+    .Settings_Form_Header {
+        padding: 24px 28px 21px;
+        border-bottom: 1px solid #f0eff5;
+
+        h3 {
+            margin: 0 0 6px;
+            padding: 0;
+            color: #2c2d42;
+            font-size: 18px;
+            font-weight: 680;
+            letter-spacing: -0.3px;
+        }
+
+        p { color: #9091a2; font-size: 12px; }
+    }
+
+    .Settings_Fields {
+        display: grid;
+        grid-template-columns: 150px minmax(0, 1fr);
+        align-items: center;
+        gap: 18px 24px;
+        padding: 26px 28px 30px;
+
+        > label {
+            width: auto;
+            margin: 0;
+            padding: 0;
+            color: #4f5166;
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        > input,
+        > select {
+            width: 100%;
+            min-height: 46px;
+            margin: 0;
+            padding: 0 14px;
+            border-color: #e3e3ec;
+            border-radius: 10px;
+            background: #fcfcfe;
+            color: #34364b;
+            font-size: 13px;
+        }
+    }
+
+    .Settings_Change_Password {
+        margin-left: auto;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #6259e8;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 650;
+    }
+
+    .Notify_Section {
+        grid-column: 1 / -1;
+        width: 100%;
+        height: auto;
+        display: grid;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+    }
+
+    .Notification_Row {
+        width: 100%;
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin: 0;
+        padding: 14px 16px;
+        border: 1px solid #ebeaf2;
+        border-radius: 12px;
+        background: #fcfcfe;
+        cursor: pointer;
+
+        > span { display: grid; gap: 4px; }
+        strong { color: #424459; font-size: 12px; }
+        small { color: #9697a8; font-size: 11px; font-weight: 400; }
+
+        input {
+            width: 38px;
+            height: 21px;
+            margin: 0 0 0 auto;
+            accent-color: #6259e8;
+            transform: none;
+        }
+    }
+
+    .Settings_Actions {
+        width: 100%;
+        height: auto;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin: 0;
+        padding: 18px 28px;
+        border-top: 1px solid #f0eff5;
+        background: #fcfcfe;
+
+        button {
+            width: auto;
+            height: 42px;
+            min-width: 118px;
+            margin: 0;
+            padding: 0 17px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .White_Btn { border: 1px solid #dedee8; background: #fff; color: #626377; }
+        .Blue_Btn { border: 1px solid #6259e8; color: #fff; }
+    }
+}
+
+@media (max-width: 720px) {
+    .Settings_Container {
+        .Settings_Layout { grid-template-columns: 1fr; gap: 14px; }
+        .Settings_Tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .Settings_Tabs button { justify-content: center; padding-inline: 8px; }
+        .Settings_Fields { grid-template-columns: 1fr; gap: 8px; }
+        .Settings_Fields > input,
+        .Settings_Fields > select { margin-bottom: 10px; }
+    }
+}
+
+@media (max-width: 460px) {
+    .Settings_Container {
+        .Settings_Tabs button { gap: 6px; font-size: 10px; }
+        .Settings_Form_Header,
+        .Settings_Fields { padding-inline: 18px; }
+        .Settings_Actions { padding: 15px 18px; }
+        .Settings_Actions button { min-width: 0; flex: 1; }
+    }
+}
+
+.Order_Container .Order_List_Container > ul {
+    width: auto;
+    height: auto;
+    min-height: 66px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    margin: 0;
+    padding: 11px 18px;
+}
+
+.Order_Container .Order_List_Container > ul > li {
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: #858698;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.Order_Container .Order_List_Container > ul > li.Active {
+    background: #f0efff;
+    color: var(--primary);
+}
+
+.Order_Container .Order_List_Container > .Order_Search_Box {
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+    height: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 18px 0 0;
+    padding: 0 12px;
+    border: 1px solid #e5e5ee;
+    border-radius: 9px;
+    background: #fafafd;
+    color: #888a9d;
+}
+
+.Order_Container .Order_List_Container > .Order_Search_Box > svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+}
+
+.Order_Container .Order_List_Container > .Order_Search_Box > input {
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #3f4055;
+    font-size: 11px;
+    outline: 0;
+}
+
+@media (max-width: 760px) {
+    .Order_Container .Order_List_Container > .Order_Search_Box {
+        width: calc(100% - 28px);
+        min-width: 0;
+        max-width: none;
+        margin: 0 14px 14px;
+    }
+}
+
+.Order_Container .Order_List_Container > .Order_List_Header {
+    width: 100%;
+    height: 44px;
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: 34px minmax(110px, 1fr) minmax(160px, 1.5fr) minmax(95px, .8fr) minmax(120px, 1fr) minmax(90px, .8fr) 70px;
+    align-items: center;
+    gap: 12px;
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 0 20px;
+    border-top: 1px solid #efeff4;
+    border-bottom: 1px solid #efeff4;
+    background: #fbfbfd;
+}
+
+.Order_Container .Order_List_Container > .Order_List_Header > article,
+.Order_Container .Order_List_Container > .Order_List_Header > .Order_Attributes {
+    width: auto;
+    height: auto;
+    display: contents;
+    margin: 0;
+    padding: 0;
+}
+
+.Order_Container .Order_List_Container > .Order_List_Header p {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    color: #9697a7;
+    font-size: 10px;
+    font-weight: 650;
+}
+
+.Order_Container .Order_List_Container > .Order_List_Item {
+    width: 100%;
+    height: auto;
+    min-height: 260px;
+    display: flex;
+    grid-column: 1 / -1;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    margin: 0;
+    padding: 0;
+}
+
+.Order_Container .Order_List_Container > .Order_List_Item > .App_Empty_State {
+    min-height: 260px;
+    flex: 1 1 auto;
+}
+
+.Settings_Container .Settings_Layout > form .Notify_Section .Notification_Row > input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    height: 22px;
+    min-height: 22px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    border: 1px solid #d9d9e5;
+    border-radius: 999px;
+    outline: 0;
+    background:
+        radial-gradient(circle at 10px 50%, #fff 0 6px, transparent 6.5px),
+        #c8c9d4;
+    box-shadow: inset 0 1px 2px rgba(35, 36, 67, 0.08);
+    cursor: pointer;
+    transform: none;
+    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.Settings_Container .Settings_Layout > form .Notify_Section .Notification_Row > input[type="checkbox"]:checked {
+    border-color: var(--primary);
+    background:
+        radial-gradient(circle at 29px 50%, #fff 0 6px, transparent 6.5px),
+        var(--primary);
+    box-shadow: 0 3px 8px rgba(98, 89, 232, 0.2);
+}
+
+.Settings_Container .Settings_Layout > form .Notify_Section .Notification_Row > input[type="checkbox"]:focus-visible {
+    outline: 3px solid rgba(98, 89, 232, 0.2);
+    outline-offset: 2px;
+}
+
+/* Collection pages, forms, tables and states */
+.Page_Eyebrow {
+    display: block;
+    margin-bottom: 7px;
+    color: #7772d4;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 1.2px;
+}
+
+.App_Empty_State {
+    width: 100%;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 28px;
+    color: #9697a8;
+    text-align: center;
+
+    .App_Empty_Icon {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 3px;
+        border: 1px solid #e6e4fb;
+        border-radius: 12px;
+        background: #f6f5ff;
+        color: #7067e8;
+        font-size: 19px;
+    }
+
+    strong { color: #4a4b60; font-size: 13px; font-weight: 650; }
+    small { max-width: 330px; color: #9a9bac; font-size: 11px; line-height: 1.6; }
+}
+
+.Product_Container .Add_Product,
+.Order_Container .Order_Header,
+.Customer_Container > article {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    padding: 0;
+
+    h1 { margin: 0; padding: 0; color: #292a3e; font-size: 30px; font-weight: 700; letter-spacing: -1px; }
+    p { margin-top: 6px; color: #8d8e9f; font-size: 12px; }
+
+    > button {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 16px;
+        border: 1px solid #6259e8;
+        border-radius: 10px;
+        background: #6259e8;
+        color: #fff;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 650;
+        box-shadow: 0 7px 16px rgba(98, 89, 232, 0.18);
+    }
+}
+
+.Product_Container .Product_Table_Section,
+.Order_Container .Order_List_Container,
+.Customer_Container .Customer_List_Container {
+    overflow: hidden;
+    padding: 0;
+}
+
+.Product_Container .Product_Table_Section > div:first-child,
+.Customer_Container .Customer_List_Container > article:first-child {
+    min-height: 66px;
+    padding: 11px 18px;
+    border-bottom: 1px solid #efeff4;
+}
+
+.Product_Container .Product_Table_Section > div:first-child > span,
+.Customer_Container .Customer_List_Container > article:first-child > div,
+.Order_Container .Order_Search_Box {
+    width: min(340px, 100%);
+    height: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 12px;
+    border: 1px solid #e7e7ef;
+    border-radius: 9px;
+    background: #fafafd;
+    color: #9192a3;
+
+    input { width: 100%; height: 100%; margin: 0; border: 0; background: transparent; outline: 0; }
+}
+
+.Product_Table_list_header,
+.Product_Table_List_content > nav {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 32px minmax(150px, 2fr) minmax(110px, 1.2fr) minmax(90px, 1fr) minmax(75px, .8fr) minmax(65px, .7fr) minmax(90px, 1fr) 70px;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+}
+
+.Product_Table_list_header {
+    min-height: 43px;
+    border-bottom: 1px solid #efeff4;
+    background: #fbfbfd;
+    color: #9697a7;
+    font-size: 10px;
+    font-weight: 650;
+
+    > span, > ul { display: contents; }
+    p, li { margin: 0; list-style: none; color: inherit; font-size: inherit; }
+}
+
+.Product_Table_List_content > nav {
+    min-height: 58px;
+    border-bottom: 1px solid #f1f1f5;
+    color: #67687b;
+
+    &:last-of-type { border-bottom: 0; }
+    p { margin: 0; color: inherit; font-size: 11px; }
+    .Product_Name { color: #36374c; font-weight: 650; }
+    .Product_Icons { display: flex; gap: 10px; color: #85869a; font-size: 17px; }
+    > input:not([type="checkbox"]), > button { min-width: 0; height: 36px; padding: 0 9px; border: 1px solid #dddce7; border-radius: 7px; }
+}
+
+.Order_Container .Order_List_Container {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+
+    > ul {
+        width: auto;
+        min-height: 66px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0;
+        padding: 11px 18px;
+        list-style: none;
+
+        li { padding: 8px 11px; border-radius: 8px; color: #7e7f91; font-size: 11px; cursor: pointer; }
+        li:hover { background: #f5f4ff; color: #6259e8; }
+    }
+
+    > .Order_Search_Box { margin-right: 18px; }
+}
+
+.Order_List_Header,
+.Order_List_Item > article {
+    grid-column: 1 / -1;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 34px minmax(110px, 1fr) minmax(160px, 1.5fr) minmax(95px, .8fr) minmax(120px, 1fr) minmax(90px, .8fr) 70px;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+}
+
+.Order_List_Header {
+    min-height: 43px;
+    border-top: 1px solid #efeff4;
+    border-bottom: 1px solid #efeff4;
+    background: #fbfbfd;
+
+    > article, .Order_Attributes { display: contents; }
+    p { margin: 0; color: #9697a7; font-size: 10px; font-weight: 650; }
+}
+
+.Order_List_Item { grid-column: 1 / -1; width: 100%; }
+.Order_List_Item > article {
+    min-height: 58px;
+    border-bottom: 1px solid #f1f1f5;
+    color: #68697c;
+
+    p { margin: 0; color: inherit !important; font-size: 11px; }
+    .Order_Icon_action { display: flex; gap: 10px; color: #85869a !important; font-size: 17px; }
+}
+
+.Order_Status {
+    width: fit-content;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #f1f2f6;
+    text-transform: capitalize;
+
+    &.paid { background: #eaf8f1; color: #20855f !important; }
+    &.pending { background: #fff5e7; color: #b87819 !important; }
+    &.cancelled { background: #fff0f0; color: #c95c65 !important; }
+}
+
+.Customer_List_Header,
+.Customer_List > article {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 32px 70px minmax(160px, 1.3fr) minmax(190px, 1.5fr) minmax(120px, 1fr) 70px;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+}
+
+.Customer_List_Header {
+    min-height: 43px;
+    border-top: 1px solid #efeff4;
+    border-bottom: 1px solid #efeff4;
+    background: #fbfbfd;
+    > div { display: contents; }
+    p { margin: 0; color: #9697a7; font-size: 10px; font-weight: 650; }
+}
+
+.Customer_List > article {
+    min-height: 58px;
+    border-bottom: 1px solid #f1f1f5;
+    > span { display: contents; }
+    > span > div { display: none; }
+    p { margin: 0; color: #68697c; font-size: 11px; }
+    .Customer_Name { color: #36374c; font-weight: 650; }
+    .Customer_Action_Icon { display: flex; gap: 10px; color: #85869a; font-size: 17px; }
+}
+
+.Product_pagination,
+.Order_pagination,
+.Customer_pagination {
+    min-height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    padding: 12px 18px;
+    list-style: none;
+
+    li a { min-width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; color: #77788c; cursor: pointer; font-size: 11px; }
+    li a:hover { background: #f4f3ff; color: #6259e8; }
+    .Product_page_active a, .Order_page_active a { background: #6259e8; color: #fff; }
+}
+
+.Form_Page_Header {
+    max-width: 1100px;
+    margin: 0 auto 22px;
+    h1 { margin: 0; padding: 0; color: #292a3e; font-size: 30px; font-weight: 700; letter-spacing: -1px; }
+    p { margin-top: 6px; color: #8d8e9f; font-size: 12px; }
+}
+
+.Newproduct_Container > .Product_Form_Container,
+.Newcustomer_Container > .Product_Form_Container {
+    max-width: 1100px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(280px, .8fr);
+    gap: 18px;
+    margin: 0 auto;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+
+    > .GenProduct_Container,
+    > .Product_Media_Container {
+        width: 100%;
+        height: auto;
+        margin: 0;
+        padding: 24px;
+        border: 1px solid #ebeaf2;
+        border-radius: 15px;
+        background: #fff;
+        box-shadow: var(--shadow-card);
+    }
+
+    h3 { margin: 0 0 22px; color: #34354a; font-size: 16px; font-weight: 680; }
+    form { width: 100%; height: auto; margin: 0; padding: 0; }
+    form > label, .Product_Media_Container label { margin: 0 0 7px; color: #55566a; font-size: 11px; font-weight: 650; }
+    input, textarea, select { width: 100%; margin: 0 0 17px; }
+    textarea { min-height: 110px; resize: vertical; }
+    form > span { width: 100%; display: grid; grid-template-columns: 120px 1fr; gap: 14px; }
+    form > div:last-child { width: 100%; height: auto; display: flex; justify-content: flex-end; gap: 9px; margin: 8px 0 0; }
+    form > div:last-child button { width: auto; min-width: 120px; height: 42px; margin: 0; cursor: pointer; }
+    .error, form > p { margin: -10px 0 12px; color: #c5535e; font-size: 10px; }
+}
+
+.Newcustomer_Container > .Product_Form_Container { grid-template-columns: minmax(0, 720px); justify-content: center; }
+
+.Product_Media_Container > section {
+    width: 100%;
+    min-height: 180px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px dashed #cfcced;
+    border-radius: 12px;
+    background: #faf9ff;
+    color: #7067e8;
+
+    label { display: grid; place-items: center; gap: 8px; cursor: pointer; font-size: 26px; }
+    label p { color: #7f8092; font-size: 11px; }
+    img { width: 100%; height: 180px; object-fit: cover; }
+}
+
+.Query_Container .Query_Header {
+    min-height: 72px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    padding: 0;
+    h1 { margin: 0; padding: 0; font-size: 30px; font-weight: 700; letter-spacing: -1px; }
+    p { margin-top: 6px; color: #8d8e9f; font-size: 12px; }
+
+    > .Query_Download_Btn {
+        width: auto;
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+.Query_Container .Query_Item_Container {
+    width: 100%;
+    min-height: 340px;
+    height: auto;
+    margin: 0 auto;
+    padding: 22px;
+    overflow-x: auto;
+}
+
+.Query_Summary {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 16px;
+    border: 1px solid #e9e8f2;
+    border-radius: 11px;
+    background: #fafafd;
+}
+
+@media (max-width: 900px) {
+    .Newproduct_Container > .Product_Form_Container { grid-template-columns: 1fr; }
+    .Product_Table_Section, .Order_List_Container, .Customer_List_Container { overflow-x: auto !important; }
+    .Product_Table_list_header, .Product_Table_List_content > nav { min-width: 850px; }
+    .Order_List_Header, .Order_List_Item > article { min-width: 760px; }
+    .Customer_List_Header, .Customer_List > article { min-width: 720px; }
+}
+
+@media (max-width: 600px) {
+    .Product_Container .Add_Product,
+    .Order_Container .Order_Header,
+    .Customer_Container > article,
+    .Query_Container .Query_Header { align-items: flex-start; gap: 16px; }
+    .Product_Container .Add_Product h1,
+    .Order_Container .Order_Header h1,
+    .Customer_Container > article h1,
+    .Query_Container .Query_Header h1,
+    .Form_Page_Header h1 { font-size: 25px; }
+    .Order_Container .Order_List_Container { grid-template-columns: 1fr; }
+    .Order_Container .Order_List_Container > ul { overflow-x: auto; }
+    .Order_Container .Order_List_Container > .Order_Search_Box { width: calc(100% - 28px); margin: 0 14px 14px; }
+    .Newproduct_Container > .Product_Form_Container > .GenProduct_Container,
+    .Newproduct_Container > .Product_Form_Container > .Product_Media_Container,
+    .Newcustomer_Container > .Product_Form_Container > .GenProduct_Container { padding: 18px; }
+}
+
+/* Final component isolation layer. */
+.Product_Table_List_content > .App_Loading_State,
+.Order_List_Item > .App_Loading_State,
+.Customer_List > .App_Loading_State {
+    width: 100%;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin: 0;
+    padding: 28px;
+    border: 0;
+    background: transparent;
+    color: #85879a;
+    font-size: 11px;
+}
+
+.Product_Table_List_content > .App_Loading_State > .App_Loading_Mark,
+.Order_List_Item > .App_Loading_State > .App_Loading_Mark,
+.Customer_List > .App_Loading_State > .App_Loading_Mark {
+    width: 46px;
+    height: 32px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    margin: 0 0 3px;
+    padding: 7px 9px;
+    border: 1px solid #e6e4fb;
+    border-radius: 11px;
+    background: #f6f5ff;
+    color: var(--primary);
+    box-shadow: 0 7px 18px rgba(98, 89, 232, 0.09);
+}
+
+.Product_Table_List_content > .App_Loading_State > small,
+.Order_List_Item > .App_Loading_State > small,
+.Customer_List > .App_Loading_State > small {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #85879a;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 600;
+}
+
+.Product_Container .Add_Product div > .Page_Eyebrow,
+.Order_Container .Order_Header div > .Page_Eyebrow,
+.Customer_Container > article div > .Page_Eyebrow {
+    width: auto;
+    height: auto;
+    display: block;
+    margin: 0 0 7px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #7772d4;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 1.2px;
+}
+
+/* Settings structure isolation. The legacy settings sheet targets every form
+   div, so direct children must explicitly own their layout and height. */
+.Settings_Container .Settings_Layout > form {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.Settings_Container .Settings_Layout > form > .Settings_Form_Header {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 24px 28px 21px;
+}
+
+.Settings_Container .Settings_Layout > form > .Settings_Fields {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    align-items: center;
+    justify-content: initial;
+    gap: 18px 24px;
+    margin: 0;
+    padding: 28px;
+}
+
+.Settings_Container .Settings_Layout > form > .Settings_Fields > label {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+}
+
+.Settings_Container .Settings_Layout > form > .Settings_Fields > input,
+.Settings_Container .Settings_Layout > form > .Settings_Fields > select {
+    width: 100%;
+    height: 46px;
+    min-height: 46px;
+    margin: 0;
+    padding: 0 14px;
+}
+
+.Settings_Container .Settings_Layout > form > .Settings_Actions {
+    width: 100%;
+    height: auto;
+    min-height: 72px;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin: 0;
+    padding: 14px 28px;
+    position: static;
+    border-top: 1px solid #f0eff5;
+    background: #fcfcfe;
+}
+
+.Settings_Container .Settings_Layout > form > .Settings_Actions > button {
+    width: auto;
+    height: var(--control-height);
+    min-height: var(--control-height);
+    margin: 0;
+    padding: 0 17px;
+}
+
+.Settings_Container .Settings_Fields > .Notify_Section {
+    width: 100%;
+    height: auto;
+    display: grid;
+    grid-column: 1 / -1;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+}
+
+.Settings_Container .Notify_Section > .Notification_Row {
+    width: 100%;
+    height: auto;
+    min-height: 72px;
+    margin: 0;
+    padding: 14px 16px;
+}
+
+@media (max-width: 720px) {
+    .Settings_Container .Settings_Layout > form > .Settings_Fields {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 22px 20px;
+    }
+
+    .Settings_Container .Settings_Layout > form > .Settings_Fields > input,
+    .Settings_Container .Settings_Layout > form > .Settings_Fields > select {
+        margin-bottom: 10px;
+    }
+
+    .Settings_Container .Settings_Layout > form > .Settings_Actions {
+        padding-inline: 20px;
+    }
+}
+
+@media (max-width: 460px) {
+    .Settings_Container .Settings_Layout > form > .Settings_Actions > button {
+        min-width: 0;
+        flex: 1;
     }
 }

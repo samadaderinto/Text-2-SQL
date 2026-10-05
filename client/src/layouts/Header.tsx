@@ -5,13 +5,11 @@ import { IoSearch } from "react-icons/io5";
 import { RiSpeakLine } from "react-icons/ri";
 import { RxDropdownMenu } from "react-icons/rx";
 import { useLocation, useNavigate } from 'react-router-dom';
-import ProfileImg from "../assets/profileimg.jfif";
 import api from '../utils/api';
 import { sidebarItems } from '../utils/sidebar';
 import { Field } from '../types/header';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { ClipLoader } from 'react-spinners';
 import { waitForQueueJob } from '../utils/queue-jobs';
 
 export const Header = () => {
@@ -232,7 +230,7 @@ export const Header = () => {
             <IoSearch className="Header_Search_Icon" />
             <input
               type="text"
-              placeholder="Search anything..."
+              placeholder="Ask your store anything..."
               value={state.searchQuery}
               onChange={(e) => setState(prevState => ({ ...prevState, searchQuery: e.target.value }))}
               onKeyDown={(e) => e.key === 'Enter' && performSearch()}
@@ -253,17 +251,17 @@ export const Header = () => {
         <ul className='Pop_Search_Container'>
           <li>Product</li>
           <li>Product</li>
-          {state.loading && <div className="loading-spinner"></div>}
+          {state.loading && <span className="Header_Loading_Pulse" role="status" aria-label="Working" />}
         </ul>
       )}
 
-      {state.loading && <ClipLoader color="#6259e8" size={24} aria-label="Loading" />}
+      {state.loading && <span className="Header_Loading_Pulse" role="status" aria-label="Working" />}
 
       <div className="RightHand_Container">
-        <p className="Exclusive_Store">{state.store.name || "Store Name"}</p>
-        <IoIosNotificationsOutline aria-label="Notifications" />
-        <div className="Image_Container">
-          <img src={ProfileImg} alt="profile" />
+        <p className="Exclusive_Store">{state.store.name || "My store"}</p>
+        <button className="Header_Icon_Button" type="button" aria-label="Notifications"><IoIosNotificationsOutline /></button>
+        <div className="Image_Container" aria-label="Account profile">
+          <span>{(state.store.name || state.store.email || 'A').trim().charAt(0).toUpperCase()}</span>
         </div>
       </div>
 

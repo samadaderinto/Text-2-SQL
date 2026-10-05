@@ -1,7 +1,8 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from app.models import (
@@ -26,13 +27,46 @@ class Command(BaseCommand):
             action="store_true",
             help="Seed demo data without flushing existing rows first.",
         )
+        parser.add_argument(
+            "--large",
+            action="store_true",
+            help="Seed a large volume of fake data for testing querying and analytics.",
+        )
+        parser.add_argument(
+            "--no-es",
+            action="store_true",
+            help="Skip Elasticsearch index creation and document indexing.",
+        )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Force execution even if running in production.",
+        )
 
-    @transaction.atomic
     def handle(self, *args, **options):
-        if not options["no_flush"]:
-            call_command("flush", interactive=False, verbosity=0)
+        if str(getattr(settings, "DEPLOY_ENV", "")).lower() in ("production", "prod"):
+            if not options.get("force"):
+                raise CommandError(
+                    "SAFETY BLOCK: Refusing to seed demo data in production (DEPLOY_ENV='production'). "
+                    "This command alters or wipes data and is strictly intended for local development."
+                )
 
-        password = "DemoPass123!"
+        if options.get("large"):
+            call_command(
+                "populate_fake_data",
+                flush=not options["no_flush"],
+                no_es=options.get("no_es", False),
+                force=options.get("force", False),
+                stdout=self.stdout,
+                stderr=self.stderr,
+            )
+            return
+
+        with transaction.atomic():
+            if not options["no_flush"]:
+                call_command("flush", interactive=False, verbosity=0)
+
+            password = "DemoPass123!"
         users = [
             self.create_user(
                 email="owner@audql.test",

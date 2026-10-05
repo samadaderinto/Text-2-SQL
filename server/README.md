@@ -7,14 +7,41 @@ deployment.
 
 ## Local development
 
-For the complete local API, worker, database, cache, search, and broker stack,
-follow the root README's Compose setup. For backend tests, no Compose services
-are needed:
+### Using Docker Compose
+
+Ensure the shared external network exists (`docker network create text-2-sql-app-net`),
+then start the backend and data stack:
+
+```bash
+# From repository root
+docker compose -f server/compose.yaml up --build -d
+
+# Or from server/ directory
+docker compose up --build -d
+```
+
+To build the image without starting:
+
+```bash
+docker compose -f server/compose.yaml build
+```
+
+### Standalone development and tests
+
+For backend tests, no Compose services are needed:
 
 ```bash
 cd server
 python -m pip install -r requirements-test.txt
 pytest
+```
+
+### Populating demo data
+
+To generate large-volume demo data (products, customers, orders, queries):
+
+```bash
+docker compose -f server/compose.yaml exec text2sql-server python manage.py populate_fake_data
 ```
 
 Tests use dedicated SQLite test settings. For API routes, configuration,

@@ -1,7 +1,7 @@
 import { useReducer, useEffect, Key } from 'react';
 import { IoIosAddCircleOutline } from 'react-icons/io';
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
-import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from 'react-icons/md';
+import { MdOutlineDelete, MdOutlineEdit } from 'react-icons/md';
 import { FiSearch } from 'react-icons/fi';
 import { Header } from '../layouts/Header';
 import Sidebar from '../layouts/Sidebar';
@@ -9,7 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
 import api from '../utils/api';
 import { notifyApiError } from '../utils/api-errors';
-import { ClipLoader } from 'react-spinners';
+import { LoadingState } from './LoadingState';
+import { EmptyState } from './EmptyState';
 
 const initialState = {
   currentPage: 1,
@@ -121,11 +122,11 @@ export const Product = () => {
       <Header />
       <Sidebar />
       <section className="Add_Product">
-        <h1>All Products</h1>
-        <span onClick={() => navigate('/product/add')}>
+        <div><small className="Page_Eyebrow">CATALOG</small><h1>Products</h1><p>Manage inventory, pricing, and availability.</p></div>
+        <button type="button" onClick={() => navigate('/product/add')}>
           <IoIosAddCircleOutline className="Product_Icon" />
-          Add new Product
-        </span>
+          Add product
+        </button>
       </section>
       <section className="Product_Table_Section">
         <div>
@@ -133,12 +134,12 @@ export const Product = () => {
             <FiSearch className="Search_Icon" />
             <input
               type="text"
+              aria-label="Search products"
               value={input}
               onChange={(e) => dispatch({ type: 'SET_INPUT', payload: e.target.value })}
               placeholder="Search Name"
             />
           </span>
-          <MdOutlineCalendarToday />
         </div>
         <div className="Product_Table_list_header">
           <span>
@@ -156,13 +157,11 @@ export const Product = () => {
         </div>
         <div className="Product_Table_List_content">
           {loading ? (
-            <div className="spinner-container">
-              <ClipLoader color="#36d7b7" loading={loading} size={50} />
-            </div>
+            <LoadingState label="Loading products" />
           ) : (
             <>
               {data.length === 0 ? (
-                <div className="No-Product">No Items Found!</div>
+                <EmptyState title="No products yet" description="Add your first product to start building your catalog." />
               ) : (
                 data.map((item: any, index: Key) => (
                   <nav key={index}>
@@ -200,10 +199,10 @@ export const Product = () => {
                         <p>${item.price}</p>
                         <p>{item.sales}</p>
                         <p>${item.sales * Number(item.price)}</p>
-                        <p className="Product_Icons">
-                          <MdOutlineEdit onClick={() => handleEditClick(item)} />
-                          <MdOutlineDelete onClick={() => handleDelete(item.id)} />
-                        </p>
+                        <div className="Row_Actions">
+                          <button type="button" aria-label={`Edit ${item.title}`} onClick={() => handleEditClick(item)}><MdOutlineEdit /></button>
+                          <button type="button" className="danger" aria-label={`Delete ${item.title}`} onClick={() => handleDelete(item.id)}><MdOutlineDelete /></button>
+                        </div>
                       </>
                     )}
                   </nav>

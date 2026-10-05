@@ -1,7 +1,8 @@
 import axios from "axios";
-import { API_BASE_URL } from "./api-config";
 
 const REPORTING_ENABLED = import.meta.env.VITE_ERROR_REPORTING_ENABLED !== "false";
+const MONITORING_LOG_URL =
+  import.meta.env.VITE_MONITORING_LOG_URL || "http://localhost:8686";
 const MAX_QUEUE_SIZE = 20;
 
 type ClientErrorEvent = {
@@ -43,7 +44,7 @@ const flush = async (): Promise<void> => {
   await Promise.all(
     batch.map(async (event) => {
       try {
-        await axios.post(`${API_BASE_URL}/logs/client/`, event, {
+        await axios.post(MONITORING_LOG_URL, event, {
           timeout: 2500,
           headers: { "Content-Type": "application/json" },
         });

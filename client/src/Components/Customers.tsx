@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
 import { IoIosAddCircleOutline } from "react-icons/io";
-import { MdOutlineCalendarToday, MdOutlineDelete, MdOutlineEdit } from "react-icons/md";
 import ReactPaginate from "react-paginate";
 import { useNavigate } from "react-router-dom";
 import { Header } from "../layouts/Header";
@@ -10,7 +9,8 @@ import Sidebar from '../layouts/Sidebar';
 import { CustomerProps } from "../types/customers";
 import api from "../utils/api";
 import { notifyApiError } from "../utils/api-errors";
-import { ClipLoader } from "react-spinners";
+import { LoadingState } from "./LoadingState";
+import { EmptyState } from "./EmptyState";
 
 export const Customers = () => {
   const itemsPerPage = 15;
@@ -60,10 +60,10 @@ export const Customers = () => {
 
         <article>
           
-          <h1>Customers</h1>
-          <span onClick={() => nav('/customers/add')}>
-            <IoIosAddCircleOutline className="Circle_Icon" /> Add New Customers
-          </span>
+          <div><small className="Page_Eyebrow">AUDIENCE</small><h1>Customers</h1><p>View and manage your customer directory.</p></div>
+          <button type="button" onClick={() => nav('/customers/add')}>
+            <IoIosAddCircleOutline className="Circle_Icon" /> Add customer
+          </button>
         </article>
 
         <section className="Customer_List_Container">
@@ -73,12 +73,12 @@ export const Customers = () => {
               <input
                 className="Search_Icon_Input"
                 type="text"
+                aria-label="Search customers"
                 placeholder="Search Name"
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
             </div>
-            <MdOutlineCalendarToday className="Customer_Calendar" />
           </article>
 
           <article className="Customer_List_Header">
@@ -91,33 +91,25 @@ export const Customers = () => {
             <div>
               <p className="Date_Joined">Date Joined</p>
             </div>
-            <p>Action</p>
           </article>
 
           <section className="Customer_List">
             {loading ? (
-              <div className="loading-spinner">
-                <ClipLoader size={50} color={"#123abc"} loading={loading} />
-              </div>
+              <LoadingState label="Loading customers" />
+            ) : data.length === 0 ? (
+              <EmptyState title="No customers yet" description="Add your first customer to begin your directory." />
             ) : (
               data.map((item) => (
                 <article key={item.id}>
                   <span>
                     <input type="checkbox" />
                     <p className="Id_customer">{item.id}</p>
-                    <div>
-                      <img src="" alt="" />
-                    </div>
                     <p className="Customer_Name">{item.last_name} {item.first_name}</p>
                   </span>
                   <p>{item.email}</p>
                   <span>
                     <p className="Date_Joined">{item.created.substring(0, 10)}</p>
                   </span>
-                  <p className="Customer_Action_Icon">
-                    <MdOutlineEdit />
-                    <MdOutlineDelete />
-                  </p>
                 </article>
               ))
             )}

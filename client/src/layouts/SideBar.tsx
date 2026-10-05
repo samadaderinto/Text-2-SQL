@@ -31,7 +31,6 @@ const Sidebar: FC = () => {
             <span className="Sidebar_Item_Name">
               {item.itemName.charAt(0).toUpperCase() + item.itemName.slice(1)}
             </span>
-            {currentIndex === index && <span className="Sidebar_Active_Mark" />}
           </button>
         ))}
       </div>

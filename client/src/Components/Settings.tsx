@@ -5,6 +5,7 @@ import { Header } from "../layouts/Header";
 import api from "../utils/api";
 import { notifyApiError } from "../utils/api-errors";
 import { registerPushNotifications } from "../utils/push-notifications";
+import { FiBell, FiCreditCard, FiUser } from "react-icons/fi";
 
 export const Settings = () => {
   const [active, setActive] = useState('General');
@@ -110,23 +111,56 @@ export const Settings = () => {
       <Header />
       <div className="Settings_Container">
         <Sidebar />
-        <h1>Settings</h1>
-        <ul>
+        <header className="Settings_Page_Header">
+          <div>
+            <span className="Settings_Eyebrow">WORKSPACE</span>
+            <h1>Settings</h1>
+            <p>Manage your store details, account, and notifications.</p>
+          </div>
+        </header>
+
+        <div className="Settings_Layout">
+        <nav className="Settings_Tabs" aria-label="Settings sections">
           {['General', 'Account', 'Notifications'].map((tab) => (
-            <li
+            <button
+              type="button"
               key={tab}
               className={active === tab ? 'Active' : ''}
               onClick={() => setActive(tab)}
             >
+              {tab === 'General' && <FiCreditCard aria-hidden="true" />}
+              {tab === 'Account' && <FiUser aria-hidden="true" />}
+              {tab === 'Notifications' && <FiBell aria-hidden="true" />}
               {tab}
-            </li>
+            </button>
           ))}
-        </ul>
+        </nav>
 
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+          <header className="Settings_Form_Header">
           {active === 'General' && (
             <>
               <h3>General Information</h3>
+              <p>These details appear across your workspace and customer documents.</p>
+            </>
+          )}
+          {active === 'Account' && (
+            <>
+              <h3>Account Information</h3>
+              <p>Keep your administrator details and sign-in information current.</p>
+            </>
+          )}
+          {active === 'Notifications' && (
+            <>
+              <h3>Notifications</h3>
+              <p>Choose how you want to hear about activity in your store.</p>
+            </>
+          )}
+          </header>
+
+          <div className="Settings_Fields">
+          {active === 'General' && (
+            <>
               <label htmlFor="Store_Name">Store Name</label>
               <input
                 type="text"
@@ -160,7 +194,6 @@ export const Settings = () => {
           )}
           {active === 'Account' && (
             <>
-              <h3>Account Information</h3>
               <label htmlFor="Admin_Name">Admin Name</label>
               <input
                 type="text"
@@ -180,7 +213,7 @@ export const Settings = () => {
                 onChange={handleInputChange}
               />
               <label htmlFor="password">Password
-                <p onClick={() => nav("/auth/forgot-password")}>change password</p>
+                <button className="Settings_Change_Password" type="button" onClick={() => nav("/auth/forgot-password")}>Change password</button>
               </label>
               <input
                 type="password"
@@ -194,32 +227,25 @@ export const Settings = () => {
           )}
           {active === 'Notifications' && (
             <>
-              <h3>Notifications</h3>
               <section className="Notify_Section">
-                <input
-                  type="checkbox"
-                  id="emailNotifications"
-                  name="emailNotifications"
-                  checked={formData.emailNotifications}
-                  onChange={handleInputChange}
-                />
-                <p>Enable Email Notifications</p>
-                <input
-                  type="checkbox"
-                  id="pushNotifications"
-                  name="pushNotifications"
-                  checked={formData.pushNotifications}
-                  onChange={handleInputChange}
-                />
-                <p>Enable Push Notifications</p>
+                <label className="Notification_Row" htmlFor="emailNotifications">
+                  <span><strong>Email notifications</strong><small>Receive account and order updates by email.</small></span>
+                  <input type="checkbox" id="emailNotifications" name="emailNotifications" checked={formData.emailNotifications} onChange={handleInputChange} />
+                </label>
+                <label className="Notification_Row" htmlFor="pushNotifications">
+                  <span><strong>Push notifications</strong><small>Get timely updates in this browser.</small></span>
+                  <input type="checkbox" id="pushNotifications" name="pushNotifications" checked={formData.pushNotifications} onChange={handleInputChange} />
+                </label>
               </section>
             </>
           )}
-          <div>
-            <span className="White_Btn">Cancel</span>
-            <span className="Blue_Btn" onClick={handleSubmit}>Save Changes</span>
+          </div>
+          <div className="Settings_Actions">
+            <button className="White_Btn" type="button" onClick={() => nav('/dashboard')}>Cancel</button>
+            <button className="Blue_Btn" type="submit">Save changes</button>
           </div>
         </form>
+        </div>
       </div>
     </>
   );

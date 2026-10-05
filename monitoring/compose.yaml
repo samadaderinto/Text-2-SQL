@@ -27,6 +27,8 @@ services:
     volumes:
       - ../observability/vector.yaml:/etc/vector/vector.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "127.0.0.1:8686:8686"
     networks:
       - text2sql-mon-net
       - text2sql-app-net

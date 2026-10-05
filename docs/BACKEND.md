@@ -8,8 +8,8 @@ or operational behavior changes.
 
 - `server/server/settings.py`: Django settings, database selection, CORS/CSRF,
   REST framework defaults, cache, search, logging, and observability settings.
-- `server/server/urls.py`: top-level routes for health, metrics, client logs,
-  jobs, OpenAPI docs, admin, and app viewsets.
+- `server/server/urls.py`: top-level routes for health, metrics, jobs,
+  OpenAPI docs, admin, and app viewsets.
 - `server/app/urls.py`: DRF router registration for auth, query, customers,
   products, orders, and settings.
 - `server/app/views.py`: request parsing and API endpoints.
@@ -22,7 +22,7 @@ or operational behavior changes.
 - `server/app/search_index.py`: Elasticsearch indexing and search helpers.
 - `server/app/metrics.py`: Prometheus request metrics and `/metrics/` response.
 - `server/app/health.py`: liveness and readiness checks.
-- `server/app/observability.py`: frontend/client log ingestion.
+- `server/app/observability.py`: JSON log formatting and structured logging helpers.
 
 ## API surface
 
@@ -32,19 +32,22 @@ Top-level routes:
 - `GET /health/`: readiness. Checks database, cache, and Elasticsearch when
   enabled.
 - `GET /metrics/`: Prometheus metrics.
-- `POST /logs/client/`: throttled frontend error reporting endpoint.
 - `GET /jobs/<job_id>/`: queued job status.
 - `GET /jobs/<job_id>/download/`: downloadable export results.
 - `GET /docs/`, `/docs/swagger/`, `/docs/redoc/`: OpenAPI schema and docs.
+  Endpoints are annotated using `drf-spectacular` with operation summaries,
+  markdown descriptions explaining workflows and comparative guidance
+  (e.g., synchronous Elasticsearch search vs. asynchronous speech/text NLP queries),
+  explicit request/response serializers, typed parameters, and grouped tags.
 
 Router-backed resources:
 
 - `/auth/`: signup, login, logout, token refresh, activation, password reset.
-- `/query/`: text-to-SQL and audio query workflows.
-- `/customers/`: customer CRUD and search.
-- `/product/`: product CRUD and search.
-- `/orders/`: order CRUD, search, and export jobs.
-- `/settings/`: account/store settings and notification preferences.
+- `/query/`: text-to-SQL prompt generation, audio voice query, multi-entity Elasticsearch search, and staged mutation confirmation.
+- `/customers/`: customer CRUD and scoped Elasticsearch search.
+- `/product/`: product CRUD (with multipart image upload) and scoped Elasticsearch search.
+- `/orders/`: order CRUD, status-filtered Elasticsearch search, and CSV export background jobs.
+- `/settings/`: account/store settings, notification preferences, and FCM push device token registration.
 
 Authentication defaults to JWT through DRF settings. Most API endpoints require
 an authenticated user unless explicitly marked public.
@@ -116,7 +119,6 @@ Search, queue, and logs:
 | `KAFKA_LOGGING_ENABLED` | `true` | Enables publishing backend logs to Kafka. |
 | `KAFKA_REQUEST_TIMEOUT_MS` | `15000` | Worker Kafka request timeout; must exceed the broker session timeout. |
 | `KAFKA_API_VERSION_AUTO_TIMEOUT_MS` | `5000` | Worker timeout for Kafka API-version negotiation. |
-| `CLIENT_LOG_RATE` | `30/min` in `.env.example` | DRF throttle scope for frontend log ingestion. |
 
 Email:
 
@@ -195,19 +197,39 @@ With Compose:
 
 ```bash
 docker network create text-2-sql-app-net
-docker compose -f compose.yaml up --build -d
-docker compose exec text2sql-server python manage.py reindex_search --rebuild
+docker compose -f server/compose.yaml up --build -d
+docker compose -f server/compose.yaml exec text2sql-server python manage.py reindex_search --rebuild
+```
+
+### Populating fake demo data
+
+To populate a large volume of realistic fake data for testing Text-to-SQL queries, filtering, search, and dashboard analytics:
+
+```bash
+# Populate 500 products across 13 categories, 500 customers, 1,000 orders, and 100 queries:
+docker compose -f server/compose.yaml exec text2sql-server python manage.py populate_fake_data
+
+# Custom volumes and options:
+docker compose -f server/compose.yaml exec text2sql-server python manage.py populate_fake_data \
+    --products 1000 \
+    --customers 1000 \
+    --orders 2500 \
+    --queries 200 \
+    --flush
+
+# Or via seed_demo:
+docker compose -f server/compose.yaml exec text2sql-server python manage.py seed_demo --large
 ```
 
 The named network is external and must be created once before starting the
-backend, frontend (`client/compose.yaml`), or monitoring Compose stack. The
-backend's Compose command applies migrations and initializes the search index
-on startup.
+backend (`server/compose.yaml`), frontend (`client/compose.yaml`), or
+monitoring Compose stack. The backend's Compose command applies migrations
+and initializes the search index on startup.
 
 To build the backend container image without starting:
 
 ```bash
-docker compose -f compose.yaml build
+docker compose -f server/compose.yaml build
 ```
 
 ## Backend documentation checklist

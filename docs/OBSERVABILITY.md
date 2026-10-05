@@ -21,7 +21,7 @@ needed with `docker compose -f monitoring/compose.yaml down`.
 Start the app and frontend stacks first, then monitoring:
 
 ```bash
-docker compose -f compose.yaml up --build -d
+docker compose -f server/compose.yaml up --build -d
 docker compose -f client/compose.yaml up --build -d
 docker compose -f monitoring/compose.yaml up -d
 ```
@@ -33,7 +33,7 @@ docker compose -f monitoring/compose.yaml up -d
 | `grafana` | Dashboards | `3000` |
 | `prometheus` | Metrics and probes | `9091` |
 | `loki` | Log storage | `3100` |
-| `vector` | Collects Kafka app logs and Docker container logs | Internal |
+| `vector` | Ingests Kafka app logs, direct HTTP frontend logs, and Docker container logs | `8686` |
 | `kafka-exporter` | Kafka/Redpanda metrics | `9308` |
 | `mysql-exporter` | MySQL metrics | `9104` |
 | `redis-exporter` | Redis metrics | `9121` |
@@ -52,7 +52,7 @@ also automatically synchronizes the admin password in `grafana.db` to match the
 | --- | --- |
 | `server` | Prometheus `/metrics/`, health probes, structured app logs, container logs |
 | `worker` | Container logs |
-| `client` | Health probe and container logs |
+| `client` | Health probe, container logs (via Docker socket), and direct client telemetry (via Vector HTTP) |
 | `database` | MySQL exporter metrics and container logs |
 | `redis` | Redis exporter metrics, container logs, and app readiness/cache behavior |
 | `elasticsearch` | Elasticsearch exporter metrics and container logs |
@@ -65,7 +65,7 @@ also automatically synchronizes the admin password in `grafana.db` to match the
 | Grafana | `grafana` | `observability/grafana/provisioning/` | Dashboards for logs, metrics, health, and infrastructure. |
 | Prometheus | `prometheus` | `observability/prometheus.yml` | Metrics scraping, local 7-day TSDB retention, query UI. |
 | Loki | `loki` | `observability/loki-config.yaml` | Local log storage with 168-hour retention. |
-| Vector | `vector` | `observability/vector.yaml` | Consumes JSON app events from Kafka and Docker container stdout/stderr, then writes both to Loki. |
+| Vector | `vector` | `observability/vector.yaml` | Consumes JSON backend events from Kafka, browser/client error events via direct HTTP on :8686, and Docker container stdout/stderr, routing all logs to Loki. |
 | Blackbox exporter | `blackbox-exporter` | `observability/blackbox.yml` | Probes HTTP endpoints and emits uptime/duration metrics. |
 | Kafka exporter | `kafka-exporter` | Compose command flags | Emits Kafka topic, partition, broker, and consumer lag metrics. |
 | MySQL exporter | `mysql-exporter` | `DATA_SOURCE_NAME` env var | Emits MySQL availability and server status metrics. |
@@ -80,8 +80,11 @@ published to Kafka topic `audql.logs`. Vector consumes that topic and writes to
 Loki.
 
 Frontend uncaught exceptions, unhandled promise rejections, and HTTP 5xx API
-failures are sent to `POST /logs/client/`. The backend validates, redacts, and
-publishes those events into the same log pipeline.
+failures are decoupled completely from the backend. The frontend container stack
+and browser clients send logs directly to the monitoring stack via Vector's
+HTTP receiver endpoint (`http://localhost:8686`). Vector normalizes the logs,
+labels them (`service="frontend"`, `level="error"`), and ingests them directly
+into Loki. The backend application performs no frontend log collection or proxying.
 
 Docker container stdout/stderr is collected separately by Vector through the
 Docker socket mount at `/var/run/docker.sock`. Container logs are written to
@@ -115,6 +118,13 @@ Vector writes application logs to Loki with JSON encoding and these labels:
 Application events may contain an `event_type` field in their JSON body, but it
 is not used as a Loki label because older or third-party events may omit it.
 Those stable labels are what power the Grafana log filters.
+
+Vector reads frontend logs directly via HTTP with:
+
+- source type: `http_server`
+- listen address: `0.0.0.0:8686`
+- decoding: JSON
+- normalized fields: `service="frontend"`, `level="error"`, `event_type="client_log"`, `environment="DEPLOY_ENV"` (defaulting to `local`)
 
 Vector reads Docker logs with:
 
@@ -192,8 +202,8 @@ Datasource provisioning lives in
 
 - `observability/prometheus.yml`: scrape jobs and health probes.
 - `observability/blackbox.yml`: HTTP probe module config.
-- `observability/vector.yaml`: Kafka-to-Loki application log routing and
-  Docker container log routing.
+- `observability/vector.yaml`: Kafka-to-Loki application log routing, HTTP
+  frontend log ingestion, and Docker container log routing.
 - `observability/loki-config.yaml`: Loki local storage config.
 - `observability/grafana/provisioning/`: Grafana datasource and dashboard
   provisioning.

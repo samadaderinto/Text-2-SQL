@@ -11,6 +11,11 @@ sources:
       codec: json
     auto_offset_reset: earliest
 
+  frontend_logs:
+    type: http_server
+    address: 0.0.0.0:8686
+    encoding: json
+
   docker_logs:
     type: docker_logs
     docker_host: unix:///var/run/docker.sock
@@ -22,6 +27,16 @@ transforms:
       - audql_logs
     source: |
       .event_type = if exists(.event_type) { .event_type } else { "app_log" }
+
+  normalize_frontend_logs:
+    type: remap
+    inputs:
+      - frontend_logs
+    source: |
+      .service = "frontend"
+      .environment = get_env_var("DEPLOY_ENV") ?? "local"
+      .level = if exists(.level) { .level } else { "error" }
+      .event_type = if exists(.event_type) { .event_type } else { "client_log" }
 
   normalize_docker_logs:
     type: remap
@@ -39,6 +54,7 @@ sinks:
     type: loki
     inputs:
       - normalize_app_logs
+      - normalize_frontend_logs
     endpoint: http://loki:3100
     encoding:
       codec: json

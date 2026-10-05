@@ -16,9 +16,9 @@ or build/test behavior changes.
   screens.
 - `client/src/utils/api.ts`: Axios instance, JWT attachment, refresh handling,
   and API error reporting.
-- `client/src/utils/api-config.ts`: shared API-origin normalization used by
-  requests and client error reporting.
-- `client/src/utils/error-reporting.ts`: browser/client error capture.
+- `client/src/utils/api-config.ts`: shared API-origin normalization.
+- `client/src/utils/error-reporting.ts`: browser/client error capture sending
+  directly to the monitoring stack.
 - `client/src/utils/queue-jobs.ts`: queued job polling helpers.
 - `client/src/styles/main.scss`: global stylesheet imports and shared toast
   styling.
@@ -26,13 +26,12 @@ or build/test behavior changes.
 ## Runtime behavior
 
 The app reads `VITE_API_BASE_URL` and defaults to `http://localhost:8001`.
-Relative or hostname-only API values are normalized to HTTPS. The same resolved
-origin is used for normal API calls and client error reporting.
+Relative or hostname-only API values are normalized to HTTPS.
 
 Access and refresh tokens are stored encrypted in `localStorage`. The Axios
 request interceptor decrypts the access token and attaches it as a bearer token.
-The response interceptor reports HTTP 5xx API failures to the backend and tries
-one refresh-token retry after a 401 response.
+The response interceptor reports HTTP 5xx API failures to the monitoring error
+reporting pipeline and tries one refresh-token retry after a 401 response.
 
 Queued backend actions return a job ID. UI code should poll `/jobs/<job_id>/`
 through the queue helpers rather than duplicating polling logic in components.
@@ -48,7 +47,8 @@ general-purpose runtime environment.
 | Variable | Default in Compose | Purpose |
 | --- | --- | --- |
 | `VITE_API_BASE_URL` | `http://localhost:8001` | Backend API origin used by the Axios client. |
-| `VITE_ERROR_REPORTING_ENABLED` | `true` | Enables browser/client error reporting to `/logs/client/`. |
+| `VITE_MONITORING_LOG_URL` | `http://localhost:8686` | Direct HTTP endpoint for the monitoring stack (Vector) to receive frontend logs. |
+| `VITE_ERROR_REPORTING_ENABLED` | `true` | Enables browser/client error reporting directly to the monitoring stack. |
 | `VITE_FIREBASE_API_KEY` | empty | Firebase web app configuration. |
 | `VITE_FIREBASE_AUTH_DOMAIN` | empty | Firebase web app configuration. |
 | `VITE_FIREBASE_PROJECT_ID` | empty | Firebase project used by the web SDK. |
@@ -110,9 +110,12 @@ Use smooth state transitions for long-running actions:
 ## Error reporting
 
 The frontend captures uncaught browser errors, unhandled promise rejections, and
-server-side API failures. Events are sent to `/logs/client/` when
-`VITE_ERROR_REPORTING_ENABLED` is true. Do not include request bodies,
-authentication headers, or secrets in client log payloads.
+server-side API failures. Client log collection is decoupled completely from the
+backend; events are sent directly to the monitoring stack (Vector's HTTP endpoint
+at `VITE_MONITORING_LOG_URL`) when `VITE_ERROR_REPORTING_ENABLED` is true. In
+addition, frontend container stdout/stderr is collected directly by Vector via
+the Docker socket. Do not include request bodies, authentication headers, or
+secrets in client log payloads.
 
 ## Local commands
 

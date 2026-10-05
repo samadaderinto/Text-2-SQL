@@ -26,19 +26,29 @@ from .models import Customer, NotificationDevice, Order, Product, QueueJob, Stor
 from .permissions import ServerAccessPolicy
 from .serializers import (
     AdminSerializer,
+    CustomerSearchResponseSerializer,
     CustomerSerializer,
     EmailSerializer,
+    ErrorResponseSerializer,
     FileSerializer,
+    JobAcceptedResponseSerializer,
     LogOutSerializer,
+    LoginResponseSerializer,
     LoginSerializer,
+    MessageResponseSerializer,
+    MutationConfirmationResponseSerializer,
     NotificationSerializer,
     NotificationDeviceSerializer,
+    OrderSearchResponseSerializer,
     OrderSerializer,
+    ProductSearchResponseSerializer,
     ProductSerializer,
     QueryPlanSerializer,
+    QueueJobStatusResponseSerializer,
     ResetPasswordSerializer,
     SearchSerializer,
     StoreSerializer,
+    TokenRefreshResponseSerializer,
     UserSerializer,
 )
 from .services import (
@@ -53,7 +63,7 @@ from .services import (
 from .job_queue import enqueue_job
 
 from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from kink import di
 
 from utils.algorithms import TokenGenerator
@@ -138,7 +148,20 @@ class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = (ServerAccessPolicy,)
     serializer_class = UserSerializer
 
-    @extend_schema(request=UserSerializer, responses={201: UserSerializer})
+    @extend_schema(
+        summary="Register new merchant user account",
+        description=(
+            "Creates a new merchant user profile with email and password credentials. "
+            "Generates an unverified account and dispatches an activation link to the user's email. "
+            "Compare with `/auth/login/`, which authenticates users after their accounts have been activated."
+        ),
+        request=UserSerializer,
+        responses={
+            201: OpenApiResponse(response=MessageResponseSerializer, description="User successfully registered; activation email sent"),
+            400: OpenApiResponse(response=MessageResponseSerializer, description="Validation failure or email already registered"),
+        },
+        tags=["Authentication"],
+    )
     @action(detail=False, methods=["post"], url_path="signup")
     def signup(self, request):
         data = JSONParser().parse(request)
@@ -160,7 +183,35 @@ class AuthViewSet(viewsets.GenericViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    @extend_schema(responses={301: None})
+    @extend_schema(
+        summary="Verify and activate user account",
+        description=(
+            "Validates the one-time activation token delivered in the welcome email. "
+            "Upon success, marks the account as active and redirects the user (HTTP 302) to the frontend sign-in view. "
+            "Compare with `/auth/signup/`, which initiates account registration and generates this token."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="uidb64",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Base64-encoded user ID",
+            ),
+            OpenApiParameter(
+                name="token",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="One-time activation cryptographic token",
+            ),
+        ],
+        responses={
+            302: OpenApiResponse(description="Redirects to frontend signin page"),
+            200: OpenApiResponse(response=MessageResponseSerializer, description="Account is already activated"),
+            401: OpenApiResponse(response=ErrorResponseSerializer, description="Invalid or expired activation token"),
+            404: OpenApiResponse(description="User not found for supplied uidb64"),
+        },
+        tags=["Authentication"],
+    )
     @action(
         detail=False,
         methods=["get"],
@@ -189,7 +240,18 @@ class AuthViewSet(viewsets.GenericViewSet):
         return redirect(f"{settings.FRONTEND_URL}/auth/signin")
 
     @extend_schema(
-        request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None}
+        summary="Log out and blacklist refresh token",
+        description=(
+            "Blacklists the submitted JWT refresh token, preventing any further access token renewals from it. "
+            "Clients should discard stored access and refresh tokens upon calling this endpoint. "
+            "Compare with `/auth/refresh-token/`, which continues an active session."
+        ),
+        request=LogOutSerializer,
+        responses={
+            205: OpenApiResponse(description="Session invalidated and refresh token blacklisted"),
+            400: OpenApiResponse(description="Invalid or expired refresh token"),
+        },
+        tags=["Authentication"],
     )
     @action(detail=False, methods=["post"], url_path="logout")
     def logout(self, request):
@@ -204,7 +266,22 @@ class AuthViewSet(viewsets.GenericViewSet):
         refresh.blacklist()
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
-    @extend_schema(request=LoginSerializer, responses={200: UserSerializer})
+    @extend_schema(
+        summary="Authenticate credentials and issue JWT pair",
+        description=(
+            "Authenticates user credentials (email and password). Returns user profile data "
+            "along with a JWT access token (1-day validity) and refresh token (7-day validity). "
+            "If the account has not yet completed email activation, returns HTTP 403. "
+            "Compare with `/auth/refresh-token/`, which renews access without re-submitting user passwords."
+        ),
+        request=LoginSerializer,
+        responses={
+            200: OpenApiResponse(response=LoginResponseSerializer, description="Authentication successful, tokens issued"),
+            400: OpenApiResponse(response=MessageResponseSerializer, description="Invalid email or password"),
+            403: OpenApiResponse(response=MessageResponseSerializer, description="Email verification required"),
+        },
+        tags=["Authentication"],
+    )
     @action(detail=False, methods=["post"], url_path="login")
     def login(self, request):
         data = JSONParser().parse(request)
@@ -228,7 +305,18 @@ class AuthViewSet(viewsets.GenericViewSet):
             )
 
     @extend_schema(
-        request=LogOutSerializer, responses={status.HTTP_205_RESET_CONTENT: None}
+        summary="Renew JWT access token",
+        description=(
+            "Issues a fresh JWT access token using a valid, unexpired refresh token. "
+            "Allows the client application to refresh expired access tokens seamlessly without prompting user credentials. "
+            "Compare with `/auth/login/`, which performs primary credential authentication."
+        ),
+        request=LogOutSerializer,
+        responses={
+            200: OpenApiResponse(response=TokenRefreshResponseSerializer, description="Access token successfully refreshed"),
+            400: OpenApiResponse(response=ErrorResponseSerializer, description="Invalid, expired, or blacklisted refresh token"),
+        },
+        tags=["Authentication"],
     )
     @action(detail=False, methods=["post"], url_path="refresh-token")
     def refresh_token(self, request):
@@ -245,7 +333,21 @@ class AuthViewSet(viewsets.GenericViewSet):
         except (InvalidToken, TokenError) as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(request=EmailSerializer, responses={status.HTTP_200_OK: dict})
+    @extend_schema(
+        summary="Request password reset email",
+        description=(
+            "Initiates the password reset workflow by enqueuing a background task (`EMAIL_PASSWORD_RESET`) "
+            "to deliver a password recovery email if the email is associated with a registered account. "
+            "Always responds with HTTP 200 and a generic message to prevent account enumeration. "
+            "Compare with `/auth/reset-password/reset/`, which consumes the generated token."
+        ),
+        request=EmailSerializer,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="Reset instructions sent if email exists"),
+            400: OpenApiResponse(description="Validation error in email address format"),
+        },
+        tags=["Authentication"],
+    )
     @action(detail=False, methods=["post"], url_path="reset-password/request")
     def request_reset_password(self, request):
         data = JSONParser().parse(request)
@@ -272,7 +374,34 @@ class AuthViewSet(viewsets.GenericViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @extend_schema(request=None, responses={status.HTTP_200_OK: None})
+    @extend_schema(
+        summary="Validate password reset link token",
+        description=(
+            "Validates the one-time password recovery cryptographic token against the user ID. "
+            "If valid, redirects (HTTP 302) to the frontend password reset interface (`/auth/reset-password/{uidb64}/{token}`). "
+            "If invalid or expired, returns HTTP 401 Unauthorized."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="uidb64",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Base64-encoded user ID",
+            ),
+            OpenApiParameter(
+                name="token",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Password reset token from email link",
+            ),
+        ],
+        responses={
+            302: OpenApiResponse(description="Redirects to frontend password reset page"),
+            401: OpenApiResponse(response=ErrorResponseSerializer, description="Invalid or expired token"),
+            404: OpenApiResponse(description="User not found for given uidb64"),
+        },
+        tags=["Authentication"],
+    )
     @action(
         detail=False,
         methods=["get"],
@@ -290,7 +419,21 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         return redirect(f"{settings.FRONTEND_URL}/auth/reset-password/{uidb64}/{token}")
 
-    @extend_schema(request=ResetPasswordSerializer, responses={status.HTTP_205_RESET_CONTENT: None})
+    @extend_schema(
+        summary="Confirm and apply new password",
+        description=(
+            "Consumes the reset token, user ID (`uidb64`), and new password to update the user account password. "
+            "Returns HTTP 205 Reset Content upon successful password change. "
+            "Compare with `/auth/reset-password/request/`, which initiates the reset request."
+        ),
+        request=ResetPasswordSerializer,
+        responses={
+            205: OpenApiResponse(description="Password successfully changed"),
+            400: OpenApiResponse(description="Validation error in password complexity or missing fields"),
+            401: OpenApiResponse(response=ErrorResponseSerializer, description="Invalid or expired reset token"),
+        },
+        tags=["Authentication"],
+    )
     @action(detail=False, methods=["post"], url_path="reset-password/reset")
     def reset_password(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
@@ -317,8 +460,34 @@ class SearchViewSet(viewsets.GenericViewSet):
 
     permission_classes = (ServerAccessPolicy,)
     parser_classes = [JSONParser, MultiPartParser, FormParser]
+    serializer_class = SearchSerializer
 
-    @extend_schema(request=SearchSerializer, responses={status.HTTP_200_OK: None})
+    @extend_schema(
+        summary="Search owned store data via Elasticsearch",
+        description=(
+            "Executes synchronous lexical and fuzzy search across products, customers, and orders owned by the user. "
+            "Accepts `query` as a URL query parameter for GET requests, or `search` in the JSON request body for POST requests. "
+            "Unlike `/query/generate/` (which translates conversational English into SQL via LLMs) or "
+            "`/query/upload/` (which transcribes speech audio into queries asynchronously), this endpoint performs fast, "
+            "direct search against pre-indexed Elasticsearch documents."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="query",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Search query string for GET requests",
+            ),
+        ],
+        request=SearchSerializer,
+        responses={
+            200: OpenApiResponse(description="Matching records across products, customers, and orders"),
+            400: OpenApiResponse(response=ErrorResponseSerializer, description="Search query string is required"),
+            503: OpenApiResponse(response=ErrorResponseSerializer, description="Elasticsearch service temporarily unavailable"),
+        },
+        tags=["Natural Language & Speech Query"],
+    )
     @action(detail=False, methods=["get", "post"], url_path="search")
     def elastic_searcher(self, request):
         if request.method == "GET":
@@ -344,7 +513,23 @@ class SearchViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
-    @extend_schema(request=FileSerializer, responses={status.HTTP_200_OK: None})
+    @extend_schema(
+        summary="Upload speech audio for voice-to-SQL processing",
+        description=(
+            "Accepts a recorded audio file (e.g. WAV, MP3, WebM) containing a spoken query or operational command "
+            "(e.g. 'Show me pending orders above $200 from last week'). "
+            "Persists the audio to storage and enqueues an asynchronous queue job (`QUERY_AUDIO`) that transcribes speech, "
+            "interprets user intent, and generates a structured query plan. "
+            "Returns HTTP 202 Accepted with a `job_id`. Poll `/jobs/{job_id}/` until status is `succeeded` to retrieve results. "
+            "Compare with `/query/generate/` (which accepts typed text prompts directly) and `/query/search/` (which runs synchronous Elasticsearch queries)."
+        ),
+        request=FileSerializer,
+        responses={
+            202: OpenApiResponse(response=JobAcceptedResponseSerializer, description="Audio job enqueued successfully"),
+            400: OpenApiResponse(description="Invalid audio file upload or unsupported format"),
+        },
+        tags=["Natural Language & Speech Query"],
+    )
     @action(detail=False, methods=["post"], url_path="upload")
     def audio_to_query(self, request):
         serializer = FileSerializer(data=request.data)
@@ -368,7 +553,21 @@ class SearchViewSet(viewsets.GenericViewSet):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    @extend_schema(request=QueryPlanSerializer, responses={status.HTTP_200_OK: None})
+    @extend_schema(
+        summary="Generate SQL query plan from text prompt",
+        description=(
+            "Submits a natural language text prompt (e.g. 'List my top 5 customers by sales volume'). "
+            "Enqueues an asynchronous queue job (`QUERY_GENERATE`) where LLMs formulate the query against the schema. "
+            "Returns HTTP 202 Accepted with a `job_id`. Poll `/jobs/{job_id}/` until status is `succeeded` to retrieve results. "
+            "Compare with `/query/upload/` (which processes voice audio recordings) and `/query/search/` (which performs Elasticsearch keyword search)."
+        ),
+        request=QueryPlanSerializer,
+        responses={
+            202: OpenApiResponse(response=JobAcceptedResponseSerializer, description="Query generation job enqueued successfully"),
+            400: OpenApiResponse(description="Prompt text is required"),
+        },
+        tags=["Natural Language & Speech Query"],
+    )
     @action(detail=False, methods=["post"], url_path="generate")
     def generate_query(self, request):
         serializer = QueryPlanSerializer(data=request.data)
@@ -387,7 +586,21 @@ class SearchViewSet(viewsets.GenericViewSet):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    @extend_schema(responses={201: None})
+    @extend_schema(
+        summary="Confirm and execute staged update mutation",
+        description=(
+            "Confirms and applies a data update staged by the conversational assistant during a prior voice or NLP query session. "
+            "Unlike direct REST updates (e.g. `/product/update/`, `/orders/update/`), this endpoint executes mutations "
+            "staged in user query sessions after explicit confirmation. "
+            "Returns HTTP 200 on success or HTTP 400 on execution failure."
+        ),
+        responses={
+            200: OpenApiResponse(response=MutationConfirmationResponseSerializer, description="Staged update applied successfully"),
+            400: OpenApiResponse(response=MutationConfirmationResponseSerializer, description="Staged update execution failed or rejected"),
+            500: OpenApiResponse(response=MutationConfirmationResponseSerializer, description="Internal error executing update"),
+        },
+        tags=["Natural Language & Speech Query"],
+    )
     @action(detail=False, methods=["put"], url_path="upload/update")
     def confirm_update(self, request):
         try:
@@ -409,7 +622,21 @@ class SearchViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    @extend_schema(responses={205: None})
+    @extend_schema(
+        summary="Confirm and execute staged delete mutation",
+        description=(
+            "Confirms and commits a record deletion staged by the conversational assistant during a voice or NLP query session. "
+            "Unlike direct REST deletion (e.g. `/product/delete/{product_id}/`, `/orders/delete/{order_id}/`), this endpoint "
+            "finalizes deletions planned and staged by the AI assistant after user confirmation. "
+            "Returns HTTP 205 Reset Content upon successful execution."
+        ),
+        responses={
+            205: OpenApiResponse(response=MutationConfirmationResponseSerializer, description="Staged deletion executed successfully"),
+            400: OpenApiResponse(response=MutationConfirmationResponseSerializer, description="Staged deletion rejected or invalid"),
+            500: OpenApiResponse(response=MutationConfirmationResponseSerializer, description="Internal error executing deletion"),
+        },
+        tags=["Natural Language & Speech Query"],
+    )
     @action(detail=False, methods=["delete"], url_path="upload/delete")
     def confirm_delete(self, request):
         try:
@@ -431,7 +658,21 @@ class SearchViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    @extend_schema(responses={201: None})
+    @extend_schema(
+        summary="Confirm and execute staged create mutation",
+        description=(
+            "Confirms and persists a new record creation staged by the conversational assistant during a voice or NLP query session. "
+            "Unlike direct REST creation endpoints (e.g. `/product/create/`, `/orders/create/`), this endpoint confirms "
+            "and saves new records synthesized from natural language interaction. "
+            "Returns HTTP 201 Created on success."
+        ),
+        responses={
+            201: OpenApiResponse(response=MutationConfirmationResponseSerializer, description="Staged record created successfully"),
+            400: OpenApiResponse(response=MutationConfirmationResponseSerializer, description="Staged creation rejected or invalid"),
+            500: OpenApiResponse(response=MutationConfirmationResponseSerializer, description="Internal error executing create"),
+        },
+        tags=["Natural Language & Speech Query"],
+    )
     @action(detail=False, methods=["post"], url_path="upload/create")
     def confirm_create(self, request):
         try:
@@ -463,7 +704,20 @@ class ProductViewSet(viewsets.GenericViewSet):
         self.product_service: ProductService = di[ProductService]
         self.search_service: SearchService = di[SearchService]
 
-    @extend_schema(request=ProductSerializer, responses={200: ProductSerializer})
+    @extend_schema(
+        summary="Create catalog product",
+        description=(
+            "Adds a new product to the authenticated user's store catalog. Supports multipart form data for uploading "
+            "product imagery, links the product to the merchant's store, and syncs to Elasticsearch. "
+            "Compare with `/product/update/` and `/query/upload/create/`."
+        ),
+        request=ProductSerializer,
+        responses={
+            201: OpenApiResponse(response=ProductSerializer, description="Product created successfully"),
+            400: OpenApiResponse(description="Validation error in product fields"),
+        },
+        tags=["Products"],
+    )
     @action(detail=False, methods=["post"], url_path="create")
     @parser_classes([MultiPartParser])
     def create_product(self, request):
@@ -472,13 +726,64 @@ class ProductViewSet(viewsets.GenericViewSet):
         product = self.product_service.create_product(request.user, serializer)
         return Response(status=201, data=product)
 
-    @extend_schema(request=ProductSerializer, responses={200: ProductSerializer})
+    @extend_schema(
+        summary="Update catalog product",
+        description=(
+            "Modifies attributes (title, description, price, category, availability) of an existing product owned by the user. "
+            "Synchronizes changes to the Elasticsearch index. "
+            "Compare with `/product/create/` and `/product/delete/{product_id}/`."
+        ),
+        request=ProductSerializer,
+        responses={
+            200: OpenApiResponse(response=ProductSerializer, description="Product updated successfully"),
+            400: OpenApiResponse(description="Validation or update error"),
+            404: OpenApiResponse(description="Product not found"),
+        },
+        tags=["Products"],
+    )
     @action(detail=False, methods=["put"], url_path="update")
     def update_product(self, request, pk=None):
         product = self.product_service.update_product(request.user, request.data)
         return Response(status=200, data=product)
 
-    @extend_schema(responses={200: ProductSerializer(many=True)})
+    @extend_schema(
+        summary="Search and paginate store products",
+        description=(
+            "Searches products belonging to the authenticated merchant's store via Elasticsearch index. "
+            "Supports text keyword query and 1-based pagination using `offset` (page number) and `limit` (page size). "
+            "Compare with `/query/search/`, which searches across all resource domains (products, customers, orders) at once."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="query",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Search keyword for product title and description",
+            ),
+            OpenApiParameter(
+                name="offset",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                default=1,
+                description="1-based page number (e.g. 1, 2, 3...)",
+            ),
+            OpenApiParameter(
+                name="limit",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                default=15,
+                description="Number of products returned per page",
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(response=ProductSearchResponseSerializer, description="Paginated product search results"),
+            503: OpenApiResponse(response=ErrorResponseSerializer, description="Search service temporarily unavailable"),
+        },
+        tags=["Products"],
+    )
     @action(detail=False, methods=["get"], url_path="search")
     def retrieve_product(self, request):
         query = request.GET.get("query", "")
@@ -512,7 +817,27 @@ class ProductViewSet(viewsets.GenericViewSet):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
-    @extend_schema(responses={204: None})
+    @extend_schema(
+        summary="Delete catalog product by ID",
+        description=(
+            "Permanently removes a product belonging to the merchant's store from the database and search index. "
+            "Returns HTTP 204 No Content upon deletion. "
+            "Compare with `/product/update/`."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="product_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Unique identifier of the product to delete",
+            ),
+        ],
+        responses={
+            204: OpenApiResponse(description="Product deleted successfully"),
+            404: OpenApiResponse(description="Product not found or unauthorized"),
+        },
+        tags=["Products"],
+    )
     @action(detail=False, methods=["delete"], url_path="delete/(?P<product_id>[^/.]+)")
     def delete_product(self, request, product_id):
         self.product_service.delete_product(request.user, product_id)
@@ -526,8 +851,21 @@ class CustomerViewSet(viewsets.GenericViewSet):
         self.search_service: SearchService = di[SearchService]
 
     permission_classes = (ServerAccessPolicy,)
+    serializer_class = CustomerSerializer
 
-    @extend_schema(request=CustomerSerializer, responses={200: CustomerSerializer})
+    @extend_schema(
+        summary="Create customer record",
+        description=(
+            "Registers a new customer profile associated with the authenticated user's store and syncs to search index. "
+            "Compare with `/customers/update/` and `/customers/search/`."
+        ),
+        request=CustomerSerializer,
+        responses={
+            201: OpenApiResponse(response=CustomerSerializer, description="Customer created successfully"),
+            400: OpenApiResponse(description="Validation error in customer attributes"),
+        },
+        tags=["Customers"],
+    )
     @action(detail=False, methods=["post"], url_path="create")
     @parser_classes([MultiPartParser])
     def create_customer(self, request):
@@ -540,14 +878,64 @@ class CustomerViewSet(viewsets.GenericViewSet):
         except serializers.ValidationError as exc:
             return Response(status=400, data=exc.detail)
 
-    @extend_schema(request=CustomerSerializer, responses={200: CustomerSerializer})
+    @extend_schema(
+        summary="Update customer record",
+        description=(
+            "Updates contact details, name, or phone number of an existing customer record owned by the user. "
+            "Compare with `/customers/create/`."
+        ),
+        request=CustomerSerializer,
+        responses={
+            201: OpenApiResponse(response=CustomerSerializer, description="Customer updated successfully"),
+            400: OpenApiResponse(description="Validation error"),
+            404: OpenApiResponse(description="Customer not found"),
+        },
+        tags=["Customers"],
+    )
     @action(detail=False, methods=["put"], url_path="update")
     def update_customer(self, request):
         data = JSONParser().parse(request)
         customer = self.customer_service.update_customer(request.user, data)
         return Response(status=201, data=customer)
 
-    @extend_schema(responses={200: CustomerSerializer(many=True)})
+    @extend_schema(
+        summary="Search and paginate customer records",
+        description=(
+            "Searches customer records belonging to the merchant's store using Elasticsearch. "
+            "Supports keyword query matching name, email, or phone number, with 1-based page pagination (`offset`, `limit`). "
+            "Compare with `/query/search/` which searches globally across products, customers, and orders."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="query",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Search keyword for customer name, email, or phone",
+            ),
+            OpenApiParameter(
+                name="offset",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                default=1,
+                description="1-based page number",
+            ),
+            OpenApiParameter(
+                name="limit",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                default=15,
+                description="Number of customer records per page",
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(response=CustomerSearchResponseSerializer, description="Paginated customer search results"),
+            503: OpenApiResponse(response=ErrorResponseSerializer, description="Search service temporarily unavailable"),
+        },
+        tags=["Customers"],
+    )
     @action(detail=False, methods=["get"], url_path="search")
     def retrieve_customer(self, request, pk=None):
         query = request.GET.get("query", "")
@@ -588,8 +976,21 @@ class StoreViewSet(viewsets.GenericViewSet):
         self.store_service: StoreService = di[StoreService]
 
     permission_classes = (ServerAccessPolicy,)
+    serializer_class = StoreSerializer
 
-    @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
+    @extend_schema(
+        summary="Create store profile",
+        description=(
+            "Creates an initial store profile linked to the merchant's account. "
+            "Compare with `/settings/store/get/` and `/settings/store/update/`."
+        ),
+        request=StoreSerializer,
+        responses={
+            201: OpenApiResponse(response=StoreSerializer, description="Store created successfully"),
+            400: OpenApiResponse(description="Validation error in store fields"),
+        },
+        tags=["Settings & Notifications"],
+    )
     @action(detail=False, methods=["post"], url_path="create")
     def create_store(self, request):
         data = JSONParser().parse(request)
@@ -598,7 +999,19 @@ class StoreViewSet(viewsets.GenericViewSet):
         customer = self.store_service.create_store(request, serializer.validated_data)
         return Response(status=201, data=customer)
 
-    @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
+    @extend_schema(
+        summary="Update store profile",
+        description=(
+            "Updates merchant store information (name, bio, contact details, currency). "
+            "Compare with `/settings/store/update/`."
+        ),
+        request=StoreSerializer,
+        responses={
+            201: OpenApiResponse(response=StoreSerializer, description="Store updated successfully"),
+            400: OpenApiResponse(description="Validation error"),
+        },
+        tags=["Settings & Notifications"],
+    )
     @action(detail=False, methods=["put"], url_path="update")
     def update_store(self, request):
         data = JSONParser().parse(request)
@@ -615,7 +1028,20 @@ class OrderViewSet(viewsets.GenericViewSet):
     permission_classes = (ServerAccessPolicy,)
     serializer_class = OrderSerializer
 
-    @extend_schema(request=OrderSerializer, responses={201: OrderSerializer})
+    @extend_schema(
+        summary="Create store order",
+        description=(
+            "Creates a new order record for the authenticated user's store, calculates cart totals, "
+            "and updates the Elasticsearch index. "
+            "Compare with `/orders/update/`."
+        ),
+        request=OrderSerializer,
+        responses={
+            201: OpenApiResponse(response=OrderSerializer, description="Order created successfully"),
+            400: OpenApiResponse(description="Validation error in order contents"),
+        },
+        tags=["Orders"],
+    )
     @action(detail=False, methods=["post"], url_path="create")
     def create_order(self, request):
         data = JSONParser().parse(request)
@@ -624,21 +1050,99 @@ class OrderViewSet(viewsets.GenericViewSet):
         order = self.order_service.create_order(request, serializer)
         return Response(status=201, data=order)
 
-    @extend_schema(responses={205: None})
+    @extend_schema(
+        summary="Delete store order by ID",
+        description=(
+            "Deletes an order record belonging to the authenticated merchant and removes it from search indexes. "
+            "Returns HTTP 205 Reset Content upon successful deletion. "
+            "Compare with `/orders/update/`."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="order_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Unique identifier of the order to delete",
+            ),
+        ],
+        responses={
+            205: OpenApiResponse(description="Order deleted successfully"),
+            404: OpenApiResponse(description="Order not found"),
+        },
+        tags=["Orders"],
+    )
     @action(detail=False, methods=["delete"], url_path="delete/(?P<order_id>[^/.]+)")
     def delete_order(self, request, order_id):
         order = get_object_or_404(Order, id=order_id, user=request.user)
         order.delete()
         return Response(status=205)
 
-    @extend_schema(request=OrderSerializer, responses={201: OrderSerializer})
+    @extend_schema(
+        summary="Update store order",
+        description=(
+            "Updates order status, line items, or customer details for an existing order owned by the user. "
+            "Compare with `/orders/create/` and `/orders/delete/{order_id}/`."
+        ),
+        request=OrderSerializer,
+        responses={
+            201: OpenApiResponse(response=OrderSerializer, description="Order updated successfully"),
+            400: OpenApiResponse(description="Validation error"),
+            404: OpenApiResponse(description="Order not found"),
+        },
+        tags=["Orders"],
+    )
     @action(detail=False, methods=["put"], url_path="update")
     def update_order(self, request):
         data = JSONParser().parse(request)
         customer = self.order_service.update_order(request.user, data)
         return Response(status=201, data=customer)
 
-    @extend_schema(responses={200: OrderSerializer(many=True)})
+    @extend_schema(
+        summary="Search and filter store orders",
+        description=(
+            "Searches and filters orders owned by the merchant using Elasticsearch. "
+            "Supports full-text query, exact status filter (e.g. pending, completed, cancelled), "
+            "and 0-based record offset and limit pagination. "
+            "Compare with `/orders/download/` which exports orders to a downloadable CSV spreadsheet."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="query",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Search keyword for order items or customer details",
+            ),
+            OpenApiParameter(
+                name="status",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter orders by status string (e.g. pending, completed, cancelled)",
+            ),
+            OpenApiParameter(
+                name="offset",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                default=0,
+                description="0-based record offset",
+            ),
+            OpenApiParameter(
+                name="limit",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                default=15,
+                description="Number of orders to retrieve",
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(response=OrderSearchResponseSerializer, description="Paginated order search results"),
+            503: OpenApiResponse(response=ErrorResponseSerializer, description="Search service temporarily unavailable"),
+        },
+        tags=["Orders"],
+    )
     @action(detail=False, methods=["get"], url_path="search")
     def retrieve_order(self, request):
         query = request.GET.get("query", "")
@@ -675,7 +1179,20 @@ class OrderViewSet(viewsets.GenericViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @extend_schema(responses={200: None})
+    @extend_schema(
+        operation_id="orders_export_all_csv",
+        summary="Queue CSV export for all store orders",
+        description=(
+            "Enqueues an asynchronous background job (`ORDERS_EXPORT`) to compile all store orders into a CSV spreadsheet. "
+            "Returns HTTP 202 Accepted with a `job_id`. Once the job is succeeded, "
+            "download the generated CSV file directly via `/jobs/{job_id}/download/`. "
+            "Compare with `/orders/download/{order_id}/`, which exports only a single order."
+        ),
+        responses={
+            202: OpenApiResponse(response=JobAcceptedResponseSerializer, description="CSV export job queued"),
+        },
+        tags=["Orders"],
+    )
     @action(detail=False, methods=["get"], url_path="download")
     def download_orders(self, request):
         job = enqueue_job(
@@ -688,7 +1205,28 @@ class OrderViewSet(viewsets.GenericViewSet):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    @extend_schema(responses={200: None})
+    @extend_schema(
+        operation_id="orders_export_single_csv",
+        summary="Queue CSV export for a single order",
+        description=(
+            "Enqueues an asynchronous background job (`ORDERS_EXPORT`) to generate a CSV export for a specific order by ID. "
+            "Returns HTTP 202 Accepted with a `job_id`. Once ready, retrieve the CSV file from `/jobs/{job_id}/download/`. "
+            "Compare with `/orders/download/` which exports all store orders."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="order_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Unique identifier of the order to export",
+            ),
+        ],
+        responses={
+            202: OpenApiResponse(response=JobAcceptedResponseSerializer, description="CSV export job queued"),
+            404: OpenApiResponse(description="Order not found"),
+        },
+        tags=["Orders"],
+    )
     @action(detail=False, methods=["get"], url_path="download/(?P<order_id>[^/.]+)")
     def download_order(self, request, order_id):
         get_object_or_404(Order, id=order_id, user=request.user)
@@ -711,6 +1249,33 @@ class QueueJobView(APIView):
 
 
 class QueueJobStatusView(QueueJobView):
+    serializer_class = QueueJobStatusResponseSerializer
+
+    @extend_schema(
+        summary="Get background job status and result",
+        description=(
+            "Polls the execution status (`pending`, `processing`, `succeeded`, `failed`) and output of an asynchronous queue job. "
+            "Jobs are created by asynchronous endpoints such as `/query/upload/` (speech-to-text), "
+            "`/query/generate/` (text query plan), and `/orders/download/` (CSV export). "
+            "When status is `succeeded`, `result` contains the payload. "
+            "When status is `failed`, `error` contains details. "
+            "Compare with `/jobs/{job_id}/download/`, which streams downloadable CSV file content "
+            "directly rather than returning JSON status."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="job_id",
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.PATH,
+                description="UUID of the background queue job",
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(response=QueueJobStatusResponseSerializer, description="Job status and payload"),
+            404: OpenApiResponse(description="Job not found or does not belong to the current user"),
+        },
+        tags=["Background Jobs"],
+    )
     def get(self, request, job_id):
         job = self.get_job(job_id, request.user)
         response_data = {
@@ -726,6 +1291,32 @@ class QueueJobStatusView(QueueJobView):
 
 
 class QueueJobDownloadView(QueueJobView):
+    @extend_schema(
+        summary="Download completed order export CSV file",
+        description=(
+            "Streams the CSV file generated by an `ORDERS_EXPORT` background job. "
+            "Initiated via `/orders/download/` (all orders) or `/orders/download/{order_id}/` (single order). "
+            "If the job has not finished yet, is not an order export, or has failed, returns HTTP 409 Conflict. "
+            "Compare with `/jobs/{job_id}/`, which checks job status metadata as JSON without streaming the file."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="job_id",
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.PATH,
+                description="UUID of the completed export job",
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=OpenApiTypes.BINARY,
+                description="CSV spreadsheet file stream",
+            ),
+            404: OpenApiResponse(description="Job not found or unauthorized"),
+            409: OpenApiResponse(response=ErrorResponseSerializer, description="Export not ready, failed, or invalid job kind"),
+        },
+        tags=["Background Jobs"],
+    )
     def get(self, request, job_id):
         job = self.get_job(job_id, request.user)
         if job.kind != QueueJob.Kind.ORDERS_EXPORT:
@@ -762,14 +1353,37 @@ class SettingsViewSet(viewsets.GenericViewSet):
         self.store_service: StoreService = di[StoreService]
 
     permission_classes = (ServerAccessPolicy,)
+    serializer_class = StoreSerializer
 
-    @extend_schema(responses={200: AdminSerializer})
+    @extend_schema(
+        summary="Retrieve administrator profile",
+        description=(
+            "Fetches administrative user details (first name, email) for the authenticated merchant account. "
+            "Compare with `/settings/admin/update/`."
+        ),
+        responses={
+            200: OpenApiResponse(response=AdminSerializer, description="Admin profile details"),
+        },
+        tags=["Settings & Notifications"],
+    )
     @action(detail=False, methods=["get"], url_path="admin/get")
     def get_admin(self, request):
         admin_info = self.settings_service.get_admin_info(request.user.email)
         return Response(status=200, data=AdminSerializer(admin_info).data)
 
-    @extend_schema(request=UserSerializer, responses={201: AdminSerializer})
+    @extend_schema(
+        summary="Update administrator profile",
+        description=(
+            "Updates administrative profile information for the authenticated merchant account. "
+            "Compare with `/settings/admin/get/`."
+        ),
+        request=UserSerializer,
+        responses={
+            200: OpenApiResponse(response=AdminSerializer, description="Admin profile updated successfully"),
+            400: OpenApiResponse(description="Validation error in updated fields"),
+        },
+        tags=["Settings & Notifications"],
+    )
     @action(detail=False, methods=["put"], url_path="admin/update")
     def edit_admin_info(self, request):
         data = JSONParser().parse(request)
@@ -778,34 +1392,92 @@ class SettingsViewSet(viewsets.GenericViewSet):
 
         return Response(status=200, data=AdminSerializer(admin_info).data)
 
-    @extend_schema(responses={200: StoreSerializer})
+    @extend_schema(
+        summary="Retrieve store settings and profile",
+        description=(
+            "Retrieves configuration details for the user's merchant store (name, bio, currency, contact phone). "
+            "Compare with `/settings/store/update/`."
+        ),
+        responses={
+            200: OpenApiResponse(response=StoreSerializer, description="Store profile details"),
+            404: OpenApiResponse(description="Store profile not found"),
+        },
+        tags=["Settings & Notifications"],
+    )
     @action(detail=False, methods=["get"], url_path="store/get")
     def get_store(self, request):
         store = get_object_or_404(Store, user=request.user)
 
         return Response(status=200, data=StoreSerializer(store).data)
 
-    @extend_schema(request=StoreSerializer, responses={200: StoreSerializer})
+    @extend_schema(
+        summary="Update store settings and profile",
+        description=(
+            "Partially updates store profile fields (name, bio, currency, phone). "
+            "Compare with `/settings/store/get/`."
+        ),
+        request=StoreSerializer,
+        responses={
+            201: OpenApiResponse(response=StoreSerializer, description="Store settings updated successfully"),
+            400: OpenApiResponse(description="Validation error"),
+        },
+        tags=["Settings & Notifications"],
+    )
     @action(detail=False, methods=["put"], url_path="store/update")
     def update_store(self, request):
         data = JSONParser().parse(request)
         store = self.store_service.partially_update_store(request, data)
         return Response(status=201, data=store)
 
-    @extend_schema(responses={200: NotificationSerializer})
+    @extend_schema(
+        summary="Retrieve notification channel preferences",
+        description=(
+            "Retrieves active notification preferences (email notification and push notification flags) for the merchant. "
+            "Compare with `/settings/notifications/update/`."
+        ),
+        responses={
+            200: OpenApiResponse(response=NotificationSerializer, description="Active notification channel flags"),
+        },
+        tags=["Settings & Notifications"],
+    )
     @action(detail=False, methods=["get"], url_path="notifications/get")
     def get_notification_info(self, request):
         notification_info = self.settings_service.get_notification_info(request.user)
         return Response(status=200, data=NotificationSerializer(notification_info).data)
 
-    @extend_schema(responses={200: NotificationSerializer})
+    @extend_schema(
+        summary="Update notification channel preferences",
+        description=(
+            "Updates preferences for email and push notifications. "
+            "Compare with `/settings/notifications/get/` and `/settings/notifications/devices/`."
+        ),
+        request=NotificationSerializer,
+        responses={
+            200: OpenApiResponse(response=NotificationSerializer, description="Notification preferences updated successfully"),
+            400: OpenApiResponse(description="Validation error"),
+        },
+        tags=["Settings & Notifications"],
+    )
     @action(detail=False, methods=["put"], url_path="notifications/update")
     def update_notification_info(self, request):
         data = JSONParser().parse(request)
         settings_data = self.settings_service.update_notification_info(request.user, data)
         return Response(status=200, data=settings_data)
 
-    @extend_schema(request=NotificationDeviceSerializer, responses={201: NotificationDeviceSerializer})
+    @extend_schema(
+        summary="Register push notification device token",
+        description=(
+            "Registers or updates a Firebase Cloud Messaging (FCM) device registration token associated with the user account "
+            "for web or mobile push notification delivery. "
+            "Compare with DELETE `/settings/notifications/devices/` to revoke a device token."
+        ),
+        request=NotificationDeviceSerializer,
+        responses={
+            201: OpenApiResponse(response=NotificationDeviceSerializer, description="Device token registered successfully"),
+            400: OpenApiResponse(description="Invalid device registration payload"),
+        },
+        tags=["Settings & Notifications"],
+    )
     @action(detail=False, methods=["post"], url_path="notifications/devices")
     def register_notification_device(self, request):
         serializer = NotificationDeviceSerializer(data=request.data)
@@ -820,7 +1492,19 @@ class SettingsViewSet(viewsets.GenericViewSet):
         )
         return Response(status=status.HTTP_201_CREATED, data=NotificationDeviceSerializer(device).data)
 
-    @extend_schema(request=NotificationDeviceSerializer, responses={204: None})
+    @extend_schema(
+        summary="Unregister push notification device token",
+        description=(
+            "Deactivates an FCM device push token so the device no longer receives push notifications. "
+            "Compare with POST `/settings/notifications/devices/` which registers or refreshes a device token."
+        ),
+        request=NotificationDeviceSerializer,
+        responses={
+            204: OpenApiResponse(description="Device token deactivated successfully"),
+            400: OpenApiResponse(description="Invalid request payload"),
+        },
+        tags=["Settings & Notifications"],
+    )
     @action(detail=False, methods=["delete"], url_path="notifications/devices")
     def unregister_notification_device(self, request):
         serializer = NotificationDeviceSerializer(data=request.data)

@@ -36,7 +36,7 @@ Browser -> React/Vite -> Django REST API -> relational database
                               `-- /metrics/ and /health/ -> monitoring stack
 ```
 
-The root `compose.yaml` defines the backend application and data stack (`text-2-sql-app`).
+The dedicated `server/compose.yaml` defines the backend application and data stack (`text-2-sql-app`).
 The dedicated `client/compose.yaml` defines the frontend stack (`text-2-sql-frontend`),
 and `monitoring/compose.yaml` defines local dashboards and exporters (`text-2-sql-monitoring`).
 All stacks communicate over the shared external Docker network `text-2-sql-app-net`.
@@ -54,8 +54,8 @@ SQLite settings.
 | `client/src/utils/api.ts` | API requests, JWT refresh, and API error handling. |
 | `client/src/utils/queue-jobs.ts` | Shared client-side polling for asynchronous jobs. |
 | `client/src/utils/push-notifications.ts` | Browser Firebase Messaging setup and device registration. |
-| `compose.yaml` | Backend API and core infrastructure Docker Compose stack. |
 | `monitoring/compose.yaml` | Observability and exporter Docker Compose stack. |
+| `server/compose.yaml` | Backend API and core infrastructure Docker Compose stack. |
 | `server/server/` | Django settings, root URL configuration, and WSGI/ASGI entry points. |
 | `server/app/views.py` | HTTP endpoints and DRF viewsets. |
 | `server/app/services.py` | Domain workflows and external service integration. |
@@ -106,7 +106,7 @@ docker network create text-2-sql-app-net
 To bring up both the backend and frontend stacks together:
 
 ```bash
-docker compose -f compose.yaml up --build -d
+docker compose -f server/compose.yaml up --build -d
 docker compose -f client/compose.yaml up --build -d
 ```
 
@@ -114,7 +114,7 @@ To bring up individual stacks:
 
 ```bash
 # Bring up backend API and data stack only
-docker compose -f compose.yaml up --build -d
+docker compose -f server/compose.yaml up --build -d
 
 # Bring up frontend stack only
 docker compose -f client/compose.yaml up
@@ -130,7 +130,7 @@ serving requests. The frontend stack builds and runs the React/Vite development 
 To build the container images for both stacks without starting them:
 
 ```bash
-docker compose -f compose.yaml build
+docker compose -f server/compose.yaml build
 docker compose -f client/compose.yaml build
 ```
 
@@ -152,16 +152,16 @@ non-development data.
 To inspect service health or rebuild search indices:
 
 ```bash
-docker compose -f compose.yaml ps
+docker compose -f server/compose.yaml ps
 docker compose -f client/compose.yaml ps
-docker compose exec text2sql-server python manage.py reindex_search --rebuild
+docker compose -f server/compose.yaml exec text2sql-server python manage.py reindex_search --rebuild
 ```
 
 To stop the application stacks without removing their persistent named volumes:
 
 ```bash
 docker compose -f client/compose.yaml down
-docker compose -f compose.yaml down
+docker compose -f server/compose.yaml down
 ```
 
 ### Standalone backend development and tests

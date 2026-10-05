@@ -104,7 +104,7 @@ export const NewCustomer = () => {
       <Header />
       <Sidebar />
       <div className="Newcustomer_Container">
-        <h1>Create New Customer</h1>
+        <header className="Form_Page_Header"><small className="Page_Eyebrow">AUDIENCE</small><h1>Add customer</h1><p>Create a customer profile for your store.</p></header>
         <section className="Product_Form_Container">
           <div className="GenProduct_Container">
             <h3>Customer Information</h3>
@@ -154,8 +154,8 @@ export const NewCustomer = () => {
               {formState.errors.phone && <p>{formState.errors.phone}</p>}
 
               <div>
-                <span onClick={() => nav(-1)} className="Cancel_Btn">Cancel</span>
-                <span onClick={handleCreateCustomer} className="Add_Btn">Add Customer</span>
+                <button type="button" onClick={() => nav(-1)} className="Cancel_Btn">Cancel</button>
+                <button type="button" onClick={handleCreateCustomer} className="Add_Btn">Add customer</button>
               </div>
             </form>
           </div>

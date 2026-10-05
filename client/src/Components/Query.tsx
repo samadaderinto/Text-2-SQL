@@ -3,6 +3,7 @@ import { Header } from "../layouts/Header";
 import { useLocation } from 'react-router-dom';
 import Sidebar from '../layouts/Sidebar';
 import { toast } from 'react-toastify';
+import { EmptyState } from './EmptyState';
 
 type QueryPlan = {
   intent?: string;
@@ -85,7 +86,7 @@ const Query = () => {
       <Sidebar />
       <div className="Query_Container">
         <section className="Query_Header">
-          <h1>{location.state?.header ?? 'Query Results'}</h1>
+          <div><small className="Page_Eyebrow">DATA EXPLORER</small><h1>{location.state?.header ?? 'Query results'}</h1><p>Review and export the records returned by your request.</p></div>
           <button
             className="Query_Download_Btn"
             onClick={downloadCSV}
@@ -132,27 +133,15 @@ const Query = () => {
 
           {dataArray.length > 0 ? (
             <>
-              <div className="Query_Headers">
-                {Object.keys(dataArray[0]).map((header, idx) => (
-                  <strong key={idx} >
-                    {header.replace(/_/g, ' ')}
-                  </strong>
-                ))}
-              </div>
-              <ul>
-                {dataArray.map((item, index) => (
-                  <li key={index}>
-                    {Object.entries(item).map(([_, value], idx) => (
-                      <div key={idx}>
-                        {value?.toString() || 'N/A'}
-                      </div>
-                    ))}
-                  </li>
-                ))}
-              </ul>
+              <table className="Query_Table">
+                <thead><tr>{Object.keys(dataArray[0]).map(key => <th key={key} scope="col">{key.replace(/_/g, ' ')}</th>)}</tr></thead>
+                <tbody>{dataArray.map((item, index) => (
+                  <tr key={index}>{Object.keys(dataArray[0]).map(key => <td key={key}>{item[key] == null ? '—' : typeof item[key] === 'object' ? JSON.stringify(item[key]) : String(item[key])}</td>)}</tr>
+                ))}</tbody>
+              </table>
             </>
           ) : (
-            <p>No data available</p>
+            <EmptyState title="No results to show" description="Ask a question from the search bar to explore your store data." />
           )}
         </section>
       </div>

@@ -8,16 +8,20 @@ services:
     env_file:
       - .env
     command: >
-      sh -c "(node -e 'require(\"rollup\")' 2>/dev/null ||
-             npm install --no-save @rollup/rollup-linux-arm64-musl @rollup/rollup-linux-x64-musl @rollup/rollup-linux-arm64-gnu @rollup/rollup-linux-x64-gnu) &&
+      sh -c "(node -e 'require(\"rollup\"); require(\"@swc/core\")' 2>/dev/null ||
+             npm install --force --no-save @rollup/rollup-linux-arm64-musl @rollup/rollup-linux-x64-musl @swc/core-linux-arm64-musl @swc/core-linux-x64-musl) &&
              exec npm run dev -- --host 0.0.0.0 --port 4174"
     ports:
       - "4174:4174"
+    container_name: text2sql-client
     volumes:
       - .:/app
       - client_node_modules:/app/node_modules
     networks:
-      - app-net
+      app-net:
+        aliases:
+          - client
+          - frontend
 
 networks:
   app-net:
